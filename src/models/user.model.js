@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema({
     },
     teachingExperience: {
         type: String,
-        required: function() { return this.role === 'teacher'; }
+        required: false
     },
     expertise: [String],
     qualification: [Object],
