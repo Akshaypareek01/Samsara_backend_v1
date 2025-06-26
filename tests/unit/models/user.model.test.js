@@ -1,6 +1,6 @@
 import faker from 'faker';
-
-import User from '../../../src/models/user.model.js';
+import mongoose from 'mongoose';
+import { User } from '../../../src/models/user.model.js';
 
 describe('User model', () => {
   describe('User validation', () => {

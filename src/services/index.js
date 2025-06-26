@@ -3,3 +3,6 @@
 // export { default as tokenService } from './token.service.js';
 // export { default as userService } from './user.service.js';
 
+// Export OTP service
+export * as otpService from './otp.service.js';
+

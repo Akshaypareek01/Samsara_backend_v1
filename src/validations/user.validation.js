@@ -7,7 +7,7 @@ const createUser = {
     email: Joi.string().required().email(),
     password: Joi.string().required().custom(password),
     name: Joi.string().required(),
-    role: Joi.string().required().valid('user', 'admin'),
+    role: Joi.string().required().valid('user', 'teacher'),
   }),
 };
 
@@ -40,11 +40,52 @@ const updateUser = {
     .min(1),
 };
 
+const updateProfile = {
+  body: Joi.object()
+    .keys({
+      name: Joi.string().max(20),
+      mobile: Joi.string().min(10).max(15),
+      gender: Joi.string(),
+      dob: Joi.string(),
+      age: Joi.string(),
+      Address: Joi.string(),
+      city: Joi.string(),
+      pincode: Joi.string(),
+      country: Joi.string(),
+      height: Joi.string(),
+      weight: Joi.string(),
+      targetWeight: Joi.string(),
+      bodyshape: Joi.string(),
+      weeklyyogaplan: Joi.string(),
+      practicetime: Joi.string(),
+      focusarea: Joi.array().items(Joi.string()),
+      goal: Joi.array().items(Joi.string()),
+      health_issues: Joi.array().items(Joi.string()),
+      howyouknowus: Joi.string(),
+      PriorExperience: Joi.string(),
+      description: Joi.string(),
+      achievements: Joi.array().items(Joi.string()),
+      // User category (for regular users)
+      userCategory: Joi.string().valid('Personal', 'Corporate'),
+      // Teacher specific fields
+      teacherCategory: Joi.string().valid('Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer'),
+      teachingExperience: Joi.string(),
+      expertise: Joi.array().items(Joi.string()),
+      qualification: Joi.array().items(Joi.object()),
+      additional_courses: Joi.array().items(Joi.object()),
+      // Company related fields (for corporate users)
+      company_name: Joi.string().custom(objectId),
+      companyId: Joi.string(),
+      corporate_id: Joi.string(),
+    })
+    .min(1),
+};
+
 const deleteUser = {
   params: Joi.object().keys({
     userId: Joi.string().custom(objectId),
   }),
 };
 
-export { createUser, getUsers, getUser, updateUser, deleteUser };
+export { createUser, getUsers, getUser, updateUser, updateProfile, deleteUser };
 

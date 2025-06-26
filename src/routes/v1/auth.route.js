@@ -7,8 +7,19 @@ import auth from '../../middlewares/auth.js';
 
 const router = express.Router();
 
+// Traditional password-based auth
 router.post('/register', validate(authValidation.register), authController.register);
 router.post('/login', validate(authValidation.login), authController.login);
+
+// OTP-based registration flow
+router.post('/send-registration-otp', validate(authValidation.sendRegistrationOTP), authController.sendRegistrationOTPController);
+router.post('/verify-registration-otp', validate(authValidation.verifyRegistrationOTP), authController.verifyRegistrationOTPController);
+
+// OTP-based login flow
+router.post('/send-login-otp', validate(authValidation.sendLoginOTP), authController.sendLoginOTPController);
+router.post('/verify-login-otp', validate(authValidation.verifyLoginOTP), authController.verifyLoginOTPController);
+
+// Other auth endpoints
 router.post('/logout', validate(authValidation.logout), authController.logout);
 router.post('/refresh-tokens', validate(authValidation.refreshTokens), authController.refreshTokens);
 router.post('/forgot-password', validate(authValidation.forgotPassword), authController.forgotPassword);

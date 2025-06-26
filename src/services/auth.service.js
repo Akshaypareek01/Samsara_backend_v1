@@ -1,6 +1,7 @@
 import httpStatus from 'http-status';
 import {verifyToken,generateAuthTokens} from './token.service.js';
 import {getUserByEmail,getUserById,updateUserById} from './user.service.js';
+import { sendLoginOTP, verifyLoginOTP } from './otp.service.js';
 import Token from '../models/token.model.js';
 import ApiError from '../utils/ApiError.js';
 import { tokenTypes } from '../config/tokens.js';
@@ -16,6 +17,41 @@ const loginUserWithEmailAndPassword = async (email, password) => {
   if (!user || !(await user.isPasswordMatch(password))) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password');
   }
+  return user;
+};
+
+/**
+ * Send OTP for login
+ * @param {string} email
+ * @returns {Promise<Object>}
+ */
+const sendLoginOTPForUser = async (email) => {
+  const user = await getUserByEmail(email);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Account not found. Please register first.');
+  }
+  
+  await sendLoginOTP(email);
+  return { message: 'OTP sent successfully to your email' };
+};
+
+/**
+ * Login with OTP
+ * @param {string} email
+ * @param {string} otp
+ * @returns {Promise<User>}
+ */
+const loginUserWithOTP = async (email, otp) => {
+  const user = await getUserByEmail(email);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Account not found. Please register first.');
+  }
+  
+  const isValidOTP = await verifyLoginOTP(email, otp);
+  if (!isValidOTP) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid or expired OTP');
+  }
+  
   return user;
 };
 
@@ -92,6 +128,8 @@ const verifyEmail = async (verifyEmailToken) => {
 
 export {
   loginUserWithEmailAndPassword,
+  sendLoginOTPForUser,
+  loginUserWithOTP,
   logout,
   refreshAuth,
   resetPassword,

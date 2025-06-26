@@ -35,11 +35,25 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+// Update current user's profile
+const updateProfile = catchAsync(async (req, res) => {
+  const user = await userService.updateUserById(req.user.id, req.body);
+  res.send(user);
+});
+
+// Get current user's profile
+const getProfile = catchAsync(async (req, res) => {
+  const user = await userService.getUserById(req.user.id);
+  res.send(user);
+});
+
 export {
   createUser,
   getUsers,
   getUser,
   updateUser,
   deleteUser,
+  updateProfile,
+  getProfile,
 };
 

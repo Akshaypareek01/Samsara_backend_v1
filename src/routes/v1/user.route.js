@@ -6,6 +6,12 @@ import * as userController from '../../controllers/user.controller.js';
 
 const router = express.Router();
 
+// Profile routes (for authenticated users)
+router
+  .route('/profile')
+  .get(auth(), userController.getProfile)
+  .patch(auth(), validate(userValidation.updateProfile), userController.updateProfile);
+
 router
   .route('/')
   .post(auth('manageUsers'), validate(userValidation.createUser), userController.createUser)

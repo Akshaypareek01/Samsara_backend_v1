@@ -1,12 +1,13 @@
 import request from 'supertest';
-import faker from 'faker';
 import httpStatus from 'http-status';
+import { faker } from '@faker-js/faker';
 import app from '../../src/app.js';
 import setupTestDB from '../utils/setupTestDB.js';
+import { User } from '../../src/models/user.model.js';
+import { userOne, insertUsers } from '../fixtures/user.fixture.js';
+import { generateAuthTokens } from '../../src/services/token.service.js';
 
-import { userOne, userTwo, admin, insertUsers } from '../fixtures/user.fixture';
 import { userOneAccessToken, adminAccessToken } from '../fixtures/token.fixture';
-import User from '../../src/models/user.model.js';
 
 
 setupTestDB();
