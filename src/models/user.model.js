@@ -57,7 +57,7 @@ const userSchema = new mongoose.Schema({
     companyId: {
         type: String,
         ref: 'Company',
-        required: function() { return this.role === 'user' && this.userCategory === 'Corporate'; }
+        required: false,
     },
     corporate_id: {
         type: String,
