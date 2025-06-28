@@ -33,7 +33,7 @@ const login = catchAsync(async (req, res) => {
 
 // OTP-based registration flow
 const sendRegistrationOTPController = catchAsync(async (req, res) => {
-  const { email, name, role, userCategory, corporate_id, teacherCategory } = req.body;
+  const { email, name, mobile, role, userCategory, corporate_id, teacherCategory } = req.body;
   
   // Check if user already exists
   const existingUser = await getUserByEmail(email);
@@ -66,7 +66,7 @@ const sendRegistrationOTPController = catchAsync(async (req, res) => {
 });
 
 const verifyRegistrationOTPController = catchAsync(async (req, res) => {
-  const { email, otp, name, role, userCategory, corporate_id, teacherCategory } = req.body;
+  const { email, otp, name, mobile, role, userCategory, corporate_id, teacherCategory } = req.body;
   
   const isValidOTP = await verifyRegistrationOTP(email, otp);
   if (!isValidOTP) {
@@ -80,6 +80,11 @@ const verifyRegistrationOTPController = catchAsync(async (req, res) => {
     role,
     active: true // Mark as active since email is verified
   };
+  
+  // Add mobile if provided
+  if (mobile) {
+    userData.mobile = mobile;
+  }
   
   // Add role-specific fields
   if (role === 'user') {
