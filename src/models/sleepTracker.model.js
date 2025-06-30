@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { toJSON, paginate } from './plugins/index';
+import { toJSON, paginate } from './plugins/index.js';
 
 const ProgressEntrySchema = new mongoose.Schema({
   date: { type: Date, required: true },

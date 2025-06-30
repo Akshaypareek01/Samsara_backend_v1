@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { toJSON, paginate } from './plugins/index';
+import { toJSON, paginate } from './plugins/index.js';
 
 const BodyStatusSchema = new mongoose.Schema(
   {
@@ -12,7 +12,7 @@ const BodyStatusSchema = new mongoose.Schema(
     height: {
       value: {
         type: Number,
-        required: true,
+        required: false,
       },
       unit: {
         type: String,
@@ -23,7 +23,7 @@ const BodyStatusSchema = new mongoose.Schema(
     weight: {
       value: {
         type: Number,
-        required: true,
+        required: false,
       },
       unit: {
         type: String,

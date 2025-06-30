@@ -3,6 +3,7 @@ import authRoute from './auth.route.js';
 import userRoute from './user.route.js';
 import docsRoute from './docs.route.js';
 import uploadRoute from './upload.route.js';
+import trackerRoute from './tracker.route.js';
 import config from '../../config/config.js';
 
 const router = express.Router();
@@ -19,6 +20,10 @@ const defaultRoutes = [
   {
     path: '/upload',
     route: uploadRoute,
+  },
+  {
+    path: '/trackers',
+    route: trackerRoute,
   },
 ];
 

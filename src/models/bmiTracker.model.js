@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { toJSON, paginate } from './plugins/index';
+import { toJSON, paginate } from './plugins/index.js';
 
 const BmiTrackerSchema = new mongoose.Schema(
   {
@@ -10,19 +10,19 @@ const BmiTrackerSchema = new mongoose.Schema(
     },
     age: {
       type: Number,
-      required: true,
+      required: false,
     },
     gender: {
       type: String,
       enum: ['Male', 'Female', 'Other'],
-      required: true,
+      required: false,
     },
     height: {
-      value: { type: Number, required: true },
+      value: { type: Number, required: false },
       unit: { type: String, enum: ['cm', 'ft'], default: 'cm' },
     },
     weight: {
-      value: { type: Number, required: true },
+      value: { type: Number, required: false },
       unit: { type: String, enum: ['kg', 'lbs'], default: 'kg' },
     },
     bmi: {

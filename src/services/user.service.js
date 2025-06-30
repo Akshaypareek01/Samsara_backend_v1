@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import pick from '../utils/pick.js';
 import { User } from '../models/user.model.js';
 import ApiError from '../utils/ApiError.js';
+import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
 
 
 /**
@@ -13,7 +14,19 @@ const createUser = async (userBody) => {
   if (await User.isEmailTaken(userBody.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
-  return User.create(userBody);
+  
+  const user = await User.create(userBody);
+  
+  // Create initial trackers for the new user
+  try {
+    await createInitialTrackers(user._id);
+    console.log(`Created initial trackers for user: ${user._id}`);
+  } catch (error) {
+    console.error(`Failed to create initial trackers for user ${user._id}:`, error);
+    // Don't throw error here to avoid failing user creation if tracker creation fails
+  }
+  
+  return user;
 };
 
 /**
@@ -64,6 +77,15 @@ const updateUserById = async (userId, updateBody) => {
   }
   Object.assign(user, updateBody);
   await user.save();
+  
+  // Update tracker fields if relevant profile data was updated
+  try {
+    await updateTrackersFromProfile(userId, updateBody);
+  } catch (error) {
+    console.error(`Failed to update trackers for user ${userId}:`, error);
+    // Don't throw error here to avoid failing user update if tracker update fails
+  }
+  
   return user;
 };
 

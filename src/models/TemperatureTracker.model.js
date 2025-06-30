@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { toJSON, paginate } from './plugins/index';
+import { toJSON, paginate } from './plugins/index.js';
 
 const TemperatureTrackerSchema = new mongoose.Schema(
   {
@@ -9,7 +9,7 @@ const TemperatureTrackerSchema = new mongoose.Schema(
       required: true,
     },
     temperature: {
-      value: { type: Number, required: true },
+      value: { type: Number, required: false },
       unit: { type: String, enum: ['F', 'C'], default: 'F' },
     },
     status: {

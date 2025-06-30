@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { toJSON, paginate } from './plugins/index';
+import { toJSON, paginate } from './plugins/index.js';
 
 const StepTrackerSchema = new mongoose.Schema(
   {
@@ -10,7 +10,7 @@ const StepTrackerSchema = new mongoose.Schema(
     },
     steps: {
       type: Number,
-      required: true,
+      required: false,
     },
     goal: {
       type: Number,

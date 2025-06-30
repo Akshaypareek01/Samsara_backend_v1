@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { toJSON, paginate } from './plugins/index';
+import { toJSON, paginate } from './plugins/index.js';
 
 const WeightTrackerSchema = new mongoose.Schema(
   {
@@ -9,11 +9,11 @@ const WeightTrackerSchema = new mongoose.Schema(
       required: true,
     },
     currentWeight: {
-      value: { type: Number, required: true },
+      value: { type: Number, required: false },
       unit: { type: String, enum: ['kg', 'lbs'], default: 'kg' },
     },
     goalWeight: {
-      value: { type: Number, required: true },
+      value: { type: Number, required: false },
       unit: { type: String, enum: ['kg', 'lbs'], default: 'kg' },
     },
     startingWeight: {

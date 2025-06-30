@@ -6,3 +6,6 @@
 // Export OTP service
 export * as otpService from './otp.service.js';
 
+// Export tracker service
+export * as trackerService from './tracker.service.js';
+

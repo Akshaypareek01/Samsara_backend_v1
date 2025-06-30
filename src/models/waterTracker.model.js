@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { toJSON, paginate } from './plugins/index';
+import { toJSON, paginate } from './plugins/index.js';
 
 const IntakeEventSchema = new mongoose.Schema({
   amountMl: { type: Number, required: true }, // e.g., 250, 500, 750
