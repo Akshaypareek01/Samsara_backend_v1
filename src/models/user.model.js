@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 import validator from 'validator';
 import { toJSON, paginate } from './plugins/index.js';
 import Membership from './membership.model.js';
-import EventApplication from './eventApplication.model.js';
 import { CustomSession } from './customSession.model.js';
 import { Mood } from './userMood.model.js';
 
@@ -205,7 +204,6 @@ userSchema.pre('remove', async function(next) {
     try {
         console.log("In remove function this delete ==>", this._id)
         await Membership.deleteMany({ userId: this._id });
-        await EventApplication.deleteMany({ userId: this._id });
         await CustomSession.deleteMany({ user: this._id });
         await Mood.deleteMany({ userId: this._id });
         next();
