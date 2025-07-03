@@ -19,7 +19,7 @@ import { MedicationTracker, DailySchedule } from './medication.model.js';
 import { BodyStatus } from './bodyStatus.model.js';
 import { SleepTracker } from './sleepTracker.model.js';
 import { WaterTracker } from './waterTracker.model.js';
-import { FatTracker } from './fatTracker.model.js';
+import { FatTracker } from './FatTracker.model.js';
 import { WeightTracker } from './weightTracker.model.js';
 import { TemperatureTracker } from './temperatureTracker.model.js';
 import { BmiTracker } from './bmiTracker.model.js';

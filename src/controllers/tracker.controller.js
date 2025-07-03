@@ -3,7 +3,7 @@ import catchAsync from '../utils/catchAsync.js';
 import * as trackerService from '../services/tracker.service.js';
 import { WeightTracker } from '../models/weightTracker.model.js';
 import { BmiTracker } from '../models/bmiTracker.model.js';
-import { FatTracker } from '../models/fatTracker.model.js';
+import { FatTracker } from '../models/FatTracker.model.js';
 import { BodyStatus } from '../models/bodyStatus.model.js';
 import { WaterTracker } from '../models/waterTracker.model.js';
 import { SleepTracker } from '../models/sleepTracker.model.js';
