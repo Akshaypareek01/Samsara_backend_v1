@@ -6,7 +6,7 @@ import {getUserByEmail} from './user.service.js';
 
 import ApiError from '../utils/ApiError.js';
 import { tokenTypes } from '../config/tokens.js';
-import Token from '../models/token.model.js';
+import { Token } from '../models/index.js';
 
 
 /**

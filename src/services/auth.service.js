@@ -2,7 +2,7 @@ import httpStatus from 'http-status';
 import {verifyToken,generateAuthTokens} from './token.service.js';
 import {getUserByEmail,getUserById,updateUserById} from './user.service.js';
 import { sendLoginOTP, verifyLoginOTP } from './otp.service.js';
-import Token from '../models/token.model.js';
+import { Token } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { tokenTypes } from '../config/tokens.js';
 

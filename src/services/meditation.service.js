@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import pick from '../utils/pick.js';
-import { Meditation } from '../models/meditation.model.js';
+import { Meditation } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 
 /**

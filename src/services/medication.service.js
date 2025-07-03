@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-import { MedicationTracker, DailySchedule } from '../models/medication.model.js';
+import { MedicationTracker, DailySchedule } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 
 /**

@@ -1,4 +1,4 @@
-import OTP from '../models/otp.model.js';
+import { OTP } from '../models/index.js';
 import { sendEmail } from './email.service.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
