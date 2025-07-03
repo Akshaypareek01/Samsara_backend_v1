@@ -5,7 +5,7 @@ import validator from 'validator';
 import { toJSON, paginate } from './plugins/index.js';
 import Membership from './membership.model.js';
 import EventApplication from './eventApplication.model.js';
-import { CustomSession } from './customSession.Model.js';
+import { CustomSession } from './customSession.model.js';
 import { Mood } from './userMood.model.js';
 
 const userSchema = new mongoose.Schema({

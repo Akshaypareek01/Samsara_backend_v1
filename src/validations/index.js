@@ -5,6 +5,9 @@ import classValidation from './class.validation.js';
 import eventValidation from './event.validation.js';
 import trackerValidation from './tracker.validation.js';
 import questionMasterValidation from './questionMaster.validation.js';
+import meditationValidation from './meditation.validation.js';
+import masterCategoryValidation from './masterCategory.validation.js';
+import medicationValidation from './medication.validation.js';
 
 export { 
   authValidation, 
@@ -13,5 +16,8 @@ export {
   classValidation, 
   eventValidation,
   trackerValidation,
-  questionMasterValidation
+  questionMasterValidation,
+  meditationValidation,
+  masterCategoryValidation,
+  medicationValidation
 };

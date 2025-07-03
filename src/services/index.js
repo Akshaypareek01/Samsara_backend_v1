@@ -12,3 +12,12 @@ export * as trackerService from './tracker.service.js';
 // Export assessment service
 export * as assessmentService from './assessment.service.js';
 
+// Export meditation service
+export * as meditationService from './meditation.service.js';
+
+// Export master category service
+export * as masterCategoryService from './masterCategory.service.js';
+
+// Export medication service
+export * as medicationService from './medication.service.js';
+

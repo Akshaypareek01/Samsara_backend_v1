@@ -15,6 +15,9 @@ import teacherAvailabilityRoute from './teacherAvailability.Router.js';
 import zoomRoute from './zoom.Router.js';
 import assessmentRoute from './assessment.router.js';
 import questionMasterRoute from './questionMaster.router.js';
+import meditationRoute from './meditation.router.js';
+import masterCategoryRoute from './masterCategory.router.js';
+import medicationRoute from './medication.router.js';
 import config from '../../config/config.js';
 
 const router = express.Router();
@@ -79,6 +82,18 @@ const defaultRoutes = [
   {
     path: '/question-master',
     route: questionMasterRoute,
+  },
+  {
+    path: '/meditations',
+    route: meditationRoute,
+  },
+  {
+    path: '/master-categories',
+    route: masterCategoryRoute,
+  },
+  {
+    path: '/medications',
+    route: medicationRoute,
   },
 ];
 

@@ -8,7 +8,7 @@ import cors from 'cors';
 import KJUR from 'jsrsasign';
 import jwt from 'jsonwebtoken';
 import { Class } from '../models/class.model.js';
-import { CustomSession } from '../models/customSession.Model.js';
+import { CustomSession } from '../models/customSession.model.js';
 import Event from '../models/event.model.js';
 
 const CLIENT_ID = 'USSKQRgqQwGWNLpTjHStQ';

@@ -1,4 +1,4 @@
-import { CustomSession, TimeSlot } from "../models/customSession.Model.js";
+import { CustomSession, TimeSlot } from "../models/customSession.model.js";
 import axios from 'axios';
 
 // Create a new custom session

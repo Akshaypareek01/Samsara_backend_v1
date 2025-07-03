@@ -1,4 +1,4 @@
-import RecordedClass from "../models/recordedClass.Model.js";
+import RecordedClass from "../models/recordedClass.model.js";
 
 
 // Get all classes

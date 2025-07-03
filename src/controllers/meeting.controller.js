@@ -1,4 +1,4 @@
-import { Meeting } from "../models/meeting.Model.js";
+import { Meeting } from "../models/meeting.model.js";
 
 export const createMeeting = async (req, res) => {
   try {
