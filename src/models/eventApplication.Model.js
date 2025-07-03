@@ -9,7 +9,7 @@ const eventApplicationSchema = new mongoose.Schema({
     },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Users', // Reference to Users model
+        ref: 'Users',
         required: true,
     },
     appliedAt: {
