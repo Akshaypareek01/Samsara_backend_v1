@@ -3,9 +3,6 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
 import { toJSON, paginate } from './plugins/index.js';
-import Membership from './membership.model.js';
-import { CustomSession } from './customSession.model.js';
-import { Mood } from './userMood.model.js';
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -200,17 +197,7 @@ userSchema.pre('save', function (next) {
     next();
 });
 
-userSchema.pre('remove', async function(next) {
-    try {
-        console.log("In remove function this delete ==>", this._id)
-        await Membership.deleteMany({ userId: this._id });
-        await CustomSession.deleteMany({ user: this._id });
-        await Mood.deleteMany({ userId: this._id });
-        next();
-    } catch (err) {
-        next(err);
-    }
-});
+
 
 /**
  * Reset Password
