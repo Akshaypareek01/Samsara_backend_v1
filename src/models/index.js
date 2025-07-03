@@ -5,7 +5,7 @@ import Event from './event.model.js';
 import OTP from './otp.model.js';
 import { Mood } from './userMood.model.js';
 import Membership from './membership.model.js';
-import EventApplication from './eventApplication.model.js';
+import EventApplication from "./eventApplication.Model.js";
 import { CustomSession } from './customSession.model.js';
 import Admin from './admin.model.js';
 import Company from './company.model.js';

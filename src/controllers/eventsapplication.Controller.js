@@ -1,4 +1,4 @@
-import EventApplication from "../models/eventApplication.model.js";
+import EventApplication from "../models/eventApplication.Model.js";
 
 // Create a new event application
 export const createEventApplication = async (req, res) => {
