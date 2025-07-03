@@ -1,4 +1,4 @@
-import { QuestionMaster } from '../models/questionMaster.model.js';
+import { QuestionMaster } from '../models/question-master.model.js';
 import { AssessmentResult } from '../models/dosha.model.js';
 import { ApiError } from '../utils/ApiError.js';
 import httpStatus from 'http-status';

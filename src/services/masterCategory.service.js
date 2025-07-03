@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import pick from '../utils/pick.js';
-import { MasterCategory } from '../models/masterCategory.model.js';
+import { MasterCategory } from '../models/master-category.model.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
