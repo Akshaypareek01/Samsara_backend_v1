@@ -1,14 +1,16 @@
 import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
 import * as trackerService from '../services/tracker.service.js';
-import { WeightTracker } from '../models/weightTracker.model.js';
-import { BmiTracker } from '../models/bmiTracker.model.js';
-import { FatTracker } from '../models/FatTracker.model.js';
-import { BodyStatus } from '../models/bodyStatus.model.js';
-import { WaterTracker } from '../models/waterTracker.model.js';
-import { SleepTracker } from '../models/sleepTracker.model.js';
-import { StepTracker } from '../models/stepTracker.model.js';
-import { TemperatureTracker } from '../models/temperatureTracker.model.js';
+import { 
+  WeightTracker, 
+  BmiTracker, 
+  FatTracker, 
+  BodyStatus, 
+  WaterTracker, 
+  SleepTracker, 
+  StepTracker, 
+  TemperatureTracker 
+} from '../models/index.js';
 
 /**
  * Get dashboard data (latest entries from all trackers)

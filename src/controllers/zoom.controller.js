@@ -7,9 +7,7 @@ import crypto from 'crypto';
 import cors from 'cors';
 import KJUR from 'jsrsasign';
 import jwt from 'jsonwebtoken';
-import { Class } from '../models/class.model.js';
-import { CustomSession } from '../models/customSession.model.js';
-import Event from '../models/event.model.js';
+import { Class, CustomSession, Event } from '../models/index.js';
 
 const CLIENT_ID = 'USSKQRgqQwGWNLpTjHStQ';
 const CLIENT_SECRET = 'GkZ34TNaLUUsePqd0UkRmtJCM1uKa5mz';

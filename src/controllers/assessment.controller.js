@@ -1,4 +1,4 @@
-import { Assessment } from "../models/assessment.model.js";
+import { Assessment } from "../models/index.js";
 
 
 export const createAssessment = async (req, res) => {

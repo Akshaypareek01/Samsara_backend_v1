@@ -1,4 +1,4 @@
-import Company from "../models/company.model.js";
+import { Company } from "../models/index.js";
 
 
 const generateUniqueId = () => {

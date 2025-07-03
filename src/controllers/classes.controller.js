@@ -1,6 +1,5 @@
 import axios from "axios";
-import { Class } from "../models/class.model.js";
-import { User } from "../models/user.model.js";
+import { Class, User } from "../models/index.js";
 
 // Utility function to get all teachers
 export const getAllTeachers = async (req, res) => {

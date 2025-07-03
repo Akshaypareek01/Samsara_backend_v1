@@ -1,7 +1,7 @@
 // controllers/eventController.js
 
 import axios from "axios";
-import Event from "../models/event.model.js";
+import { Event } from "../models/index.js";
 
 
 // Create a new event
@@ -199,7 +199,7 @@ export const getUserRegisteredEventsUpcoming = async (req, res) => {
         // Fetch only upcoming events or events happening today
         const events = await Event.find({ 
             students: userId, 
-            startDate: { $gte: currentDate } // Ensures only today’s and future events are included
+            startDate: { $gte: currentDate } // Ensures only today's and future events are included
         })
 
         res.status(200).json({ events });

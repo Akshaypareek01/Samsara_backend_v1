@@ -1,5 +1,4 @@
-import { QuestionMaster } from '../models/questionMaster.model.js';
-import { AssessmentResult } from '../models/dosha.model.js';
+import { QuestionMaster, AssessmentResult } from '../models/index.js';
 import catchAsync from '../utils/catchAsync.js';
 import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';

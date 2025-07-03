@@ -1,4 +1,4 @@
-import { TeacherAvailability } from '../models/teacherAvailability.model.js';
+import { TeacherAvailability } from '../models/index.js';
 
 // Create new availability
 export const createAvailability = async (req, res) => {

@@ -3,8 +3,7 @@ import pick from '../utils/pick.js';
 import ApiError from '../utils/ApiError.js';
 import catchAsync from '../utils/catchAsync.js';
 import * as userService  from '../services/user.service.js';
-import { User } from '../models/user.model.js';
-import { Class } from '../models/class.model.js';
+import { User, Class } from '../models/index.js';
 
 
 const createUser = catchAsync(async (req, res) => {
