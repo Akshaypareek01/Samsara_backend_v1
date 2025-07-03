@@ -19,8 +19,17 @@ const TimeSlot = mongoose.model('TimeSlot', timeSlotSchema);
 const customSessionSchema = new mongoose.Schema({
   teacher: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Teachers',
+    ref: 'Users',
     required: true,
+    // Validate that the referenced user has role 'teacher'
+    validate: {
+      validator: async function(teacherId) {
+        const User = mongoose.model('Users');
+        const teacher = await User.findById(teacherId);
+        return teacher && teacher.role === 'teacher';
+      },
+      message: 'Teacher must be a user with role "teacher"'
+    }
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,

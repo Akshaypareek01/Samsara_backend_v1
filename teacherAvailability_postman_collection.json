@@ -1,0 +1,191 @@
+{
+  "info": {
+    "name": "Teacher Availability API",
+    "description": "API collection for Teacher Availability management functionality",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "Base_url",
+      "value": "http://localhost:3000/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Create Availability",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"teacherId\": \"TEACHER_ID_HERE\",\n  \"session\": \"morning\",\n  \"date\": \"2024-01-15\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"availabilityFor\": \"yoga\"\n}"
+        },
+        "url": {
+          "raw": "{{Base_url}}/teacher-availability",
+          "host": ["{{Base_url}}"],
+          "path": ["teacher-availability"]
+        }
+      }
+    },
+    {
+      "name": "Get Teacher Availabilities",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{Base_url}}/teacher-availability/teacher/:teacherId?date=2024-01-15&status=available",
+          "host": ["{{Base_url}}"],
+          "path": ["teacher-availability", "teacher", ":teacherId"],
+          "query": [
+            {
+              "key": "date",
+              "value": "2024-01-15",
+              "description": "Filter by specific date (optional)"
+            },
+            {
+              "key": "status",
+              "value": "available",
+              "description": "Filter by status (optional)"
+            }
+          ],
+          "variable": [
+            {
+              "key": "teacherId",
+              "value": "TEACHER_ID_HERE",
+              "description": "ID of the teacher"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Available Slots",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{Base_url}}/teacher-availability/available-slots/:teacherId/:date?availabilityFor=yoga",
+          "host": ["{{Base_url}}"],
+          "path": ["teacher-availability", "available-slots", ":teacherId", ":date"],
+          "query": [
+            {
+              "key": "availabilityFor",
+              "value": "yoga",
+              "description": "Type of availability (optional)"
+            }
+          ],
+          "variable": [
+            {
+              "key": "teacherId",
+              "value": "TEACHER_ID_HERE",
+              "description": "ID of the teacher"
+            },
+            {
+              "key": "date",
+              "value": "2024-01-15",
+              "description": "Date to check availability for"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Availability",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session\": \"afternoon\",\n  \"date\": \"2024-01-15\",\n  \"startTime\": \"14:00\",\n  \"endTime\": \"15:00\",\n  \"availabilityFor\": \"meditation\",\n  \"status\": \"booked\"\n}"
+        },
+        "url": {
+          "raw": "{{Base_url}}/teacher-availability/:id",
+          "host": ["{{Base_url}}"],
+          "path": ["teacher-availability", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "AVAILABILITY_ID_HERE",
+              "description": "ID of the availability to update"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Availability",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{Base_url}}/teacher-availability/:id",
+          "host": ["{{Base_url}}"],
+          "path": ["teacher-availability", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "AVAILABILITY_ID_HERE",
+              "description": "ID of the availability to delete"
+            }
+          ]
+        }
+      }
+    }
+  ]
+} 

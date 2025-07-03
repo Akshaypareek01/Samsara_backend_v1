@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import validator from 'validator';
 import { toJSON, paginate } from './plugins/index.js';
 import Membership from './membership.model.js';
-import EventApplication from './eventApplication.Model.js';
+import EventApplication from './eventApplication.model.js';
 import { CustomSession } from './customSession.Model.js';
 import { Mood } from './userMood.model.js';
 
@@ -168,7 +168,8 @@ const userSchema = new mongoose.Schema({
     },
     images: [{
         filename: String, // Store the filename of the image
-        path: String,     // Store the path to the image in the media folder
+        path: String,
+        key: String,     // Store the path to the image in the media folder
     }],
     notificationToken: {
         type: String,

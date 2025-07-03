@@ -1,0 +1,1153 @@
+{
+  "info": {
+    "name": "Samsara API Collection",
+    "description": "Complete API collection for Samsara backend with authentication",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "Base_url",
+      "value": "http://localhost:3000/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\",\n  \"name\": \"John Doe\"\n}"
+            },
+            "url": "{{Base_url}}/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": "{{Base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Send Registration OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"name\": \"John Doe\",\n  \"mobile\": \"9876543210\",\n  \"role\": \"user\",\n  \"userCategory\": \"Personal\"\n}"
+            },
+            "url": "{{Base_url}}/auth/send-registration-otp"
+          }
+        },
+        {
+          "name": "Verify Registration OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"1234\",\n  \"name\": \"John Doe\",\n  \"mobile\": \"9876543210\",\n  \"role\": \"user\",\n  \"userCategory\": \"Personal\"\n}"
+            },
+            "url": "{{Base_url}}/auth/verify-registration-otp"
+          }
+        },
+        {
+          "name": "Send Login OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": "{{Base_url}}/auth/send-login-otp"
+          }
+        },
+        {
+          "name": "Verify Login OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"otp\": \"1234\"\n}"
+            },
+            "url": "{{Base_url}}/auth/verify-login-otp"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"your_refresh_token_here\"\n}"
+            },
+            "url": "{{Base_url}}/auth/logout"
+          }
+        },
+        {
+          "name": "Refresh Tokens",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"your_refresh_token_here\"\n}"
+            },
+            "url": "{{Base_url}}/auth/refresh-tokens"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": "{{Base_url}}/auth/forgot-password"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NewPassword123!\"\n}"
+            },
+            "url": "{{Base_url}}/auth/reset-password?token=your_reset_token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Classes",
+      "item": [
+        {
+          "name": "Create Class",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classImage\": \"https://example.com/image.jpg\",\n  \"className\": \"Yoga Basics\",\n  \"classType\": \"online\",\n  \"duration\": 60,\n  \"maxCapacity\": 20,\n  \"level\": \"Beginner\",\n  \"schedule\": [\n    {\n      \"day\": \"Monday\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"10:00\"\n    }\n  ],\n  \"classDetails\": \"Learn the fundamentals of yoga practice\",\n  \"perfectFor\": \"Beginners who want to start their yoga journey\",\n  \"skipIf\": \"You have advanced yoga experience\",\n  \"whatYouWillGain\": \"Basic yoga poses, breathing techniques, and mindfulness\",\n  \"teacher\": \"teacher_id_here\",\n  \"price\": 500,\n  \"currency\": \"INR\",\n  \"tags\": [\"yoga\", \"beginner\", \"online\"],\n  \"category\": \"Fitness\",\n  \"prerequisites\": [\"Comfortable clothing\", \"Yoga mat\"],\n  \"materials\": [\n    {\n      \"name\": \"Yoga Guide\",\n      \"type\": \"document\",\n      \"url\": \"https://example.com/guide.pdf\",\n      \"description\": \"Complete beginner's guide\"\n    }\n  ],\n  \"enrollmentStartDate\": \"2024-01-01\",\n  \"enrollmentEndDate\": \"2024-01-31\",\n  \"classStartDate\": \"2024-02-01\",\n  \"classEndDate\": \"2024-03-31\"\n}"
+            },
+            "url": "{{Base_url}}/classes"
+          }
+        },
+        {
+          "name": "Get All Classes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/classes"
+          }
+        },
+        {
+          "name": "Get Upcoming Classes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/classes/upcoming"
+          }
+        },
+        {
+          "name": "Get All Teachers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/classes/teachers"
+          }
+        },
+        {
+          "name": "Get Class by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/classes/:classId"
+          }
+        },
+        {
+          "name": "Update Class",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"className\": \"Advanced Yoga\",\n  \"level\": \"Advanced\",\n  \"price\": 750,\n  \"status\": \"active\",\n  \"isPublished\": true\n}"
+            },
+            "url": "{{Base_url}}/classes/:classId"
+          }
+        },
+        {
+          "name": "Delete Class",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{Base_url}}/classes/:classId"
+          }
+        },
+        {
+          "name": "Add Predefined Classes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            },
+            "url": "{{Base_url}}/classes/add-pre-data"
+          }
+        },
+        {
+          "name": "Assign Teacher to Class",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{Base_url}}/classes/:classId/assign-teacher/:teacherId"
+          }
+        },
+        {
+          "name": "Add Student to Class",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{Base_url}}/classes/:classId/add-student/:studentId"
+          }
+        },
+        {
+          "name": "Get Student Classes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/classes/student/:studentId/classes"
+          }
+        },
+        {
+          "name": "Get Student Upcoming Classes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/classes/student/:studentId/classes/upcoming"
+          }
+        },
+        {
+          "name": "Check Student Enrollment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/classes/class/:classId/student/:studentId/enrolled"
+          }
+        },
+        {
+          "name": "Remove Student from Class",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{Base_url}}/classes/:classId/remove-student/:studentId"
+          }
+        },
+        {
+          "name": "Get Classes by Teacher",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/classes/teacher/:teacherId"
+          }
+        },
+        {
+          "name": "End Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"zoom_token_here\",\n  \"meetingId\": \"meeting_id_here\"\n}"
+            },
+            "url": "{{Base_url}}/classes/end_meeting/:classId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventName\": \"Yoga Workshop\",\n  \"eventMode\": \"online\",\n  \"meetingLink\": \"https://zoom.us/j/123456789\",\n  \"meetingPassword\": \"yoga123\",\n  \"eventImage\": \"https://example.com/event.jpg\",\n  \"eventDetails\": \"Join us for an intensive yoga workshop\",\n  \"level\": \"Intermediate\",\n  \"maxSeats\": 50,\n  \"eventDate\": \"2024-02-15\",\n  \"eventTime\": \"14:00\",\n  \"duration\": 120,\n  \"moderator\": \"moderator_id_here\",\n  \"onlineRequirements\": [\n    {\n      \"point\": \"Stable internet connection\",\n      \"order\": 1\n    },\n    {\n      \"point\": \"Yoga mat\",\n      \"order\": 2\n    }\n  ],\n  \"isPaid\": true,\n  \"price\": 1000,\n  \"currency\": \"INR\",\n  \"registrationStartDate\": \"2024-01-01\",\n  \"registrationEndDate\": \"2024-02-10\",\n  \"tags\": [\"yoga\", \"workshop\", \"online\"],\n  \"category\": \"Fitness\",\n  \"highlights\": [\"Expert guidance\", \"Interactive session\"],\n  \"speakers\": [\n    {\n      \"name\": \"John Doe\",\n      \"designation\": \"Senior Yoga Instructor\",\n      \"bio\": \"10+ years of experience\",\n      \"image\": \"https://example.com/speaker.jpg\"\n    }\n  ],\n  \"certificates\": true,\n  \"certificateTemplate\": \"Workshop completion certificate\"\n}"
+            },
+            "url": "{{Base_url}}/events"
+          }
+        },
+        {
+          "name": "Get Upcoming Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/events/upcoming"
+          }
+        },
+        {
+          "name": "Get Event by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/events/:id"
+          }
+        },
+        {
+          "name": "Get All Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/events"
+          }
+        },
+        {
+          "name": "Add Predefined Events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[]"
+            },
+            "url": "{{Base_url}}/events/add-pre-data"
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventName\": \"Advanced Yoga Workshop\",\n  \"level\": \"Advanced\",\n  \"price\": 1500,\n  \"status\": \"upcoming\"\n}"
+            },
+            "url": "{{Base_url}}/events/:id"
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{Base_url}}/events/:id"
+          }
+        },
+        {
+          "name": "End Event Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"zoom_token_here\",\n  \"meetingId\": \"meeting_id_here\"\n}"
+            },
+            "url": "{{Base_url}}/events/end_meeting/:classId"
+          }
+        },
+        {
+          "name": "Register User to Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"event_id_here\",\n  \"userId\": \"user_id_here\"\n}"
+            },
+            "url": "{{Base_url}}/events/register"
+          }
+        },
+        {
+          "name": "Get Students for Event",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/events/students/:eventId"
+          }
+        },
+        {
+          "name": "Get User Registered Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/events/user-events/:userId"
+          }
+        },
+        {
+          "name": "Get User Upcoming Events",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/events/user-events/:userId/upcoming"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Event Applications",
+      "item": [
+        {
+          "name": "Create Event Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"event_id_here\",\n  \"userId\": \"user_id_here\",\n  \"status\": \"pending\",\n  \"applicationDate\": \"2024-01-15\"\n}"
+            },
+            "url": "{{Base_url}}/event-applications/apply"
+          }
+        },
+        {
+          "name": "Get Events by User ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/event-applications/events/user/:userId"
+          }
+        },
+        {
+          "name": "Get All Event Applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/event-applications"
+          }
+        },
+        {
+          "name": "Get Event Application by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/event-applications/:id"
+          }
+        },
+        {
+          "name": "Update Event Application",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Application approved\"\n}"
+            },
+            "url": "{{Base_url}}/event-applications/:id"
+          }
+        },
+        {
+          "name": "Delete Event Application",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{Base_url}}/event-applications/:id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Custom Sessions",
+      "item": [
+        {
+          "name": "Get All Time Slots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/time-slots"
+          }
+        },
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teacher\": \"teacher_id_here\",\n  \"user\": \"user_id_here\",\n  \"timeSlot\": \"time_slot_id_here\",\n  \"date\": \"2024-02-15\",\n  \"sessionValue\": \"pending\",\n  \"notes\": \"Custom yoga session\"\n}"
+            },
+            "url": "{{Base_url}}/custom-sessions"
+          }
+        },
+        {
+          "name": "Get All Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions"
+          }
+        },
+        {
+          "name": "Get Session by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/:id"
+          }
+        },
+        {
+          "name": "Update Session",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2024-02-16\",\n  \"notes\": \"Updated session notes\"\n}"
+            },
+            "url": "{{Base_url}}/custom-sessions/:id"
+          }
+        },
+        {
+          "name": "Delete Session",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/:id"
+          }
+        },
+        {
+          "name": "Approve Session",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"approved\"\n}"
+            },
+            "url": "{{Base_url}}/custom-sessions/approve/:sessionId"
+          }
+        },
+        {
+          "name": "Get Sessions by User ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/sessions/:userId"
+          }
+        },
+        {
+          "name": "Get User Upcoming Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/sessions/:userId/upcoming"
+          }
+        },
+        {
+          "name": "Get Session Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/session/:userId/:sessionId"
+          }
+        },
+        {
+          "name": "Get Sessions by Teacher ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/teacher/:teacherId/sessions"
+          }
+        },
+        {
+          "name": "Create Time Slot",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeRange\": \"09:00-10:00\"\n}"
+            },
+            "url": "{{Base_url}}/custom-sessions/time-slots"
+          }
+        },
+        {
+          "name": "Get Time Slot by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/time-slots/:id"
+          }
+        },
+        {
+          "name": "Update Time Slot",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeRange\": \"10:00-11:00\"\n}"
+            },
+            "url": "{{Base_url}}/custom-sessions/time-slots/:id"
+          }
+        },
+        {
+          "name": "Delete Time Slot",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{Base_url}}/custom-sessions/time-slots/:id"
+          }
+        },
+        {
+          "name": "End Session Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"zoom_token_here\",\n  \"meetingId\": \"meeting_id_here\"\n}"
+            },
+            "url": "{{Base_url}}/custom-sessions/end_meeting/:classId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meetings",
+      "item": [
+        {
+          "name": "Create Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Meeting Topic\",\n  \"type\": 2,\n  \"start_time\": \"2024-02-15T10:00:00Z\",\n  \"duration\": 60,\n  \"timezone\": \"UTC\"\n}"
+            },
+            "url": "{{Base_url}}/meetings"
+          }
+        },
+        {
+          "name": "Get Meeting Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/meetings"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recorded Classes",
+      "item": [
+        {
+          "name": "Get All Recorded Classes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/recorded-classes"
+          }
+        },
+        {
+          "name": "Get Recorded Class by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/recorded-classes/:id"
+          }
+        },
+        {
+          "name": "Create Recorded Class",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Yoga Basics Recording\",\n  \"description\": \"Recorded yoga class for beginners\",\n  \"videoUrl\": \"https://example.com/video.mp4\",\n  \"duration\": 60,\n  \"teacher\": \"teacher_id_here\",\n  \"category\": \"Yoga\",\n  \"level\": \"Beginner\"\n}"
+            },
+            "url": "{{Base_url}}/recorded-classes"
+          }
+        },
+        {
+          "name": "Update Recorded Class",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Yoga Basics\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": "{{Base_url}}/recorded-classes/:id"
+          }
+        },
+        {
+          "name": "Delete Recorded Class",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{Base_url}}/recorded-classes/:id"
+          }
+        },
+        {
+          "name": "Update Class Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"published\"\n}"
+            },
+            "url": "{{Base_url}}/recorded-classes/:id/update-status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Zoom",
+      "item": [
+        {
+          "name": "Fetch Zoom Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"AccessTokenMain\": \"your_access_token_here\"\n}"
+            },
+            "url": "{{Base_url}}/zoom/fetchZoomToken"
+          }
+        },
+        {
+          "name": "Get OAuth Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/zoom/zoom/oauth-token"
+          }
+        },
+        {
+          "name": "Get Zoom User Info",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"zoom_token_here\"\n}"
+            },
+            "url": "{{Base_url}}/zoom/zoomuserInfo"
+          }
+        },
+        {
+          "name": "Create Zoom Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Class Meeting\",\n  \"type\": 2,\n  \"start_time\": \"2024-02-15T10:00:00Z\",\n  \"duration\": 60,\n  \"timezone\": \"UTC\",\n  \"password\": \"class123\",\n  \"settings\": {\n    \"host_video\": true,\n    \"participant_video\": true,\n    \"join_before_host\": false,\n    \"mute_upon_entry\": true,\n    \"watermark\": false,\n    \"use_pmi\": false,\n    \"approval_type\": 0,\n    \"audio\": \"both\",\n    \"auto_recording\": \"none\"\n  }\n}"
+            },
+            "url": "{{Base_url}}/zoom/createZoomMeeting"
+          }
+        },
+        {
+          "name": "Create Session Zoom Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Custom Session\",\n  \"type\": 2,\n  \"start_time\": \"2024-02-15T10:00:00Z\",\n  \"duration\": 60,\n  \"timezone\": \"UTC\",\n  \"password\": \"session123\",\n  \"classId\": \"class_id_here\"\n}"
+            },
+            "url": "{{Base_url}}/zoom/createZoomMeeting-session"
+          }
+        },
+        {
+          "name": "Create Event Zoom Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"topic\": \"Event Meeting\",\n  \"type\": 2,\n  \"start_time\": \"2024-02-15T10:00:00Z\",\n  \"duration\": 60,\n  \"timezone\": \"UTC\",\n  \"password\": \"event123\",\n  \"classId\": \"event_id_here\"\n}"
+            },
+            "url": "{{Base_url}}/zoom/createZoomMeeting-event"
+          }
+        },
+        {
+          "name": "Get Meeting Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meetingId\": \"meeting_id_here\"\n}"
+            },
+            "url": "{{Base_url}}/zoom/getMeetingData"
+          }
+        },
+        {
+          "name": "Delete Meeting",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meetingId\": \"meeting_id_here\"\n}"
+            },
+            "url": "{{Base_url}}/zoom/deleteMeeting"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assessments",
+      "item": [
+        {
+          "name": "Create Assessment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Yoga Assessment\",\n  \"description\": \"Assessment for yoga beginners\",\n  \"questions\": [\n    {\n      \"question\": \"What is the primary goal of yoga?\",\n      \"type\": \"multiple_choice\",\n      \"options\": [\"Physical fitness\", \"Mental peace\", \"Both\", \"None\"],\n      \"correctAnswer\": 2\n    }\n  ],\n  \"duration\": 30,\n  \"passingScore\": 70,\n  \"category\": \"Yoga\",\n  \"level\": \"Beginner\"\n}"
+            },
+            "url": "{{Base_url}}/assessments"
+          }
+        },
+        {
+          "name": "Get All Assessments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/assessments"
+          }
+        },
+        {
+          "name": "Get Assessment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/assessments/:assessmentId"
+          }
+        },
+        {
+          "name": "Update Assessment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Yoga Assessment\",\n  \"description\": \"Updated assessment description\",\n  \"passingScore\": 80\n}"
+            },
+            "url": "{{Base_url}}/assessments/:assessmentId"
+          }
+        },
+        {
+          "name": "Delete Assessment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{Base_url}}/assessments/:assessmentId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/users"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{Base_url}}/users/:userId"
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"mobile\": \"9876543210\",\n  \"gender\": \"male\",\n  \"dob\": \"1990-01-01\",\n  \"age\": \"34\",\n  \"Address\": \"123 Main St\",\n  \"city\": \"Mumbai\",\n  \"pincode\": \"400001\",\n  \"country\": \"India\",\n  \"height\": \"170cm\",\n  \"weight\": \"70kg\",\n  \"targetWeight\": \"65kg\",\n  \"bodyshape\": \"Athletic\",\n  \"weeklyyogaplan\": \"3 times per week\",\n  \"practicetime\": \"Morning\",\n  \"focusarea\": [\"Flexibility\", \"Strength\"],\n  \"goal\": [\"Weight loss\", \"Stress relief\"],\n  \"health_issues\": [\"Back pain\"],\n  \"howyouknowus\": \"Social media\",\n  \"PriorExperience\": \"Beginner\",\n  \"description\": \"Fitness enthusiast\",\n  \"achievements\": [\"Completed 30-day challenge\"]\n}"
+            },
+            "url": "{{Base_url}}/users/profile"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{Base_url}}/users/:userId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": "{{Base_url}}/upload"
+          }
+        }
+      ]
+    }
+  ]
+} 

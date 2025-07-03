@@ -3,8 +3,17 @@ import mongoose from 'mongoose';
 const teacherAvailabilitySchema = new mongoose.Schema({
     teacherId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Teachers',
-        required: [true, 'Teacher ID is required']
+        ref: 'Users',
+        required: [true, 'Teacher ID is required'],
+        // Validate that the referenced user has role 'teacher'
+        validate: {
+            validator: async function(teacherId) {
+                const User = mongoose.model('Users');
+                const teacher = await User.findById(teacherId);
+                return teacher && teacher.role === 'teacher';
+            },
+            message: 'Teacher must be a user with role "teacher"'
+        }
     },
     session: {
         type: String,

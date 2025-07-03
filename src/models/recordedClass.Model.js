@@ -1,4 +1,4 @@
-// models/classModel.js
+// models/recordedClass.Model.js
 import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
@@ -21,9 +21,20 @@ const classSchema = new Schema({
     type: String,
     required: true,
   },
-  teacher: { type: mongoose.Schema.Types.ObjectId,
-    ref: 'Teachers',
-    required: true, },
+  teacher: { 
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Users',
+    required: true,
+    // Validate that the referenced user has role 'teacher'
+    validate: {
+      validator: async function(teacherId) {
+        const User = mongoose.model('Users');
+        const teacher = await User.findById(teacherId);
+        return teacher && teacher.role === 'teacher';
+      },
+      message: 'Teacher must be a user with role "teacher"'
+    }
+  },
   // You can add more fields as needed, such as date, duration, etc.
 
   // Timestamps to track when the class was created and last updated

@@ -6,9 +6,21 @@ const eventSchema = new mongoose.Schema({
         type: String,
         required: true 
     },
-      teacher: { type: mongoose.Schema.Types.ObjectId,
-        ref: 'Teachers',
-        required: false, },
+    teacher: { 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Users',
+        required: false,
+        // Validate that the referenced user has role 'teacher' if provided
+        validate: {
+            validator: async function(teacherId) {
+                if (!teacherId) return true; // Allow null/undefined
+                const User = mongoose.model('Users');
+                const teacher = await User.findById(teacherId);
+                return teacher && teacher.role === 'teacher';
+            },
+            message: 'Teacher must be a user with role "teacher"'
+        }
+    },
     students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
     type:{ 
         type: String, 

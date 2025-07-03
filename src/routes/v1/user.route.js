@@ -12,6 +12,7 @@ router
   .get(auth(), userController.getProfile)
   .patch(auth(), validate(userValidation.updateProfile), userController.updateProfile);
 
+// User management routes
 router
   .route('/')
   .post(auth('manageUsers'), validate(userValidation.createUser), userController.createUser)
@@ -23,7 +24,69 @@ router
   .patch(auth('manageUsers'), validate(userValidation.updateUser), userController.updateUser)
   .delete(auth('manageUsers'), validate(userValidation.deleteUser), userController.deleteUser);
 
-  export default router;
+// User profile routes
+router
+  .route('/:userId/profile')
+  .get(userController.getUserProfile);
+
+// Image management routes
+router
+  .route('/:userId/images')
+  .post(auth(), userController.uploadUserImage)
+  .get(auth(), userController.getUserImages)
+  .delete(auth(), userController.deleteUserImageByKey);
+
+router
+  .route('/:userId/images/:imageIndex')
+  .delete(auth(), userController.deleteUserImage);
+
+router
+  .route('/:userId/images/delete-by-filename')
+  .delete(auth(), userController.deleteUserImageByFilename);
+
+// Attendance routes
+router
+  .route('/:userId/attendance/:classId')
+  .post(auth(), userController.markAttendance);
+
+// Achievement routes
+router
+  .route('/:userId/achievements')
+  .post(auth(), userController.addAchievement);
+
+// Assessment routes
+router
+  .route('/:userId/assessments')
+  .post(auth(), userController.addAssessment);
+
+router
+  .route('/assessment-form')
+  .post(auth(), userController.submitAssessmentForm);
+
+// Notification token routes
+router
+  .route('/:userId/notification-token')
+  .patch(auth(), userController.updateNotificationToken);
+
+// Class participation routes
+router
+  .route('/join-class')
+  .post(auth(), userController.joinClass);
+
+router
+  .route('/leave-class')
+  .post(auth(), userController.leaveClass);
+
+// Statistics routes
+router
+  .route('/stats')
+  .post(auth(), userController.getUserStats);
+
+router
+  .route('/weekly-stats')
+  .post(auth(), userController.getWeeklyStats);
+
+export default router;
 
 /**
  * @swagger

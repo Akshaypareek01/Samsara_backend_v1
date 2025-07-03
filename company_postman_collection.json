@@ -1,0 +1,185 @@
+{
+  "info": {
+    "name": "Company API",
+    "description": "API collection for Company management functionality",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "Base_url",
+      "value": "http://localhost:3000/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Create Company",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Sample Company\",\n  \"email\": \"contact@samplecompany.com\",\n  \"phone\": \"+1234567890\",\n  \"address\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\",\n    \"country\": \"USA\"\n  },\n  \"website\": \"https://samplecompany.com\",\n  \"description\": \"A sample company for testing\",\n  \"industry\": \"Technology\",\n  \"size\": \"50-100\",\n  \"isActive\": true\n}"
+        },
+        "url": {
+          "raw": "{{Base_url}}/companies",
+          "host": ["{{Base_url}}"],
+          "path": ["companies"]
+        }
+      }
+    },
+    {
+      "name": "Get All Companies",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{Base_url}}/companies",
+          "host": ["{{Base_url}}"],
+          "path": ["companies"]
+        }
+      }
+    },
+    {
+      "name": "Check Company Exists",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{Base_url}}/check-company/:companyId",
+          "host": ["{{Base_url}}"],
+          "path": ["check-company", ":companyId"],
+          "variable": [
+            {
+              "key": "companyId",
+              "value": "COMPANY_ID_HERE",
+              "description": "Company ID to check existence"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Company by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{Base_url}}/companies/:id",
+          "host": ["{{Base_url}}"],
+          "path": ["companies", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "COMPANY_ID_HERE",
+              "description": "ID of the company to retrieve"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Update Company by ID",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Company Name\",\n  \"email\": \"updated@samplecompany.com\",\n  \"phone\": \"+1234567890\",\n  \"address\": {\n    \"street\": \"456 Updated St\",\n    \"city\": \"Los Angeles\",\n    \"state\": \"CA\",\n    \"zipCode\": \"90210\",\n    \"country\": \"USA\"\n  },\n  \"website\": \"https://updatedcompany.com\",\n  \"description\": \"Updated company description\",\n  \"industry\": \"Healthcare\",\n  \"size\": \"100-500\",\n  \"isActive\": true\n}"
+        },
+        "url": {
+          "raw": "{{Base_url}}/companies/:id",
+          "host": ["{{Base_url}}"],
+          "path": ["companies", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "COMPANY_ID_HERE",
+              "description": "ID of the company to update"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Company by ID",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{Base_url}}/companies/:id",
+          "host": ["{{Base_url}}"],
+          "path": ["companies", ":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "COMPANY_ID_HERE",
+              "description": "ID of the company to delete"
+            }
+          ]
+        }
+      }
+    }
+  ]
+} 

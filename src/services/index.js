@@ -9,3 +9,6 @@ export * as otpService from './otp.service.js';
 // Export tracker service
 export * as trackerService from './tracker.service.js';
 
+// Export assessment service
+export * as assessmentService from './assessment.service.js';
+

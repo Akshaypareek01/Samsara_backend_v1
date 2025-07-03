@@ -4,6 +4,7 @@ import teacherValidation from './teacher.validation.js';
 import classValidation from './class.validation.js';
 import eventValidation from './event.validation.js';
 import trackerValidation from './tracker.validation.js';
+import questionMasterValidation from './questionMaster.validation.js';
 
 export { 
   authValidation, 
@@ -11,5 +12,6 @@ export {
   teacherValidation, 
   classValidation, 
   eventValidation,
-  trackerValidation 
+  trackerValidation,
+  questionMasterValidation
 };
