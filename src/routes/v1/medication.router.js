@@ -7,7 +7,7 @@ import * as medicationValidation from '../../validations/medication.validation.j
 const router = express.Router();
 
 // Apply authentication to all routes
-router.use(auth());
+// router.use(auth());
 
 // Medication Tracker Management
 router

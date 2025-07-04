@@ -9,27 +9,27 @@ const router = express.Router();
 // Master category management routes
 router
   .route('/')
-  .post(auth('manageCategories'), validate(masterCategoryValidation.createMasterCategory), masterCategoryController.createMasterCategory)
-  .get(auth('getCategories'), validate(masterCategoryValidation.getMasterCategories), masterCategoryController.getMasterCategories);
+  .post( validate(masterCategoryValidation.createMasterCategory), masterCategoryController.createMasterCategory)
+  .get(validate(masterCategoryValidation.getMasterCategories), masterCategoryController.getMasterCategories);
 
 // Special routes (must come before parameterized routes)
 router
   .route('/active')
-  .get(auth('getCategories'), validate(masterCategoryValidation.getActiveMasterCategories), masterCategoryController.getActiveMasterCategories);
+  .get( validate(masterCategoryValidation.getActiveMasterCategories), masterCategoryController.getActiveMasterCategories);
 
 router
   .route('/search')
-  .get(auth('getCategories'), validate(masterCategoryValidation.searchMasterCategories), masterCategoryController.searchMasterCategories);
+  .get( validate(masterCategoryValidation.searchMasterCategories), masterCategoryController.searchMasterCategories);
 
 router
   .route('/order')
-  .patch(auth('manageCategories'), validate(masterCategoryValidation.updateCategoryOrder), masterCategoryController.updateCategoryOrder);
+  .patch( validate(masterCategoryValidation.updateCategoryOrder), masterCategoryController.updateCategoryOrder);
 
 router
   .route('/:categoryId')
-  .get(auth('getCategories'), validate(masterCategoryValidation.getMasterCategory), masterCategoryController.getMasterCategory)
-  .patch(auth('manageCategories'), validate(masterCategoryValidation.updateMasterCategory), masterCategoryController.updateMasterCategory)
-  .delete(auth('manageCategories'), validate(masterCategoryValidation.deleteMasterCategory), masterCategoryController.deleteMasterCategory);
+  .get( validate(masterCategoryValidation.getMasterCategory), masterCategoryController.getMasterCategory)
+  .patch(validate(masterCategoryValidation.updateMasterCategory), masterCategoryController.updateMasterCategory)
+  .delete( validate(masterCategoryValidation.deleteMasterCategory), masterCategoryController.deleteMasterCategory);
 
 export default router;
 

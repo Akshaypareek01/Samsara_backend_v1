@@ -7,7 +7,7 @@ import * as trackerValidation from '../../validations/tracker.validation.js';
 const router = express.Router();
 
 // Apply authentication to all routes
-router.use(auth());
+// router.use(auth());
 
 /**
  * @route   GET /v1/trackers/dashboard

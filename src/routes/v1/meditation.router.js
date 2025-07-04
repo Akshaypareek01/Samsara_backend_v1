@@ -9,36 +9,36 @@ const router = express.Router();
 // Meditation management routes
 router
   .route('/')
-  .post(auth('manageMeditations'), validate(meditationValidation.createMeditation), meditationController.createMeditation)
-  .get(auth('getMeditations'), validate(meditationValidation.getMeditations), meditationController.getMeditations);
+  .post( validate(meditationValidation.createMeditation), meditationController.createMeditation)
+  .get( validate(meditationValidation.getMeditations), meditationController.getMeditations);
 
 // Search route (must come before parameterized routes)
 router
   .route('/search')
-  .get(auth('getMeditations'), validate(meditationValidation.searchMeditations), meditationController.searchMeditations);
+  .get( validate(meditationValidation.searchMeditations), meditationController.searchMeditations);
 
 // Filtered meditation routes
 router
   .route('/category/:categoryId')
-  .get(auth('getMeditations'), validate(meditationValidation.getMeditationsByCategory), meditationController.getMeditationsByCategory);
+  .get( validate(meditationValidation.getMeditationsByCategory), meditationController.getMeditationsByCategory);
 
 router
   .route('/level/:level')
-  .get(auth('getMeditations'), validate(meditationValidation.getMeditationsByLevel), meditationController.getMeditationsByLevel);
+  .get( validate(meditationValidation.getMeditationsByLevel), meditationController.getMeditationsByLevel);
 
 router
   .route('/mood/:mood')
-  .get(auth('getMeditations'), validate(meditationValidation.getMeditationsByMood), meditationController.getMeditationsByMood);
+  .get( validate(meditationValidation.getMeditationsByMood), meditationController.getMeditationsByMood);
 
 router
   .route('/:meditationId')
-  .get(auth('getMeditations'), validate(meditationValidation.getMeditation), meditationController.getMeditation)
-  .patch(auth('manageMeditations'), validate(meditationValidation.updateMeditation), meditationController.updateMeditation)
-  .delete(auth('manageMeditations'), validate(meditationValidation.deleteMeditation), meditationController.deleteMeditation);
+  .get( validate(meditationValidation.getMeditation), meditationController.getMeditation)
+  .patch( validate(meditationValidation.updateMeditation), meditationController.updateMeditation)
+  .delete( validate(meditationValidation.deleteMeditation), meditationController.deleteMeditation);
 
 router
   .route('/:meditationId/recommended')
-  .get(auth('getMeditations'), validate(meditationValidation.getRecommendedMeditations), meditationController.getRecommendedMeditations);
+  .get( validate(meditationValidation.getRecommendedMeditations), meditationController.getRecommendedMeditations);
 
 export default router;
 
