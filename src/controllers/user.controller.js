@@ -428,6 +428,21 @@ const deleteUserImageByFilename = catchAsync(async (req, res) => {
   });
 });
 
+const getUsersByRole = catchAsync(async (req, res) => {
+  const { role } = req.params;
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  
+  if (!role || !['user', 'teacher'].includes(role)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Valid role (user or teacher) is required');
+  }
+
+  const result = await userService.getUsersByRole(role, options);
+  res.status(httpStatus.OK).json({
+    status: 'success',
+    data: result
+  });
+});
+
 export {
   createUser,
   getUsers,
@@ -451,5 +466,6 @@ export {
   deleteUserImage,
   deleteUserImageByKey,
   deleteUserImageByFilename,
+  getUsersByRole,
 };
 

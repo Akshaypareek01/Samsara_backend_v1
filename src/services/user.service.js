@@ -103,6 +103,21 @@ const deleteUserById = async (userId) => {
   return user;
 };
 
+/**
+ * Get users by role
+ * @param {string} role - User role (user, teacher)
+ * @param {Object} options - Query options
+ * @param {string} [options.sortBy] - Sort option in the format: sortField:(desc|asc)
+ * @param {number} [options.limit] - Maximum number of results per page (default = 10)
+ * @param {number} [options.page] - Current page (default = 1)
+ * @returns {Promise<QueryResult>}
+ */
+const getUsersByRole = async (role, options = {}) => {
+  const filter = { role };
+  const users = await User.paginate(filter, options);
+  return users;
+};
+
 export {
   createUser,
   queryUsers,
@@ -110,5 +125,6 @@ export {
   getUserByEmail,
   updateUserById,
   deleteUserById,
+  getUsersByRole,
 };
 

@@ -217,7 +217,7 @@ const preDefineEvents = [
       "image": "https://yogajala.com/wp-content/uploads/3-49.jpg",
       "level": "Beginner",
       "location": "Virtual",
-      "startDate": "2025-06-12",
+      "startDate": "2025-07-12",
       "startTime": "06:30",
       "type": "free"
     },
@@ -229,7 +229,7 @@ const preDefineEvents = [
       "image": "https://wallpaperaccess.com/full/1347345.jpg",
       "level": "Intermediate",
       "location": "Mumbai",
-      "startDate": "2025-06-15",
+      "startDate": "2025-07-15",
       "startTime": "18:00",
       "type": "paid"
     },
@@ -241,7 +241,7 @@ const preDefineEvents = [
       "image": "https://asmy.org.au/app/uploads/2019/01/DSC09296_edited.jpg",
       "level": "Advanced",
       "location": "Virtual",
-      "startDate": "2025-06-20",
+      "startDate": "2025-07-20",
       "startTime": "19:00",
       "type": "free"
     },
@@ -253,7 +253,7 @@ const preDefineEvents = [
       "image": "https://1.bp.blogspot.com/_sCVN1yQuK3A/TNfcYl4FG8I/AAAAAAAADI8/jpc-oc9UaMs/s1600/dhanurasana-posizione-dellarco.jpg",
       "level": "Beginner",
       "location": "Jaipur",
-      "startDate": "2025-06-20",
+      "startDate": "2025-07-20",
       "startTime": "17:30",
       "type": "free"
     },
@@ -289,7 +289,7 @@ const preDefineEvents = [
       "image": "https://asmy.org.au/app/uploads/2019/01/DSC09296_edited.jpg",
       "level": "Intermediate",
       "location": "Bangalore",
-      "startDate": "2025-07-05",
+      "startDate": "2025-08-05",
       "startTime": "07:00",
       "type": "paid"
     },
