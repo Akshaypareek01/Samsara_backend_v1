@@ -3,6 +3,21 @@
 import axios from "axios";
 import { Event } from "../models/index.js";
 
+// Helper function to get teacher data with first image
+const getTeacherData = (teacher) => {
+    if (!teacher) return null;
+    
+    return {
+        _id: teacher._id,
+        name: teacher.name,
+        email: teacher.email,
+        teacherCategory: teacher.teacherCategory,
+        expertise: teacher.expertise,
+        teachingExperience: teacher.teachingExperience,
+        qualification: teacher.qualification,
+        image: teacher.images && teacher.images.length > 0 ? teacher.images[0] : null
+    };
+};
 
 // Create a new event
 export const createEvent = async (req, res) => {
@@ -10,6 +25,17 @@ export const createEvent = async (req, res) => {
     try {
         const event = new Event(req.body);
         await event.save();
+        
+        // Populate teacher data if teacher exists
+        if (event.teacher) {
+            const populatedEvent = await Event.findById(event._id)
+                .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+                .exec();
+            const eventData = populatedEvent.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            return res.status(201).json(eventData);
+        }
+        
         res.status(201).json(event);
     } catch (error) {
         console.log("error  ==<.",error)
@@ -20,11 +46,19 @@ export const createEvent = async (req, res) => {
 // Get event by ID
 export const getEventById = async (req, res) => {
     try {
-        const event = await Event.findById(req.params.id);
+        const event = await Event.findById(req.params.id)
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('students', 'name email')
+            .exec();
+            
         if (!event) {
             return res.status(404).json({ message: 'Event not found' });
         }
-        res.status(200).json(event);
+        
+        const eventData = event.toObject();
+        eventData.teacher = getTeacherData(eventData.teacher);
+        
+        res.status(200).json(eventData);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -33,8 +67,18 @@ export const getEventById = async (req, res) => {
 // Get all events
 export const getAllEvents = async (req, res) => {
     try {
-        const events = await Event.find();
-        res.status(200).json(events);
+        const events = await Event.find()
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('students', 'name email')
+            .exec();
+            
+        const eventsWithTeacherData = events.map(event => {
+            const eventData = event.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            return eventData;
+        });
+        
+        res.status(200).json(eventsWithTeacherData);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -49,8 +93,17 @@ export const getAllEventsUpcoming = async (req, res) => {
         const events = await Event.find({ 
             startDate: { $gte: currentDate } 
         })
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+        .populate('students', 'name email')
+        .exec();
 
-        res.status(200).json(events);
+        const eventsWithTeacherData = events.map(event => {
+            const eventData = event.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            return eventData;
+        });
+
+        res.status(200).json(eventsWithTeacherData);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -59,11 +112,19 @@ export const getAllEventsUpcoming = async (req, res) => {
 // Update event
 export const updateEvent = async (req, res) => {
     try {
-        const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true })
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('students', 'name email')
+            .exec();
+            
         if (!event) {
             return res.status(404).json({ message: 'Event not found' });
         }
-        res.status(200).json(event);
+        
+        const eventData = event.toObject();
+        eventData.teacher = getTeacherData(eventData.teacher);
+        
+        res.status(200).json(eventData);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -144,7 +205,11 @@ const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassw
     try {
         const { eventId, userId } = req.body;
 
-        const event = await Event.findById(eventId);
+        const event = await Event.findById(eventId)
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('students', 'name email')
+            .exec();
+            
         if (!event) {
             return res.status(404).json({ message: 'Event not found' });
         }
@@ -152,7 +217,11 @@ const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassw
         if (!event.students.includes(userId)) {
             event.students.push(userId);
             await event.save();
-            return res.status(200).json({ message: 'User registered successfully', event });
+            
+            const eventData = event.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            
+            return res.status(200).json({ message: 'User registered successfully', event: eventData });
         }
         
         res.status(400).json({ message: 'User already registered' });
@@ -182,8 +251,18 @@ export const getUserRegisteredEvents = async (req, res) => {
     try {
         const { userId } = req.params;
 
-        const events = await Event.find({ students: userId });
-        res.status(200).json({ events });
+        const events = await Event.find({ students: userId })
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('students', 'name email')
+            .exec();
+            
+        const eventsWithTeacherData = events.map(event => {
+            const eventData = event.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            return eventData;
+        });
+        
+        res.status(200).json({ events: eventsWithTeacherData });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
     }
@@ -201,8 +280,17 @@ export const getUserRegisteredEventsUpcoming = async (req, res) => {
             students: userId, 
             startDate: { $gte: currentDate } // Ensures only today's and future events are included
         })
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+        .populate('students', 'name email')
+        .exec();
 
-        res.status(200).json({ events });
+        const eventsWithTeacherData = events.map(event => {
+            const eventData = event.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            return eventData;
+        });
+
+        res.status(200).json({ events: eventsWithTeacherData });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
     }
@@ -219,7 +307,8 @@ const preDefineEvents = [
       "location": "Virtual",
       "startDate": "2025-07-12",
       "startTime": "06:30",
-      "type": "free"
+      "type": "free",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Deep Stretch & Flexibility Yoga",
@@ -231,7 +320,8 @@ const preDefineEvents = [
       "location": "Mumbai",
       "startDate": "2025-07-15",
       "startTime": "18:00",
-      "type": "paid"
+      "type": "paid",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Power Yoga for Strength",
@@ -243,7 +333,8 @@ const preDefineEvents = [
       "location": "Virtual",
       "startDate": "2025-07-20",
       "startTime": "19:00",
-      "type": "free"
+      "type": "free",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Yoga for Stress Relief",
@@ -255,7 +346,8 @@ const preDefineEvents = [
       "location": "Jaipur",
       "startDate": "2025-07-20",
       "startTime": "17:30",
-      "type": "free"
+      "type": "free",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Full Moon Yoga Flow",
@@ -267,7 +359,8 @@ const preDefineEvents = [
       "location": "Goa",
       "startDate": "2025-07-01",
       "startTime": "20:00",
-      "type": "paid"
+      "type": "paid",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Prenatal Yoga for Moms-to-Be",
@@ -279,7 +372,8 @@ const preDefineEvents = [
       "location": "Virtual",
       "startDate": "2025-07-15",
       "startTime": "10:00",
-      "type": "free"
+      "type": "free",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Sun Salutation Masterclass",
@@ -291,7 +385,8 @@ const preDefineEvents = [
       "location": "Bangalore",
       "startDate": "2025-08-05",
       "startTime": "07:00",
-      "type": "paid"
+      "type": "paid",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Yoga & Sound Healing",
@@ -303,7 +398,8 @@ const preDefineEvents = [
       "location": "Delhi",
       "startDate": "2025-08-20",
       "startTime": "19:30",
-      "type": "paid"
+      "type": "paid",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Morning Yoga for Beginners",
@@ -315,7 +411,8 @@ const preDefineEvents = [
       "location": "Virtual",
       "startDate": "2025-09-10",
       "startTime": "06:00",
-      "type": "free"
+      "type": "free",
+      "teacher": "6868f7814d18790474561a8d"
     },
     {
       "eventName": "Yoga & Detox Retreat",
@@ -327,7 +424,8 @@ const preDefineEvents = [
       "location": "Goa",
       "startDate": "2025-09-25",
       "startTime": "08:00",
-      "type": "paid"
+      "type": "paid",
+      "teacher": "6868f7814d18790474561a8d"
     }
   ]
   

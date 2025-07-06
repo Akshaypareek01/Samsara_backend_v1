@@ -1,13 +1,38 @@
 import axios from "axios";
 import { Class, User } from "../models/index.js";
 
+// Helper function to get teacher data with first image
+const getTeacherData = (teacher) => {
+    if (!teacher) return null;
+    
+    return {
+        _id: teacher._id,
+        name: teacher.name,
+        email: teacher.email,
+        teacherCategory: teacher.teacherCategory,
+        expertise: teacher.expertise,
+        teachingExperience: teacher.teachingExperience,
+        qualification: teacher.qualification,
+        image: teacher.images && teacher.images.length > 0 ? teacher.images[0] : null
+    };
+};
+
 // Utility function to get all teachers
 export const getAllTeachers = async (req, res) => {
   try {
     const teachers = await User.find({ role: 'teacher' })
-      .select('name email teacherCategory expertise teachingExperience qualification')
+      .select('name email teacherCategory expertise teachingExperience qualification images')
       .exec();
-    res.json({ success: true, data: teachers });
+      
+    const teachersWithImages = teachers.map(teacher => {
+      const teacherData = teacher.toObject();
+      return {
+        ...teacherData,
+        image: teacherData.images && teacherData.images.length > 0 ? teacherData.images[0] : null
+      };
+    });
+    
+    res.json({ success: true, data: teachersWithImages });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -40,10 +65,14 @@ export const createClass = async (req, res) => {
     
     const newClass = await Class.create(req.body);
     const populatedClass = await Class.findById(newClass._id)
-      .populate('teacher', 'name email teacherCategory expertise')
-      .populate('students', 'name email');
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('students', 'name email')
+      .exec();
       
-    res.json({ success: true, data: populatedClass });
+    const classData = populatedClass.toObject();
+    classData.teacher = getTeacherData(classData.teacher);
+    
+    res.json({ success: true, data: classData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -52,10 +81,17 @@ export const createClass = async (req, res) => {
 export const getAllClasses = async (req, res) => {
   try {
     const classes = await Class.find()
-      .populate('teacher', 'name email teacherCategory expertise')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
       .populate('students', 'name email')
       .exec();
-    res.json({ success: true, data: classes });
+      
+    const classesWithTeacherData = classes.map(classItem => {
+      const classData = classItem.toObject();
+      classData.teacher = getTeacherData(classData.teacher);
+      return classData;
+    });
+    
+    res.json({ success: true, data: classesWithTeacherData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -67,11 +103,17 @@ export const getAllUpcomingClasses = async (req, res) => {
     currentDate.setHours(0, 0, 0, 0); // Reset time to 00:00:00 for the current day
 
     const classes = await Class.find({ schedule: { $gte: currentDate } }) // Includes today & future dates
-      .populate('teacher', 'name email teacherCategory expertise')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
       .populate('students', 'name email')
       .exec();
 
-    res.json({ success: true, data: classes });
+    const classesWithTeacherData = classes.map(classItem => {
+      const classData = classItem.toObject();
+      classData.teacher = getTeacherData(classData.teacher);
+      return classData;
+    });
+
+    res.json({ success: true, data: classesWithTeacherData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -81,7 +123,7 @@ export const getClassById = async (req, res) => {
   const { classId } = req.params;
   try {
     const foundClass = await Class.findById(classId)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
       .populate('students', 'name email')
       .exec();
     
@@ -89,7 +131,10 @@ export const getClassById = async (req, res) => {
       return res.status(404).json({ success: false, error: "Class not found" });
     }
     
-    res.json({ success: true, data: foundClass });
+    const classData = foundClass.toObject();
+    classData.teacher = getTeacherData(classData.teacher);
+    
+    res.json({ success: true, data: classData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -106,14 +151,18 @@ export const updateClass = async (req, res) => {
     }
     
     const updatedClass = await Class.findByIdAndUpdate(classId, updatedData, { new: true })
-      .populate('teacher', 'name email teacherCategory expertise')
-      .populate('students', 'name email');
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('students', 'name email')
+      .exec();
       
     if (!updatedClass) {
       return res.status(404).json({ success: false, error: "Class not found" });
     }
     
-    res.json({ success: true, data: updatedClass });
+    const classData = updatedClass.toObject();
+    classData.teacher = getTeacherData(classData.teacher);
+    
+    res.json({ success: true, data: classData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -171,10 +220,14 @@ export const addStudentToClass = async (req, res) => {
     await foundClass.save();
 
     const updatedClass = await Class.findById(classId)
-      .populate('teacher', 'name email teacherCategory expertise')
-      .populate('students', 'name email');
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('students', 'name email')
+      .exec();
 
-    res.json({ success: true, data: updatedClass });
+    const classData = updatedClass.toObject();
+    classData.teacher = getTeacherData(classData.teacher);
+
+    res.json({ success: true, data: classData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -189,10 +242,16 @@ export const getStudentClasses = async (req, res) => {
 
     // Find all classes where studentId exists in the students array
     const classes = await Class.find({ students: studentId })
-      .populate('teacher', 'name email teacherCategory expertise')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
       .exec();
 
-    res.json({ success: true, data: classes });
+    const classesWithTeacherData = classes.map(classItem => {
+      const classData = classItem.toObject();
+      classData.teacher = getTeacherData(classData.teacher);
+      return classData;
+    });
+
+    res.json({ success: true, data: classesWithTeacherData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -213,10 +272,16 @@ export const getStudentUpcomingClasses = async (req, res) => {
       students: studentId, 
       schedule: { $gte: currentDate } // Only fetch today's and future classes
     })
-    .populate('teacher', 'name email teacherCategory expertise')
+    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
     .exec();
 
-    res.json({ success: true, data: classes });
+    const classesWithTeacherData = classes.map(classItem => {
+      const classData = classItem.toObject();
+      classData.teacher = getTeacherData(classData.teacher);
+      return classData;
+    });
+
+    res.json({ success: true, data: classesWithTeacherData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -253,14 +318,18 @@ export const assignTeacherToClass = async (req, res) => {
       { $set: { teacher: teacherId } },
       { new: true }
     )
-    .populate('teacher', 'name email teacherCategory expertise')
-    .populate('students', 'name email');
+    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+    .populate('students', 'name email')
+    .exec();
     
     if (!updatedClass) {
       return res.status(404).json({ success: false, error: "Class not found" });
     }
     
-    res.json({ success: true, data: updatedClass });
+    const classData = updatedClass.toObject();
+    classData.teacher = getTeacherData(classData.teacher);
+    
+    res.json({ success: true, data: classData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -274,14 +343,18 @@ export const removeStudentFromClass = async (req, res) => {
         { $pull: { students: studentId } },
         { new: true }
       )
-      .populate('teacher', 'name email teacherCategory expertise')
-      .populate('students', 'name email');
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('students', 'name email')
+      .exec();
       
       if (!updatedClass) {
         return res.status(404).json({ success: false, error: "Class not found" });
       }
       
-      res.json({ success: true, data: updatedClass });
+      const classData = updatedClass.toObject();
+      classData.teacher = getTeacherData(classData.teacher);
+      
+      res.json({ success: true, data: classData });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }
@@ -298,17 +371,21 @@ export const removeStudentFromClass = async (req, res) => {
         { $set: { recordingPath: recordingPath } },
         { new: true }
       )
-      .populate('teacher', 'name email teacherCategory expertise')
-      .populate('students', 'name email');
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('students', 'name email')
+      .exec();
       
       if (!updatedClass) {
         return res.status(404).json({ success: false, error: "Class not found" });
       }
   
+      const classData = updatedClass.toObject();
+      classData.teacher = getTeacherData(classData.teacher);
+  
       res.status(200).json({
         status: 'success',
         data: {
-          class: updatedClass,
+          class: classData,
         },
       });
     } catch (error) {
