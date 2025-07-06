@@ -219,6 +219,13 @@ export const addStudentToClass = async (req, res) => {
     foundClass.students.push(studentId);
     await foundClass.save();
 
+    console.log('Student added to class:', {
+      classId,
+      studentId,
+      totalStudentsAfter: foundClass.students.length,
+      studentIds: foundClass.students.map(s => s.toString())
+    });
+
     const updatedClass = await Class.findById(classId)
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
       .populate('students', 'name email')
@@ -227,7 +234,15 @@ export const addStudentToClass = async (req, res) => {
     const classData = updatedClass.toObject();
     classData.teacher = getTeacherData(classData.teacher);
 
-    res.json({ success: true, data: classData });
+    res.json({ 
+      success: true, 
+      data: classData,
+      debug: {
+        classId,
+        studentId,
+        totalStudents: foundClass.students.length
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -298,11 +313,32 @@ export const isStudentEnrolled = async (req, res) => {
       return res.status(404).json({ success: false, message: "Class not found" });
     }
 
-    // Check if student is in the class
-    const isEnrolled = foundClass.students.includes(studentId);
+    // Convert studentId to string for comparison (handles ObjectId vs string mismatch)
+    const studentIdStr = studentId.toString();
+    
+    // Check if student is in the class - convert all student IDs to strings for comparison
+    const isEnrolled = foundClass.students.some(student => student.toString() === studentIdStr);
 
-    res.json({ success: true, enrolled: isEnrolled });
+    // Add debug information
+    console.log('Checking enrollment for:', {
+      classId,
+      studentId: studentIdStr,
+      totalStudents: foundClass.students.length,
+      studentIds: foundClass.students.map(s => s.toString()),
+      isEnrolled
+    });
+
+    res.json({ 
+      success: true, 
+      enrolled: isEnrolled,
+      debug: {
+        classId,
+        studentId: studentIdStr,
+        totalStudents: foundClass.students.length
+      }
+    });
   } catch (error) {
+    console.error('Error in isStudentEnrolled:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
