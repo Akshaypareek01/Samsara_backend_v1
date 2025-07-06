@@ -23,23 +23,6 @@ const classSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-    
-  whoitsfor:{
-    type: String,
-    required: false
-  },
-  whoitsnotfor:{
-    type: String,
-    required: false
-  },
-  howItWillHelp:{
-    type: String,
-    required: false
-  },
-  howItWillnotHelp:{
-    type: String,
-    required: false
-  },
   students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
   schedule: { type: Date, default: Date.now, required: true },
   startTime:{ type: String, required: false },
@@ -50,6 +33,18 @@ const classSchema = new mongoose.Schema({
     required: false 
   },
   recordingPath: String,
+  image: { type: String }, // URL or file path
+  classType: { type: String, required: true }, // or enum
+  duration: { type: Number, required: true },
+  maxCapacity: { type: Number, required: true },
+  schedules: [{
+    days: [{ type: String, enum: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] }],
+    startTime: String,
+    endTime: String,
+  }],
+  perfectFor: [{ type: String }],
+  skipIf: [{ type: String }],
+  whatYoullGain: [{ type: String }],
   // Add other fields as needed
 });
 
