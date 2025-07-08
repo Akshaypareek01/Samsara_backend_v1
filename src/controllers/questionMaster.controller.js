@@ -60,6 +60,15 @@ export const toggleQuestionStatus = catchAsync(async (req, res) => {
   res.send(question);
 });
 
+export const bulkCreateQuestions = catchAsync(async (req, res) => {
+  const questions = req.body;
+  if (!Array.isArray(questions) || questions.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Request body must be a non-empty array of questions');
+  }
+  const created = await QuestionMaster.insertMany(questions, { ordered: false });
+  res.status(httpStatus.CREATED).send(created);
+});
+
 // Assessment Result Controllers
 export const startAssessment = catchAsync(async (req, res) => {
   const { assessmentType } = req.body;

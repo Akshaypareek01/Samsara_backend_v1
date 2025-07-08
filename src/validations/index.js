@@ -8,6 +8,7 @@ import questionMasterValidation from './questionMaster.validation.js';
 import meditationValidation from './meditation.validation.js';
 import masterCategoryValidation from './masterCategory.validation.js';
 import medicationValidation from './medication.validation.js';
+import doshaValidation from './dosha.validation.js';
 
 export { 
   authValidation, 
@@ -19,5 +20,6 @@ export {
   questionMasterValidation,
   meditationValidation,
   masterCategoryValidation,
-  medicationValidation
+  medicationValidation,
+  doshaValidation
 };

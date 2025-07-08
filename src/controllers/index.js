@@ -16,6 +16,7 @@ import * as eventsApplicationController from './eventsapplication.Controller.js'
 import * as customSessionController from './customSession.controller.js';
 import * as zoomController from './zoom.controller.js';
 import uploadController from './upload.controller.js';
+import * as doshaController from './dosha.controller.js';
 
 export { 
   authController, 
@@ -35,6 +36,7 @@ export {
   eventsApplicationController,
   customSessionController,
   zoomController,
-  uploadController
+  uploadController,
+  doshaController
 };
 

@@ -19,6 +19,7 @@ import meditationRoute from './meditation.router.js';
 import masterCategoryRoute from './masterCategory.router.js';
 import medicationRoute from './medication.router.js';
 import config from '../../config/config.js';
+import doshaRoute from './dosha.router.js';
 
 const router = express.Router();
 
@@ -94,6 +95,10 @@ const defaultRoutes = [
   {
     path: '/medications',
     route: medicationRoute,
+  },
+  {
+    path: '/dosha',
+    route: doshaRoute,
   },
 ];
 
