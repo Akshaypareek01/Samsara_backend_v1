@@ -4,6 +4,32 @@ import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
 import mongoose from 'mongoose';
 
+// Helper function to calculate dosha scores and percentages
+const calculateDoshaScores = (answers) => {
+  const doshaScore = { vata: 0, pitta: 0, kapha: 0 };
+  
+  for (const answer of answers) {
+    if (answer.questionId && answer.selectedOptionIndex !== undefined) {
+      const question = answer.questionId;
+      const selectedOption = question.options[answer.selectedOptionIndex];
+      
+      if (selectedOption && selectedOption.dosha) {
+        doshaScore[selectedOption.dosha.toLowerCase()]++;
+      }
+    }
+  }
+  
+  // Calculate percentages
+  const totalAnswers = answers.length;
+  const doshaPercentages = {
+    vata: totalAnswers > 0 ? Math.round((doshaScore.vata / totalAnswers) * 100) : 0,
+    pitta: totalAnswers > 0 ? Math.round((doshaScore.pitta / totalAnswers) * 100) : 0,
+    kapha: totalAnswers > 0 ? Math.round((doshaScore.kapha / totalAnswers) * 100) : 0
+  };
+  
+  return { doshaScore, doshaPercentages };
+};
+
 // Start a new dosha assessment
 export const startAssessment = catchAsync(async (req, res) => {
   const userId = req.user.id;
@@ -23,6 +49,7 @@ export const startAssessment = catchAsync(async (req, res) => {
     assessmentType,
     answers: [],
     doshaScore: { vata: 0, pitta: 0, kapha: 0 },
+    doshaPercentages: { vata: 0, pitta: 0, kapha: 0 },
     isCompleted: false
   });
   res.status(httpStatus.CREATED).send(assessment);
@@ -52,7 +79,8 @@ export const submitAnswer = catchAsync(async (req, res) => {
     _id: assessmentId,
     userId,
     isCompleted: false
-  });
+  }).populate('answers.questionId');
+  
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found or already completed');
 
   // Process each answer
@@ -65,6 +93,11 @@ export const submitAnswer = catchAsync(async (req, res) => {
       assessment.answers.push({ questionId, selectedOptionIndex });
     }
   }
+  
+  // Calculate dosha scores and percentages
+  const { doshaScore, doshaPercentages } = calculateDoshaScores(assessment.answers);
+  assessment.doshaScore = doshaScore;
+  assessment.doshaPercentages = doshaPercentages;
   
   await assessment.save();
   res.send(assessment);
@@ -81,17 +114,14 @@ export const calculateDoshaScore = catchAsync(async (req, res) => {
     isCompleted: false
   }).populate('answers.questionId');
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found or already completed');
-  const doshaScore = { vata: 0, pitta: 0, kapha: 0 };
-  for (const answer of assessment.answers) {
-    if (answer.questionId && answer.selectedOptionIndex !== undefined) {
-      const q = answer.questionId;
-      const opt = q.options[answer.selectedOptionIndex];
-      if (opt && opt.dosha) doshaScore[opt.dosha.toLowerCase()]++;
-    }
-  }
+  
+  // Calculate final dosha scores and percentages
+  const { doshaScore, doshaPercentages } = calculateDoshaScores(assessment.answers);
   assessment.doshaScore = doshaScore;
+  assessment.doshaPercentages = doshaPercentages;
   assessment.isCompleted = true;
   assessment.submittedAt = new Date();
+  
   await assessment.save();
   res.send(assessment);
 });

@@ -9,6 +9,7 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 - **Purpose:** Allow users to take Prakriti (birth constitution) and Vikriti (current state) dosha assessments.
 - **Questions & Options:** Managed by the QuestionMaster (admin only). Users fetch questions, submit answers, and receive dosha results.
 - **Authentication:** All endpoints require JWT token authentication.
+- **Real-time Scoring:** Dosha scores and percentages are calculated automatically after each answer submission.
 - **Models Used:**
   - `QuestionMaster` (questions/options)
   - `AssessmentResult` (user answers/results)
@@ -34,6 +35,7 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
   "assessmentType": "Prakriti",
   "answers": [],
   "doshaScore": { "vata": 0, "pitta": 0, "kapha": 0 },
+  "doshaPercentages": { "vata": 0, "pitta": 0, "kapha": 0 },
   "isCompleted": false
 }
 ```
@@ -64,12 +66,23 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
   ]
 }
 ```
-- **Response:** Updated assessment object
+- **Response:** Updated assessment object with calculated scores and percentages
+```json
+{
+  "_id": "64a1b2c3d4e5f6a7b8c9d0e1",
+  "userId": "64a1b2c3d4e5f6a7b8c9d0e2",
+  "assessmentType": "Prakriti",
+  "answers": [...],
+  "doshaScore": { "vata": 3, "pitta": 5, "kapha": 2 },
+  "doshaPercentages": { "vata": 30, "pitta": 50, "kapha": 20 },
+  "isCompleted": false
+}
+```
 
-### 2.4 Calculate Dosha Score
+### 2.4 Calculate Dosha Score (Final)
 - **POST** `/v1/doshas/assessments/:assessmentId/calculate`
 - **Headers:** `Authorization: Bearer <token>`
-- **Response:** Assessment object with dosha scores
+- **Response:** Assessment object with final dosha scores and percentages, marked as completed
 
 ### 2.5 Get Assessment Results (History)
 - **GET** `/v1/doshas/assessments`
@@ -104,7 +117,7 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 - **Headers:** `Authorization: Bearer <your_token>` (optional)
 - **Save** question `id` values for answers
 
-#### 3. Submit Multiple Answers
+#### 3. Submit Multiple Answers (Real-time scoring)
 - **POST** `/v1/doshas/assessments/submit-answer`
 - **Headers:** `Authorization: Bearer <your_token>`
 - **Body:**
@@ -120,11 +133,12 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
   ]
 }
 ```
+- **Response:** Updated assessment with current scores and percentages
 
-#### 4. Calculate Dosha Score
+#### 4. Calculate Final Dosha Score
 - **POST** `/v1/doshas/assessments/64a1b2c3d4e5f6a7b8c9d0e1/calculate`
 - **Headers:** `Authorization: Bearer <your_token>`
-- **Response:** Dosha scores (e.g., `{ vata: 5, pitta: 3, kapha: 2 }`)
+- **Response:** Final dosha scores and percentages, marked as completed
 
 #### 5. Get Results
 - **GET** `/v1/doshas/assessments`
@@ -158,6 +172,7 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
     { questionId: ObjectId, selectedOptionIndex: Number }
   ],
   doshaScore: { vata: Number, pitta: Number, kapha: Number },
+  doshaPercentages: { vata: Number, pitta: Number, kapha: Number },
   isCompleted: Boolean,
   submittedAt: Date
 }
@@ -171,14 +186,18 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 flowchart TD
     A[Start Assessment] --> B[Get Questions]
     B --> C[Submit Multiple Answers]
-    C --> D[Calculate Dosha Score]
-    D --> E[Get Results]
+    C --> D[Real-time Score Calculation]
+    D --> E[Show Current Percentages]
+    E --> F[Continue or Calculate Final]
+    F --> G[Get Final Results]
 ```
 
 ---
 
 ## 6. Notes
 - **Authentication:** All endpoints require JWT token except `getAssessmentQuestions` (optional).
+- **Real-time Scoring:** Dosha scores and percentages are calculated automatically after each answer submission.
+- **Percentages:** Returned as whole numbers (e.g., 30, 50, 20 for 30%, 50%, 20%).
 - **Bulk Submit:** You can submit multiple answers in one request for better performance.
 - **assessmentId:** Comes from the `_id` field in the startAssessment response.
 - **questionId:** Comes from the `id` field in each question from getQuestions response.
