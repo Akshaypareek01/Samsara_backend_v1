@@ -7,7 +7,7 @@ import * as doshaController from '../../controllers/dosha.controller.js';
 const router = express.Router();
 
 // Start assessment
-router.post('/start', validate(doshaValidation.startAssessment), doshaController.startAssessment);
+router.post('/start', auth(), validate(doshaValidation.startAssessment), doshaController.startAssessment);
 
 // Get questions for assessment type
 router.get('/questions/:assessmentType', validate(doshaValidation.getAssessmentQuestions), doshaController.getAssessmentQuestions);
