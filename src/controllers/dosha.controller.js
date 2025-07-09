@@ -6,8 +6,8 @@ import mongoose from 'mongoose';
 
 // Start a new dosha assessment
 export const startAssessment = catchAsync(async (req, res) => {
-  const userId = req.body.userId || (req.user && req.user.id);
-  if (!userId) throw new ApiError(httpStatus.BAD_REQUEST, 'userId is required');
+  const userId = req.user.id;
+  if (!userId) throw new ApiError(httpStatus.UNAUTHORIZED, 'User not authenticated');
   const { assessmentType } = req.body;
 
   // Check for existing incomplete assessment
@@ -38,31 +38,42 @@ export const getAssessmentQuestions = catchAsync(async (req, res) => {
   res.send(questions);
 });
 
-// Submit an answer to an assessment
+// Submit multiple answers to an assessment
 export const submitAnswer = catchAsync(async (req, res) => {
-  const userId = req.body.userId || (req.user && req.user.id);
-  if (!userId) throw new ApiError(httpStatus.BAD_REQUEST, 'userId is required');
-  const { assessmentId, questionId, selectedOptionIndex } = req.body;
+  const userId = req.user.id;
+  if (!userId) throw new ApiError(httpStatus.UNAUTHORIZED, 'User not authenticated');
+  const { assessmentId, answers } = req.body;
+  
+  if (!Array.isArray(answers) || answers.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'answers must be a non-empty array');
+  }
+
   const assessment = await AssessmentResult.findOne({
     _id: assessmentId,
     userId,
     isCompleted: false
   });
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found or already completed');
-  const idx = assessment.answers.findIndex(a => a.questionId.toString() === questionId);
-  if (idx !== -1) {
-    assessment.answers[idx].selectedOptionIndex = selectedOptionIndex;
-  } else {
-    assessment.answers.push({ questionId, selectedOptionIndex });
+
+  // Process each answer
+  for (const answer of answers) {
+    const { questionId, selectedOptionIndex } = answer;
+    const idx = assessment.answers.findIndex(a => a.questionId.toString() === questionId);
+    if (idx !== -1) {
+      assessment.answers[idx].selectedOptionIndex = selectedOptionIndex;
+    } else {
+      assessment.answers.push({ questionId, selectedOptionIndex });
+    }
   }
+  
   await assessment.save();
   res.send(assessment);
 });
 
 // Calculate dosha score and complete assessment
 export const calculateDoshaScore = catchAsync(async (req, res) => {
-  const userId = req.body.userId || (req.user && req.user.id);
-  if (!userId) throw new ApiError(httpStatus.BAD_REQUEST, 'userId is required');
+  const userId = req.user.id;
+  if (!userId) throw new ApiError(httpStatus.UNAUTHORIZED, 'User not authenticated');
   const { assessmentId } = req.params;
   const assessment = await AssessmentResult.findOne({
     _id: assessmentId,
@@ -87,8 +98,8 @@ export const calculateDoshaScore = catchAsync(async (req, res) => {
 
 // Get all assessment results for user
 export const getAssessmentResults = catchAsync(async (req, res) => {
-  const userId = req.query.userId || (req.user && req.user.id);
-  if (!userId) throw new ApiError(httpStatus.BAD_REQUEST, 'userId is required');
+  const userId = req.user.id;
+  if (!userId) throw new ApiError(httpStatus.UNAUTHORIZED, 'User not authenticated');
   const { assessmentType } = req.query;
   const filter = { userId };
   if (assessmentType) filter.assessmentType = assessmentType;
@@ -100,8 +111,8 @@ export const getAssessmentResults = catchAsync(async (req, res) => {
 
 // Get assessment by ID
 export const getAssessmentById = catchAsync(async (req, res) => {
-  const userId = req.query.userId || (req.user && req.user.id);
-  if (!userId) throw new ApiError(httpStatus.BAD_REQUEST, 'userId is required');
+  const userId = req.user.id;
+  if (!userId) throw new ApiError(httpStatus.UNAUTHORIZED, 'User not authenticated');
   const { assessmentId } = req.params;
   const assessment = await AssessmentResult.findOne({
     _id: assessmentId,

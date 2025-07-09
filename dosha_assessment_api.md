@@ -8,6 +8,7 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 
 - **Purpose:** Allow users to take Prakriti (birth constitution) and Vikriti (current state) dosha assessments.
 - **Questions & Options:** Managed by the QuestionMaster (admin only). Users fetch questions, submit answers, and receive dosha results.
+- **Authentication:** All endpoints require JWT token authentication.
 - **Models Used:**
   - `QuestionMaster` (questions/options)
   - `AssessmentResult` (user answers/results)
@@ -18,6 +19,7 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 
 ### 2.1 Start Assessment
 - **POST** `/v1/doshas/assessments/start`
+- **Headers:** `Authorization: Bearer <token>`
 - **Body:**
 ```json
 {
@@ -28,32 +30,46 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 
 ### 2.2 Get Assessment Questions
 - **GET** `/v1/doshas/assessments/questions/:assessmentType`
+- **Headers:** `Authorization: Bearer <token>` (optional - public endpoint)
 - **Params:** `assessmentType` = Prakriti | Vikriti
 - **Response:** Array of questions (with options)
 
-### 2.3 Submit Answer
+### 2.3 Submit Multiple Answers
 - **POST** `/v1/doshas/assessments/submit-answer`
+- **Headers:** `Authorization: Bearer <token>`
 - **Body:**
 ```json
 {
   "assessmentId": "<assessment_id>",
-  "questionId": "<question_id>",
-  "selectedOptionIndex": 0 // index of selected option
+  "answers": [
+    {
+      "questionId": "<question_id>",
+      "selectedOptionIndex": 0
+    },
+    {
+      "questionId": "<question_id>",
+      "selectedOptionIndex": 1
+    }
+    // ... more answers
+  ]
 }
 ```
 - **Response:** Updated assessment object
 
 ### 2.4 Calculate Dosha Score
 - **POST** `/v1/doshas/assessments/:assessmentId/calculate`
+- **Headers:** `Authorization: Bearer <token>`
 - **Response:** Assessment object with dosha scores
 
 ### 2.5 Get Assessment Results (History)
 - **GET** `/v1/doshas/assessments`
+- **Headers:** `Authorization: Bearer <token>`
 - **Query:** `assessmentType` (optional)
 - **Response:** Array of assessment results
 
 ### 2.6 Get Assessment by ID
 - **GET** `/v1/doshas/assessments/:assessmentId`
+- **Headers:** `Authorization: Bearer <token>`
 - **Response:** Assessment result object
 
 ---
@@ -61,7 +77,7 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 ## 3. Postman Usage Guide
 
 ### 3.1 Authentication
-- **If endpoints are protected:**
+- **Required for all endpoints (except get questions):**
   - Obtain JWT token via login endpoint
   - Add `Authorization: Bearer <token>` header to all requests
 
@@ -69,31 +85,40 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 
 #### 1. Start Assessment
 - **POST** `/v1/doshas/assessments/start`
+- **Headers:** `Authorization: Bearer <your_token>`
 - **Body:** `{ "assessmentType": "Prakriti" }`
 - **Save** `assessmentId` from response
 
 #### 2. Get Questions
 - **GET** `/v1/doshas/assessments/questions/Prakriti`
+- **Headers:** `Authorization: Bearer <your_token>` (optional)
 - **Use** question IDs and options for next step
 
-#### 3. Submit Answers (repeat for each question)
+#### 3. Submit Multiple Answers
 - **POST** `/v1/doshas/assessments/submit-answer`
+- **Headers:** `Authorization: Bearer <your_token>`
 - **Body:**
 ```json
 {
-  "assessmentId": "...",
-  "questionId": "...",
-  "selectedOptionIndex": 1
+  "assessmentId": "<assessment_id>",
+  "answers": [
+    { "questionId": "<question_id_1>", "selectedOptionIndex": 0 },
+    { "questionId": "<question_id_2>", "selectedOptionIndex": 1 },
+    { "questionId": "<question_id_3>", "selectedOptionIndex": 2 }
+  ]
 }
 ```
 
 #### 4. Calculate Dosha Score
 - **POST** `/v1/doshas/assessments/<assessmentId>/calculate`
+- **Headers:** `Authorization: Bearer <your_token>`
 - **Response:** Dosha scores (e.g., `{ vata: 5, pitta: 3, kapha: 2 }`)
 
 #### 5. Get Results
 - **GET** `/v1/doshas/assessments`
+- **Headers:** `Authorization: Bearer <your_token>`
 - **GET** `/v1/doshas/assessments/<assessmentId>`
+- **Headers:** `Authorization: Bearer <your_token>`
 
 ---
 
@@ -133,19 +158,18 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 ```mermaid
 flowchart TD
     A[Start Assessment] --> B[Get Questions]
-    B --> C[Submit Answer 1]
-    C --> D[Submit Answer 2 ...]
-    D --> E[Submit Last Answer]
-    E --> F[Calculate Dosha Score]
-    F --> G[Get Results]
+    B --> C[Submit Multiple Answers]
+    C --> D[Calculate Dosha Score]
+    D --> E[Get Results]
 ```
 
 ---
 
 ## 6. Notes
+- **Authentication:** All endpoints require JWT token except `getAssessmentQuestions` (optional).
+- **Bulk Submit:** You can submit multiple answers in one request for better performance.
 - **Admin** manages questions via `/v1/questionMaster/questions` endpoints.
 - **User** interacts only with `/v1/doshas/assessments/*` endpoints for assessment flow.
-- All endpoints require authentication unless marked public.
 
 ---
 
