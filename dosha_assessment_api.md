@@ -87,7 +87,7 @@ This document describes the **Dosha Assessment** API endpoints for user-facing P
 - **POST** `/v1/doshas/assessments/start`
 - **Headers:** `Authorization: Bearer <your_token>`
 - **Body:** `{ "assessmentType": "Prakriti" }`
-- **Save** `assessmentId` from response
+
 
 #### 2. Get Questions
 - **GET** `/v1/doshas/assessments/questions/Prakriti`
