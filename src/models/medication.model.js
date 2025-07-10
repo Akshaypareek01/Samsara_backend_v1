@@ -13,6 +13,11 @@ const HealthConditionSchema = new mongoose.Schema({
   analysis: { 
     type: String 
   }, // optional notes or doctor's input
+  level: {
+    type: String,
+    enum: ['High', 'Moderate', 'Low'],
+    default: 'Moderate'
+  },
   isActive: { 
     type: Boolean, 
     default: true 
@@ -25,55 +30,60 @@ const HealthConditionSchema = new mongoose.Schema({
 
 // Medication Item Schema (for both prescriptions and supplements)
 const MedicationItemSchema = new mongoose.Schema({
-  type: {
+  category: {
     type: String,
-    enum: ['Prescription', 'Supplement'],
+    enum: ['Medication', 'Supplement'],
     required: true
   },
-  name: { 
-    type: String, 
-    required: true 
-  }, // e.g., "Metformin" or "Vitamin D3"
-  dosage: { 
-    type: String 
-  }, // e.g., "500mg" or "2000 IU"
-  instruction: { 
-    type: String 
-  }, // e.g., "Take 1 pill with breakfast"
-  quantityLeft: { 
-    type: Number, 
-    default: 0 
-  }, // e.g., 28
-  frequency: { 
-    type: String 
-  }, // e.g., "Once daily"
-  times: [{ 
-    type: String 
-  }], // e.g., ["Morning", "Evening"]
-  isActive: { 
-    type: Boolean, 
-    default: true 
-  },
-  schedulePattern: {
+  medicineType: {
     type: String,
-    enum: ['daily', 'weekly', 'monthly', 'custom'],
-    default: 'daily'
+    enum: ['Pills', 'Capsule', 'Syrup', 'Injection', 'Other'],
+    required: true
   },
-  daysOfWeek: [{ 
-    type: String 
-  }], // ["Mon", "Wed", "Fri"] for weekly patterns
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  }
+  medicineName: {
+    type: String,
+    required: true
+  },
+  dosage: {
+    quantity: { type: Number, required: true },
+    unit: { type: String, required: true } // e.g., mg, ml, IU
+  },
+  duration: {
+    startDate: { type: Date },
+    endDate: { type: Date },
+    preset: { type: String, enum: ['1 week', '1 month', '3 months', 'Ongoing'] }
+  },
+  frequency: {
+    type: String,
+    enum: ['Daily', 'Weekly', 'Custom'],
+    required: true
+  },
+  daysOfWeek: [{
+    type: String,
+    enum: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+  }],
+  times: [
+    {
+      time: { type: String }, // e.g., "08:00"
+      ampm: { type: String, enum: ['AM', 'PM'] }
+    }
+  ],
+  consumptionInstructions: [{
+    type: String,
+    enum: ['Before Meals', 'During Meals', 'After Meals', 'Empty Stomach', 'Before Sleep']
+  }],
+  additionalNotes: { type: String },
+  reminderNotifications: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
 });
 
 // Daily Schedule Schema
 const DailyScheduleSchema = new mongoose.Schema({
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+      ref: 'User', 
+      required: true 
   },
   date: { 
     type: Date, 

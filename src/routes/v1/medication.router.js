@@ -7,7 +7,7 @@ import * as medicationValidation from '../../validations/medication.validation.j
 const router = express.Router();
 
 // Apply authentication to all routes
-// router.use(auth());
+router.use(auth());
 
 // Medication Tracker Management
 router
@@ -22,6 +22,7 @@ router
 
 router
   .route('/health-conditions/:conditionId')
+  .get(medicationController.getHealthConditionById)
   .patch(validate(medicationValidation.updateHealthCondition), medicationController.updateHealthCondition)
   .delete(validate(medicationValidation.deleteHealthCondition), medicationController.deleteHealthCondition);
 
@@ -32,6 +33,7 @@ router
 
 router
   .route('/medications/:medicationId')
+  .get(medicationController.getMedicationById)
   .patch(validate(medicationValidation.updateMedication), medicationController.updateMedication)
   .delete(validate(medicationValidation.deleteMedication), medicationController.deleteMedication);
 
