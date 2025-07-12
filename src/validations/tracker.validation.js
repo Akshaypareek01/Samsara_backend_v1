@@ -185,6 +185,12 @@ const getTrackerHistory = {
   }),
 };
 
+const getTrackerEntryById = {
+  params: Joi.object().keys({
+    entryId: Joi.string().custom(objectId).required(),
+  }),
+};
+
 export {
   createWeightTracker,
   createWaterTracker,
@@ -198,4 +204,5 @@ export {
   updateTrackerEntry,
   deleteTrackerEntry,
   getTrackerHistory,
+  getTrackerEntryById,
 }; 

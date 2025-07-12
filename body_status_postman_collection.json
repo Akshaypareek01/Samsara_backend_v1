@@ -1,0 +1,303 @@
+{
+  "info": {
+    "name": "Body Status API Collection",
+    "description": "Complete CRUD operations for Body Status tracker endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/v1/trackers",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Body Status History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/body-status/history?days=30",
+          "host": ["{{base_url}}"],
+          "path": ["body-status", "history"],
+          "query": [
+            {
+              "key": "days",
+              "value": "30",
+              "description": "Number of days to look back (default: 30, max: 365)"
+            }
+          ]
+        },
+        "description": "Retrieve body status history for the authenticated user"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Body Status Entry by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/body-status/{{entry_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["body-status", "{{entry_id}}"]
+        },
+        "description": "Retrieve a specific body status entry by its ID. Replace {{entry_id}} with the actual entry ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Body Status Entry - Minimal",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"height\": {\n    \"value\": 175,\n    \"unit\": \"cm\"\n  },\n  \"weight\": {\n    \"value\": 70,\n    \"unit\": \"kg\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/body-status",
+          "host": ["{{base_url}}"],
+          "path": ["body-status"]
+        },
+        "description": "Create a new body status entry with minimal required data (height and weight)"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Body Status Entry - Complete",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"height\": {\n    \"value\": 175,\n    \"unit\": \"cm\"\n  },\n  \"weight\": {\n    \"value\": 70,\n    \"unit\": \"kg\"\n  },\n  \"chest\": {\n    \"value\": 95,\n    \"unit\": \"cm\"\n  },\n  \"waist\": {\n    \"value\": 80,\n    \"unit\": \"cm\"\n  },\n  \"hips\": {\n    \"value\": 95,\n    \"unit\": \"cm\"\n  },\n  \"arms\": {\n    \"value\": 30,\n    \"unit\": \"cm\"\n  },\n  \"thighs\": {\n    \"value\": 55,\n    \"unit\": \"cm\"\n  },\n  \"bodyFat\": {\n    \"value\": 15,\n    \"unit\": \"%\"\n  },\n  \"notes\": \"Complete body measurements\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/body-status",
+          "host": ["{{base_url}}"],
+          "path": ["body-status"]
+        },
+        "description": "Create a new body status entry with complete measurements"
+      },
+      "response": []
+    },
+    {
+      "name": "Update Body Status Entry",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"weight\": {\n    \"value\": 72,\n    \"unit\": \"kg\"\n  },\n  \"chest\": {\n    \"value\": 96,\n    \"unit\": \"cm\"\n  },\n  \"notes\": \"Updated measurements after workout\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/bodyStatus/{{entry_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["bodyStatus", "{{entry_id}}"]
+        },
+        "description": "Update an existing body status entry. Replace {{entry_id}} with the actual entry ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Body Status Entry",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/bodyStatus/{{entry_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["bodyStatus", "{{entry_id}}"]
+        },
+        "description": "Delete a body status entry. Replace {{entry_id}} with the actual entry ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Body Status History - 7 Days",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/body-status/history?days=7",
+          "host": ["{{base_url}}"],
+          "path": ["body-status", "history"],
+          "query": [
+            {
+              "key": "days",
+              "value": "7",
+              "description": "Get last 7 days of body status history"
+            }
+          ]
+        },
+        "description": "Get body status history for the last 7 days"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Body Status History - 90 Days",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/body-status/history?days=90",
+          "host": ["{{base_url}}"],
+          "path": ["body-status", "history"],
+          "query": [
+            {
+              "key": "days",
+              "value": "90",
+              "description": "Get last 90 days of body status history"
+            }
+          ]
+        },
+        "description": "Get body status history for the last 90 days"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Body Status Entry - Imperial Units",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{auth_token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"height\": {\n    \"value\": 5.75,\n    \"unit\": \"ft\"\n  },\n  \"weight\": {\n    \"value\": 154,\n    \"unit\": \"lbs\"\n  },\n  \"chest\": {\n    \"value\": 37.4,\n    \"unit\": \"inches\"\n  },\n  \"waist\": {\n    \"value\": 31.5,\n    \"unit\": \"inches\"\n  },\n  \"hips\": {\n    \"value\": 37.4,\n    \"unit\": \"inches\"\n  },\n  \"arms\": {\n    \"value\": 11.8,\n    \"unit\": \"inches\"\n  },\n  \"thighs\": {\n    \"value\": 21.7,\n    \"unit\": \"inches\"\n  },\n  \"bodyFat\": {\n    \"value\": 15,\n    \"unit\": \"%\"\n  },\n  \"notes\": \"Measurements in imperial units\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/body-status",
+          "host": ["{{base_url}}"],
+          "path": ["body-status"]
+        },
+        "description": "Create a new body status entry using imperial units (feet, pounds, inches)"
+      },
+      "response": []
+    }
+  ]
+} 

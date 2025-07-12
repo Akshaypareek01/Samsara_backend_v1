@@ -73,6 +73,13 @@ router.get('/bmi/history', validate(trackerValidation.getTrackerHistory), tracke
 router.get('/body-status/history', validate(trackerValidation.getTrackerHistory), trackerController.getBodyStatusHistory);
 
 /**
+ * @route   GET /v1/trackers/body-status/:entryId
+ * @desc    Get body status entry by ID
+ * @access  Private
+ */
+router.get('/body-status/:entryId', validate(trackerValidation.getTrackerEntryById), trackerController.getBodyStatusById);
+
+/**
  * @route   GET /v1/trackers/step/history
  * @desc    Get step tracker history
  * @access  Private
