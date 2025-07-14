@@ -21,6 +21,13 @@ router
   );
 
 router
+  .route('/questions/bulk')
+  .post(
+    validate(questionMasterValidation.bulkCreateQuestions),
+    questionMasterController.bulkCreateQuestions
+  );
+
+router
   .route('/questions/:questionId')
   .get(
     

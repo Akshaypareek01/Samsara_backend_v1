@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-import { MedicationTracker, DailySchedule } from '../models/index.js';
+import { MedicationTracker, DailySchedule ,User } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -23,12 +23,15 @@ const createMedicationTracker = async (userId, trackerData) => {
 /**
  * Get medication tracker for user
  */
-const getMedicationTracker = async (userId) => {
+const getMedicationTracker = async (userId, category) => {
   const tracker = await MedicationTracker.findOne({ userId })
-    .populate('userId', 'name email');
   
   if (!tracker) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Medication tracker not found');
+  }
+
+  if (category) {
+    tracker.medications = tracker.medications.filter(med => med.category === category);
   }
 
   return tracker;
@@ -38,14 +41,24 @@ const getMedicationTracker = async (userId) => {
  * Add health condition to tracker
  */
 const addHealthCondition = async (userId, conditionData) => {
-  const tracker = await MedicationTracker.findOne({ userId });
+  let tracker = await MedicationTracker.findOne({ userId });
   if (!tracker) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Medication tracker not found');
+    tracker = new MedicationTracker({ userId, healthConditions: [], medications: [] });
+    await tracker.save();
   }
-
-  tracker.healthConditions.push(conditionData);
-  await tracker.save();
   
+  // Create the health condition with all required fields
+  const newCondition = {
+    name: conditionData.name,
+    diagnosedYear: conditionData.diagnosedYear,
+    analysis: conditionData.analysis,
+    level: conditionData.level || 'Moderate', // Use provided level or default
+    isActive: conditionData.isActive !== undefined ? conditionData.isActive : true,
+    createdAt: new Date()
+  };
+  
+  tracker.healthConditions.push(newCondition);
+  await tracker.save();
   return tracker.healthConditions[tracker.healthConditions.length - 1];
 };
 
@@ -93,14 +106,13 @@ const deleteHealthCondition = async (userId, conditionId) => {
  * Add medication to tracker
  */
 const addMedication = async (userId, medicationData) => {
-  const tracker = await MedicationTracker.findOne({ userId });
+  let tracker = await MedicationTracker.findOne({ userId });
   if (!tracker) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Medication tracker not found');
+    tracker = new MedicationTracker({ userId, healthConditions: [], medications: [] });
+    await tracker.save();
   }
-
   tracker.medications.push(medicationData);
   await tracker.save();
-  
   return tracker.medications[tracker.medications.length - 1];
 };
 

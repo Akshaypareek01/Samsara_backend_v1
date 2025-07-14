@@ -38,6 +38,20 @@ const AssessmentResultSchema = new mongoose.Schema(
         default: 0
       }
     },
+    doshaPercentages: {
+      vata: { 
+        type: Number,
+        default: 0
+      },
+      pitta: { 
+        type: Number,
+        default: 0
+      },
+      kapha: { 
+        type: Number,
+        default: 0
+      }
+    },
     submittedAt: { 
       type: Date, 
       default: Date.now 

@@ -14,7 +14,9 @@ const createMedicationTracker = catchAsync(async (req, res) => {
  * Get medication tracker
  */
 const getMedicationTracker = catchAsync(async (req, res) => {
-  const tracker = await medicationService.getMedicationTracker(req.user.id);
+  // Allow filtering by category (Medication or Supplement)
+  const category = req.query.category;
+  const tracker = await medicationService.getMedicationTracker(req.user.id, category);
   res.send(tracker);
 });
 
@@ -200,6 +202,24 @@ const getAdherenceStats = catchAsync(async (req, res) => {
   res.send(stats);
 });
 
+const getHealthConditionById = catchAsync(async (req, res) => {
+  const tracker = await medicationService.getMedicationTracker(req.user.id);
+  const condition = tracker.healthConditions.id(req.params.conditionId);
+  if (!condition) {
+    return res.status(404).send({ message: 'Health condition not found' });
+  }
+  res.send(condition);
+});
+
+const getMedicationById = catchAsync(async (req, res) => {
+  const tracker = await medicationService.getMedicationTracker(req.user.id);
+  const medication = tracker.medications.id(req.params.medicationId);
+  if (!medication) {
+    return res.status(404).send({ message: 'Medication not found' });
+  }
+  res.send(medication);
+});
+
 export {
   createMedicationTracker,
   getMedicationTracker,
@@ -219,5 +239,7 @@ export {
   getMedicationReminders,
   generateDailySchedule,
   getLowStockMedications,
-  getAdherenceStats
+  getAdherenceStats,
+  getHealthConditionById,
+  getMedicationById
 }; 

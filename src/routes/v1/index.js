@@ -21,6 +21,7 @@ import medicationRoute from './medication.router.js';
 import ratingRoute from './rating.router.js';
 import userAnalyticsRoute from './userAnalytics.router.js';
 import config from '../../config/config.js';
+import doshaRoute from './dosha.router.js';
 
 const router = express.Router();
 
@@ -96,6 +97,10 @@ const defaultRoutes = [
   {
     path: '/medications',
     route: medicationRoute,
+  },
+  {
+    path: '/dosha',
+    route: doshaRoute,
   },
   {
     path: '/ratings',

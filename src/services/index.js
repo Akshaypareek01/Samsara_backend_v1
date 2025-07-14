@@ -21,6 +21,9 @@ export * as masterCategoryService from './masterCategory.service.js';
 // Export medication service
 export * as medicationService from './medication.service.js';
 
+// Export dosha service
+export * as doshaService from './dosha.service.js';
+
 // Export rating service
 export * as ratingService from './rating.service.js';
 

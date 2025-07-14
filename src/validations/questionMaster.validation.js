@@ -86,4 +86,22 @@ export const getAssessmentQuestions = {
   params: Joi.object().keys({
     assessmentType: Joi.string().valid('Prakriti', 'Vikriti').required()
   })
+};
+
+export const bulkCreateQuestions = {
+  body: Joi.array().items(
+    Joi.object().keys({
+      assessmentType: Joi.string().valid('Prakriti', 'Vikriti').required(),
+      questionText: Joi.string().required(),
+      options: Joi.array().items(
+        Joi.object().keys({
+          text: Joi.string().required(),
+          dosha: Joi.string().valid('Vata', 'Pitta', 'Kapha').required(),
+          description: Joi.string().optional()
+        })
+      ).min(2).max(5).required(),
+      order: Joi.number().integer().min(1).optional(),
+      isActive: Joi.boolean().optional()
+    })
+  ).min(1).required()
 }; 

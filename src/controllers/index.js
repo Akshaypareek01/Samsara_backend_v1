@@ -18,6 +18,8 @@ import * as zoomController from './zoom.controller.js';
 import * as ratingController from './rating.controller.js';
 import * as userAnalyticsController from './userAnalytics.controller.js';
 import uploadController from './upload.controller.js';
+import * as doshaController from './dosha.controller.js';
+
 
 export { 
   authController, 
@@ -39,6 +41,7 @@ export {
   zoomController,
   ratingController,
   userAnalyticsController,
-  uploadController
+  uploadController,
+  doshaController
 };
 

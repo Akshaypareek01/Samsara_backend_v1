@@ -33,6 +33,7 @@ const addHealthCondition = {
     name: Joi.string().required(),
     diagnosedYear: Joi.number().min(1900).max(new Date().getFullYear()),
     analysis: Joi.string().max(1000),
+    level: Joi.string().valid('High', 'Moderate', 'Low'),
     isActive: Joi.boolean().default(true)
   })
 };
@@ -45,6 +46,7 @@ const updateHealthCondition = {
     name: Joi.string(),
     diagnosedYear: Joi.number().min(1900).max(new Date().getFullYear()),
     analysis: Joi.string().max(1000),
+    level: Joi.string().valid('High', 'Moderate', 'Low'),
     isActive: Joi.boolean()
   }).min(1)
 };
@@ -57,16 +59,32 @@ const deleteHealthCondition = {
 
 const addMedication = {
   body: Joi.object().keys({
-    type: Joi.string().valid('Prescription', 'Supplement').required(),
-    name: Joi.string().required(),
-    dosage: Joi.string(),
-    instruction: Joi.string().max(500),
-    quantityLeft: Joi.number().min(0),
-    frequency: Joi.string(),
-    times: Joi.array().items(Joi.string()),
-    isActive: Joi.boolean().default(true),
-    schedulePattern: Joi.string().valid('daily', 'weekly', 'monthly', 'custom').default('daily'),
-    daysOfWeek: Joi.array().items(Joi.string().valid('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'))
+    category: Joi.string().valid('Medication', 'Supplement').required(),
+    medicineType: Joi.string().valid('Pills', 'Capsule', 'Syrup', 'Injection', 'Other').required(),
+    medicineName: Joi.string().required(),
+    dosage: Joi.object().keys({
+      quantity: Joi.number().required(),
+      unit: Joi.string().required()
+    }).required(),
+    duration: Joi.object().keys({
+      startDate: Joi.date(),
+      endDate: Joi.date(),
+      preset: Joi.string().valid('1 week', '1 month', '3 months', 'Ongoing')
+    }),
+    frequency: Joi.string().valid('Daily', 'Weekly', 'Custom').required(),
+    daysOfWeek: Joi.array().items(Joi.string().valid('M', 'T', 'W', 'T', 'F', 'S', 'S')),
+    times: Joi.array().items(
+      Joi.object().keys({
+        time: Joi.string().required(),
+        ampm: Joi.string().valid('AM', 'PM').required()
+      })
+    ),
+    consumptionInstructions: Joi.array().items(
+      Joi.string().valid('Before Meals', 'During Meals', 'After Meals', 'Empty Stomach', 'Before Sleep')
+    ),
+    additionalNotes: Joi.string(),
+    reminderNotifications: Joi.boolean(),
+    isActive: Joi.boolean().default(true)
   })
 };
 
@@ -75,16 +93,32 @@ const updateMedication = {
     medicationId: Joi.string().custom(objectId).required(),
   }),
   body: Joi.object().keys({
-    type: Joi.string().valid('Prescription', 'Supplement'),
-    name: Joi.string(),
-    dosage: Joi.string(),
-    instruction: Joi.string().max(500),
-    quantityLeft: Joi.number().min(0),
-    frequency: Joi.string(),
-    times: Joi.array().items(Joi.string()),
-    isActive: Joi.boolean(),
-    schedulePattern: Joi.string().valid('daily', 'weekly', 'monthly', 'custom'),
-    daysOfWeek: Joi.array().items(Joi.string().valid('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'))
+    category: Joi.string().valid('Medication', 'Supplement'),
+    medicineType: Joi.string().valid('Pills', 'Capsule', 'Syrup', 'Injection', 'Other'),
+    medicineName: Joi.string(),
+    dosage: Joi.object().keys({
+      quantity: Joi.number(),
+      unit: Joi.string()
+    }),
+    duration: Joi.object().keys({
+      startDate: Joi.date(),
+      endDate: Joi.date(),
+      preset: Joi.string().valid('1 week', '1 month', '3 months', 'Ongoing')
+    }),
+    frequency: Joi.string().valid('Daily', 'Weekly', 'Custom'),
+    daysOfWeek: Joi.array().items(Joi.string().valid('M', 'T', 'W', 'T', 'F', 'S', 'S')),
+    times: Joi.array().items(
+      Joi.object().keys({
+        time: Joi.string(),
+        ampm: Joi.string().valid('AM', 'PM')
+      })
+    ),
+    consumptionInstructions: Joi.array().items(
+      Joi.string().valid('Before Meals', 'During Meals', 'After Meals', 'Empty Stomach', 'Before Sleep')
+    ),
+    additionalNotes: Joi.string(),
+    reminderNotifications: Joi.boolean(),
+    isActive: Joi.boolean()
   }).min(1)
 };
 

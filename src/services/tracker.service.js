@@ -231,6 +231,20 @@ const getBodyStatusHistory = async (userId, days = 30) => {
 };
 
 /**
+ * Get body status entry by ID
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @returns {Promise<Object>}
+ */
+const getBodyStatusById = async (userId, entryId) => {
+  const entry = await BodyStatus.findOne({ _id: entryId, userId });
+  if (!entry) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Body status entry not found');
+  }
+  return entry;
+};
+
+/**
  * Get step tracker history
  * @param {ObjectId} userId
  * @param {number} days
@@ -467,6 +481,7 @@ export {
   getFatHistory,
   getBmiHistory,
   getBodyStatusHistory,
+  getBodyStatusById,
   getStepHistory,
   getSleepHistory,
   getDashboardData,

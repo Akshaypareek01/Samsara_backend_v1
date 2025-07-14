@@ -115,6 +115,15 @@ const getBodyStatusHistory = catchAsync(async (req, res) => {
 });
 
 /**
+ * Get body status entry by ID
+ */
+const getBodyStatusById = catchAsync(async (req, res) => {
+  const { entryId } = req.params;
+  const entry = await trackerService.getBodyStatusById(req.user.id, entryId);
+  res.send(entry);
+});
+
+/**
  * Get step tracker history
  */
 const getStepHistory = catchAsync(async (req, res) => {
@@ -232,6 +241,7 @@ export {
   getFatHistory,
   getBmiHistory,
   getBodyStatusHistory,
+  getBodyStatusById,
   getStepHistory,
   getSleepHistory,
   addWeightEntry,
