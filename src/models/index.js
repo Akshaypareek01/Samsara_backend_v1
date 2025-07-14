@@ -26,6 +26,8 @@ import { BmiTracker } from './bmi-tracker.model.js';
 import { StepTracker } from './step-tracker.model.js';
 import { Meditation } from './meditation.model.js';
 import { MasterCategory } from './master-category.model.js';
+import { ClassRating } from './class-rating.model.js';
+import { EventRating } from './event-rating.model.js';
 
 export {
   Token,
@@ -57,6 +59,8 @@ export {
   BmiTracker,
   StepTracker,
   Meditation,
-  MasterCategory
+  MasterCategory,
+  ClassRating,
+  EventRating
 };
 

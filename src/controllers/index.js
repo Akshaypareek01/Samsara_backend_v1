@@ -15,6 +15,8 @@ import * as meetingController from './meeting.controller.js';
 import * as eventsApplicationController from './eventsapplication.Controller.js';
 import * as customSessionController from './customSession.controller.js';
 import * as zoomController from './zoom.controller.js';
+import * as ratingController from './rating.controller.js';
+import * as userAnalyticsController from './userAnalytics.controller.js';
 import uploadController from './upload.controller.js';
 
 export { 
@@ -35,6 +37,8 @@ export {
   eventsApplicationController,
   customSessionController,
   zoomController,
+  ratingController,
+  userAnalyticsController,
   uploadController
 };
 

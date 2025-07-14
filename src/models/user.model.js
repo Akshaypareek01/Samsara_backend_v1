@@ -171,6 +171,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    // Favorites system
+    favoriteClasses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Class' }],
+    favoriteEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+    favoriteTeachers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
 }, {
     timestamps: {}
 });

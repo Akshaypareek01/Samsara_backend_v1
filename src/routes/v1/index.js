@@ -18,6 +18,8 @@ import questionMasterRoute from './questionMaster.router.js';
 import meditationRoute from './meditation.router.js';
 import masterCategoryRoute from './masterCategory.router.js';
 import medicationRoute from './medication.router.js';
+import ratingRoute from './rating.router.js';
+import userAnalyticsRoute from './userAnalytics.router.js';
 import config from '../../config/config.js';
 
 const router = express.Router();
@@ -94,6 +96,14 @@ const defaultRoutes = [
   {
     path: '/medications',
     route: medicationRoute,
+  },
+  {
+    path: '/ratings',
+    route: ratingRoute,
+  },
+  {
+    path: '/user-analytics',
+    route: userAnalyticsRoute,
   },
 ];
 
