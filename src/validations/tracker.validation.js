@@ -191,6 +191,22 @@ const getTrackerEntryById = {
   }),
 };
 
+const updateWaterTarget = {
+  body: Joi.object().keys({
+    targetMl: Joi.number().min(500).max(5000).required(),
+    targetGlasses: Joi.number().min(1).max(20).required(),
+  }),
+};
+
+const deleteWaterIntake = {
+  params: Joi.object().keys({
+    entryId: Joi.string().custom(objectId).required(),
+  }),
+  body: Joi.object().keys({
+    amountMl: Joi.number().min(1).required(),
+  }),
+};
+
 export {
   createWeightTracker,
   createWaterTracker,
@@ -205,4 +221,6 @@ export {
   deleteTrackerEntry,
   getTrackerHistory,
   getTrackerEntryById,
+  updateWaterTarget,
+  deleteWaterIntake,
 }; 

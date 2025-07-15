@@ -52,6 +52,34 @@ router.get('/water/history', validate(trackerValidation.getTrackerHistory), trac
 router.get('/water/:entryId', validate(trackerValidation.getTrackerEntryById), trackerController.getWaterById);
 
 /**
+ * @route   GET /v1/trackers/water/today
+ * @desc    Get today's water data
+ * @access  Private
+ */
+router.get('/water/today', trackerController.getTodayWaterData);
+
+/**
+ * @route   GET /v1/trackers/water/weekly-summary
+ * @desc    Get weekly water summary
+ * @access  Private
+ */
+router.get('/water/weekly-summary', trackerController.getWeeklyWaterSummary);
+
+/**
+ * @route   PUT /v1/trackers/water/target
+ * @desc    Update water target/goal
+ * @access  Private
+ */
+router.put('/water/target', validate(trackerValidation.updateWaterTarget), trackerController.updateWaterTarget);
+
+/**
+ * @route   DELETE /v1/trackers/water/intake/:entryId
+ * @desc    Delete water intake entry
+ * @access  Private
+ */
+router.delete('/water/intake/:entryId', validate(trackerValidation.deleteWaterIntake), trackerController.deleteWaterIntake);
+
+/**
  * @route   GET /v1/trackers/mood/history
  * @desc    Get mood history
  * @access  Private

@@ -258,6 +258,40 @@ const deleteTrackerEntry = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+/**
+ * Update water target/goal
+ */
+const updateWaterTarget = catchAsync(async (req, res) => {
+  const entry = await trackerService.updateWaterTarget(req.user.id, req.body);
+  res.send(entry);
+});
+
+/**
+ * Get today's water data
+ */
+const getTodayWaterData = catchAsync(async (req, res) => {
+  const data = await trackerService.getTodayWaterData(req.user.id);
+  res.send(data);
+});
+
+/**
+ * Get weekly water summary
+ */
+const getWeeklyWaterSummary = catchAsync(async (req, res) => {
+  const days = parseInt(req.query.days) || 7;
+  const summary = await trackerService.getWeeklyWaterSummary(req.user.id, days);
+  res.send(summary);
+});
+
+/**
+ * Delete water intake entry
+ */
+const deleteWaterIntake = catchAsync(async (req, res) => {
+  const { amountMl } = req.body;
+  const entry = await trackerService.deleteWaterIntake(req.user.id, req.params.entryId, amountMl);
+  res.send(entry);
+});
+
 export {
   getDashboardData,
   getTrackerStatus,
@@ -284,5 +318,9 @@ export {
   addStepEntry,
   addSleepEntry,
   updateTrackerEntry,
-  deleteTrackerEntry
+  deleteTrackerEntry,
+  updateWaterTarget,
+  getTodayWaterData,
+  getWeeklyWaterSummary,
+  deleteWaterIntake
 };
