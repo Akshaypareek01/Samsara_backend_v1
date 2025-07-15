@@ -206,6 +206,48 @@ router.post('/step', validate(trackerValidation.createStepTracker), trackerContr
 router.post('/sleep', validate(trackerValidation.createSleepTracker), trackerController.addSleepEntry);
 
 /**
+ * @route   POST /v1/trackers/workout
+ * @desc    Add workout entry
+ * @access  Private
+ */
+router.post('/workout', validate(trackerValidation.addWorkoutEntry), trackerController.addWorkoutEntry);
+
+/**
+ * @route   GET /v1/trackers/workout/history
+ * @desc    Get workout history
+ * @access  Private
+ */
+router.get('/workout/history', validate(trackerValidation.getWorkoutByType), trackerController.getWorkoutHistory);
+
+/**
+ * @route   GET /v1/trackers/workout/by-type
+ * @desc    Get workout by type
+ * @access  Private
+ */
+router.get('/workout/by-type', validate(trackerValidation.getWorkoutByType), trackerController.getWorkoutByType);
+
+/**
+ * @route   GET /v1/trackers/workout/summary
+ * @desc    Get workout summary
+ * @access  Private
+ */
+router.get('/workout/summary', validate(trackerValidation.getWorkoutSummary), trackerController.getWorkoutSummary);
+
+/**
+ * @route   PUT /v1/trackers/workout/:entryId
+ * @desc    Update workout entry
+ * @access  Private
+ */
+router.put('/workout/:entryId', validate(trackerValidation.updateWorkoutEntry), trackerController.updateWorkoutEntry);
+
+/**
+ * @route   DELETE /v1/trackers/workout/:entryId
+ * @desc    Delete workout entry
+ * @access  Private
+ */
+router.delete('/workout/:entryId', validate(trackerValidation.deleteWorkoutEntry), trackerController.deleteWorkoutEntry);
+
+/**
  * @route   PUT /v1/trackers/:trackerType/:entryId
  * @desc    Update tracker entry
  * @access  Private

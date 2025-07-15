@@ -241,6 +241,60 @@ const addSleepEntry = catchAsync(async (req, res) => {
 });
 
 /**
+ * Add workout entry
+ */
+const addWorkoutEntry = catchAsync(async (req, res) => {
+  const entry = await trackerService.addWorkoutEntry(req.user.id, req.body);
+  res.status(httpStatus.CREATED).send(entry);
+});
+
+/**
+ * Get workout history
+ */
+const getWorkoutHistory = catchAsync(async (req, res) => {
+  const days = parseInt(req.query.days) || 30;
+  const history = await trackerService.getWorkoutHistory(req.user.id, days);
+  res.send(history);
+});
+
+/**
+ * Get workout by type
+ */
+const getWorkoutByType = catchAsync(async (req, res) => {
+  const { workoutType } = req.query;
+  const days = parseInt(req.query.days) || 30;
+  const workouts = await trackerService.getWorkoutByType(req.user.id, workoutType, days);
+  res.send(workouts);
+});
+
+/**
+ * Get workout summary
+ */
+const getWorkoutSummary = catchAsync(async (req, res) => {
+  const { period, days } = req.query;
+  const summary = await trackerService.getWorkoutSummary(req.user.id, period, parseInt(days) || 7);
+  res.send(summary);
+});
+
+/**
+ * Update workout entry
+ */
+const updateWorkoutEntry = catchAsync(async (req, res) => {
+  const { entryId } = req.params;
+  const entry = await trackerService.updateWorkoutEntry(req.user.id, entryId, req.body);
+  res.send(entry);
+});
+
+/**
+ * Delete workout entry
+ */
+const deleteWorkoutEntry = catchAsync(async (req, res) => {
+  const { entryId } = req.params;
+  await trackerService.deleteWorkoutEntry(req.user.id, entryId);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+/**
  * Update tracker entry
  */
 const updateTrackerEntry = catchAsync(async (req, res) => {
@@ -318,6 +372,12 @@ export {
   addBodyStatusEntry,
   addStepEntry,
   addSleepEntry,
+  addWorkoutEntry,
+  getWorkoutHistory,
+  getWorkoutByType,
+  getWorkoutSummary,
+  updateWorkoutEntry,
+  deleteWorkoutEntry,
   updateTrackerEntry,
   deleteTrackerEntry,
   updateWaterTarget,
