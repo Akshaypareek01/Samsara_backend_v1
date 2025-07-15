@@ -189,6 +189,10 @@ router.put('/:trackerType/:entryId', validate(trackerValidation.updateTrackerEnt
  * @desc    Delete tracker entry
  * @access  Private
  */
-router.delete('/:trackerType/:entryId', validate(trackerValidation.deleteTrackerEntry), trackerController.deleteTrackerEntry);
+router.delete(
+  '/:trackerType/:entryId',
+  validate(trackerValidation.deleteTrackerEntry),
+  trackerController.deleteTrackerEntry
+);
 
 export default router; 
