@@ -31,11 +31,25 @@ router.get('/status', trackerController.getTrackerStatus);
 router.get('/weight/history', validate(trackerValidation.getTrackerHistory), trackerController.getWeightHistory);
 
 /**
+ * @route   GET /v1/trackers/weight/:entryId
+ * @desc    Get weight tracker entry by ID
+ * @access  Private
+ */
+router.get('/weight/:entryId', validate(trackerValidation.getTrackerEntryById), trackerController.getWeightById);
+
+/**
  * @route   GET /v1/trackers/water/history
  * @desc    Get water tracker history
  * @access  Private
  */
 router.get('/water/history', validate(trackerValidation.getTrackerHistory), trackerController.getWaterHistory);
+
+/**
+ * @route   GET /v1/trackers/water/:entryId
+ * @desc    Get water tracker entry by ID
+ * @access  Private
+ */
+router.get('/water/:entryId', validate(trackerValidation.getTrackerEntryById), trackerController.getWaterById);
 
 /**
  * @route   GET /v1/trackers/mood/history
@@ -92,6 +106,13 @@ router.get('/step/history', validate(trackerValidation.getTrackerHistory), track
  * @access  Private
  */
 router.get('/sleep/history', validate(trackerValidation.getTrackerHistory), trackerController.getSleepHistory);
+
+/**
+ * @route   GET /v1/trackers/sleep/:entryId
+ * @desc    Get sleep tracker entry by ID
+ * @access  Private
+ */
+router.get('/sleep/:entryId', validate(trackerValidation.getTrackerEntryById), trackerController.getSleepById);
 
 /**
  * @route   POST /v1/trackers/weight

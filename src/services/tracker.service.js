@@ -131,6 +131,20 @@ const getWeightHistory = async (userId, days = 30) => {
 };
 
 /**
+ * Get weight tracker entry by ID
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @returns {Promise<Object>}
+ */
+const getWeightById = async (userId, entryId) => {
+  const entry = await WeightTracker.findOne({ _id: entryId, userId });
+  if (!entry) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Weight tracker entry not found');
+  }
+  return entry;
+};
+
+/**
  * Get water tracker history
  * @param {ObjectId} userId
  * @param {number} days
@@ -144,6 +158,20 @@ const getWaterHistory = async (userId, days = 30) => {
     userId,
     date: { $gte: startDate }
   }).sort({ date: -1 });
+};
+
+/**
+ * Get water tracker entry by ID
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @returns {Promise<Object>}
+ */
+const getWaterById = async (userId, entryId) => {
+  const entry = await WaterTracker.findOne({ _id: entryId, userId });
+  if (!entry) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Water tracker entry not found');
+  }
+  return entry;
 };
 
 /**
@@ -275,6 +303,83 @@ const getSleepHistory = async (userId, days = 30) => {
     userId,
     date: { $gte: startDate }
   }).sort({ date: -1 });
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Get sleep tracker entry by ID
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @returns {Promise<Object>}
+ */
+const getSleepById = async (userId, entryId) => {
+  const entry = await SleepTracker.findOne({ _id: entryId, userId });
+  if (!entry) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Sleep tracker entry not found');
+  }
+  return entry;
 };
 
 /**
@@ -475,7 +580,9 @@ export {
   createInitialTrackers,
   updateTrackersFromProfile,
   getWeightHistory,
+  getWeightById,
   getWaterHistory,
+  getWaterById,
   getMoodHistory,
   getTemperatureHistory,
   getFatHistory,
@@ -484,6 +591,7 @@ export {
   getBodyStatusById,
   getStepHistory,
   getSleepHistory,
+  getSleepById,
   getDashboardData,
   addWeightEntry,
   addWaterEntry,
