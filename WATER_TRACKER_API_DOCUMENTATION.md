@@ -395,7 +395,7 @@ Content-Type: application/json
 
 ### Endpoint
 ```
-DELETE /water/intake/:entryId
+DELETE /water/intake/:trackerId
 ```
 
 ### Headers

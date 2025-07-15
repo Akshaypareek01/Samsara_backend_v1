@@ -461,7 +461,8 @@ const addWaterEntry = async (userId, waterData) => {
       targetGlasses: 8,
       intakeTimeline: [],
       totalIntake: 0,
-      status: 'Dehydrated'
+      status: 'Dehydrated',
+      weeklySummary: []
     });
   }
 
@@ -489,6 +490,48 @@ const addWaterEntry = async (userId, waterData) => {
     waterTracker.status = 'Mildly dehydrated';
   } else {
     waterTracker.status = 'Dehydrated';
+  }
+
+  // Update weekly summary
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+  
+  // Find or create weekly summary entry for today
+  const existingWeekEntry = waterTracker.weeklySummary.find(
+    entry => entry.date.getTime() === today.getTime()
+  );
+
+  if (existingWeekEntry) {
+    // Update existing entry
+    existingWeekEntry.totalMl = waterTracker.totalIntake;
+  } else {
+    // Add new weekly summary entry
+    waterTracker.weeklySummary.push({
+      date: today,
+      totalMl: waterTracker.totalIntake
+    });
+  }
+
+  // Calculate weekly statistics
+  if (waterTracker.weeklySummary.length > 0) {
+    const totalWeeklyIntake = waterTracker.weeklySummary.reduce((sum, entry) => sum + entry.totalMl, 0);
+    const daysWithData = waterTracker.weeklySummary.length;
+    waterTracker.dailyAverage = Math.round(totalWeeklyIntake / daysWithData);
+    waterTracker.bestDay = Math.max(...waterTracker.weeklySummary.map(entry => entry.totalMl));
+    
+    // Calculate streak (consecutive days with water intake)
+    let streak = 0;
+    const sortedEntries = waterTracker.weeklySummary
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+    
+    for (const entry of sortedEntries) {
+      if (entry.totalMl > 0) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    waterTracker.streak = streak;
   }
 
   await waterTracker.save();
@@ -522,7 +565,8 @@ const updateWaterTarget = async (userId, targetData) => {
       targetGlasses: targetData.targetGlasses || 8,
       intakeTimeline: [],
       totalIntake: 0,
-      status: 'Dehydrated'
+      status: 'Dehydrated',
+      weeklySummary: []
     });
   } else {
     // Update existing tracker
@@ -571,7 +615,8 @@ const getTodayWaterData = async (userId) => {
       targetGlasses: 8,
       intakeTimeline: [],
       totalIntake: 0,
-      status: 'Dehydrated'
+      status: 'Dehydrated',
+      weeklySummary: []
     });
   }
 
@@ -650,24 +695,18 @@ const getWeeklyWaterSummary = async (userId, days = 7) => {
 /**
  * Delete water intake entry
  * @param {ObjectId} userId
- * @param {ObjectId} entryId
+ * @param {ObjectId} trackerId - water tracker ID
  * @param {number} amountMl - amount to remove
  * @returns {Promise<Object>}
  */
-const deleteWaterIntake = async (userId, entryId, amountMl) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
+const deleteWaterIntake = async (userId, trackerId, amountMl) => {
   const waterTracker = await WaterTracker.findOne({ 
-    userId, 
-    date: { 
-      $gte: today, 
-      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
-    } 
+    _id: trackerId,
+    userId
   });
 
   if (!waterTracker) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'No water tracker found for today');
+    throw new ApiError(httpStatus.NOT_FOUND, 'Water tracker not found');
   }
 
   // Remove the specific intake event

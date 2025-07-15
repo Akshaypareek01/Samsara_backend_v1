@@ -191,6 +191,16 @@ const getTrackerEntryById = {
   }),
 };
 
+const addWaterIntake = {
+  body: Joi.object().keys({
+    amountMl: Joi.number().min(1).max(5000).required(),
+  }),
+};
+
+const getTodayWaterData = {
+  // No validation needed for this endpoint
+};
+
 const updateWaterTarget = {
   body: Joi.object().keys({
     targetMl: Joi.number().min(500).max(5000).required(),
@@ -200,7 +210,7 @@ const updateWaterTarget = {
 
 const deleteWaterIntake = {
   params: Joi.object().keys({
-    entryId: Joi.string().custom(objectId).required(),
+    trackerId: Joi.string().custom(objectId).required(),
   }),
   body: Joi.object().keys({
     amountMl: Joi.number().min(1).required(),
@@ -223,4 +233,6 @@ export {
   getTrackerEntryById,
   updateWaterTarget,
   deleteWaterIntake,
+  addWaterIntake,
+  getTodayWaterData,
 }; 

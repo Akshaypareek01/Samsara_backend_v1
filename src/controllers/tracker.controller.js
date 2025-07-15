@@ -287,8 +287,9 @@ const getWeeklyWaterSummary = catchAsync(async (req, res) => {
  * Delete water intake entry
  */
 const deleteWaterIntake = catchAsync(async (req, res) => {
+  const { trackerId } = req.params;
   const { amountMl } = req.body;
-  const entry = await trackerService.deleteWaterIntake(req.user.id, req.params.entryId, amountMl);
+  const entry = await trackerService.deleteWaterIntake(req.user.id, trackerId, amountMl);
   res.send(entry);
 });
 

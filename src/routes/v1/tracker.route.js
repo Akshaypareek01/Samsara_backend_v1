@@ -45,13 +45,6 @@ router.get('/weight/:entryId', validate(trackerValidation.getTrackerEntryById), 
 router.get('/water/history', validate(trackerValidation.getTrackerHistory), trackerController.getWaterHistory);
 
 /**
- * @route   GET /v1/trackers/water/:entryId
- * @desc    Get water tracker entry by ID
- * @access  Private
- */
-router.get('/water/:entryId', validate(trackerValidation.getTrackerEntryById), trackerController.getWaterById);
-
-/**
  * @route   GET /v1/trackers/water/today
  * @desc    Get today's water data
  * @access  Private
@@ -66,6 +59,13 @@ router.get('/water/today', trackerController.getTodayWaterData);
 router.get('/water/weekly-summary', trackerController.getWeeklyWaterSummary);
 
 /**
+ * @route   GET /v1/trackers/water/:entryId
+ * @desc    Get water tracker entry by ID
+ * @access  Private
+ */
+router.get('/water/:entryId', validate(trackerValidation.getTrackerEntryById), trackerController.getWaterById);
+
+/**
  * @route   PUT /v1/trackers/water/target
  * @desc    Update water target/goal
  * @access  Private
@@ -73,11 +73,11 @@ router.get('/water/weekly-summary', trackerController.getWeeklyWaterSummary);
 router.put('/water/target', validate(trackerValidation.updateWaterTarget), trackerController.updateWaterTarget);
 
 /**
- * @route   DELETE /v1/trackers/water/intake/:entryId
+ * @route   DELETE /v1/trackers/water/intake/:trackerId
  * @desc    Delete water intake entry
  * @access  Private
  */
-router.delete('/water/intake/:entryId', validate(trackerValidation.deleteWaterIntake), trackerController.deleteWaterIntake);
+router.delete('/water/intake/:trackerId', validate(trackerValidation.deleteWaterIntake), trackerController.deleteWaterIntake);
 
 /**
  * @route   GET /v1/trackers/mood/history
@@ -154,7 +154,7 @@ router.post('/weight', validate(trackerValidation.createWeightTracker), trackerC
  * @desc    Add water entry
  * @access  Private
  */
-router.post('/water', validate(trackerValidation.createWaterTracker), trackerController.addWaterEntry);
+router.post('/water', validate(trackerValidation.addWaterIntake), trackerController.addWaterEntry);
 
 /**
  * @route   POST /v1/trackers/mood
