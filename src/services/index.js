@@ -24,3 +24,15 @@ export * as medicationService from './medication.service.js';
 // Export dosha service
 export * as doshaService from './dosha.service.js';
 
+// Export rating service
+export * as ratingService from './rating.service.js';
+
+// Export favorites service
+export * as favoritesService from './favorites.service.js';
+
+// Export schedule service
+export * as scheduleService from './schedule.service.js';
+
+// Export user analytics service
+export * as userAnalyticsService from './userAnalytics.service.js';
+

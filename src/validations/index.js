@@ -9,6 +9,8 @@ import meditationValidation from './meditation.validation.js';
 import masterCategoryValidation from './masterCategory.validation.js';
 import medicationValidation from './medication.validation.js';
 import doshaValidation from './dosha.validation.js';
+import * as ratingValidation from './rating.validation.js';
+import * as userAnalyticsValidation from './userAnalytics.validation.js';
 
 export { 
   authValidation, 
@@ -21,5 +23,7 @@ export {
   meditationValidation,
   masterCategoryValidation,
   medicationValidation,
-  doshaValidation
+  doshaValidation,
+  ratingValidation,
+  userAnalyticsValidation
 };
