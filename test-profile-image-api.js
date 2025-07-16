@@ -39,7 +39,7 @@ const testProfileImageAPI = async () => {
     
     try {
       const response = await fetch(`${baseURL}/users/profile/image`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer YOUR_JWT_TOKEN_HERE' // Replace with actual token

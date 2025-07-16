@@ -15,7 +15,7 @@ router
 // Profile image route
 router
   .route('/profile/image')
-  .post(auth(), validate(userValidation.updateProfileImage), userController.updateProfileImage);
+  .patch(auth(), validate(userValidation.updateProfileImage), userController.updateProfileImage);
 
 // User management routes
 router
