@@ -8,7 +8,8 @@ import {
   BmiTracker, 
   BodyStatus, 
   StepTracker, 
-  SleepTracker 
+  SleepTracker,
+  WorkoutTracker
 } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 
@@ -131,6 +132,20 @@ const getWeightHistory = async (userId, days = 30) => {
 };
 
 /**
+ * Get weight tracker entry by ID
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @returns {Promise<Object>}
+ */
+const getWeightById = async (userId, entryId) => {
+  const entry = await WeightTracker.findOne({ _id: entryId, userId });
+  if (!entry) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Weight tracker entry not found');
+  }
+  return entry;
+};
+
+/**
  * Get water tracker history
  * @param {ObjectId} userId
  * @param {number} days
@@ -144,6 +159,20 @@ const getWaterHistory = async (userId, days = 30) => {
     userId,
     date: { $gte: startDate }
   }).sort({ date: -1 });
+};
+
+/**
+ * Get water tracker entry by ID
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @returns {Promise<Object>}
+ */
+const getWaterById = async (userId, entryId) => {
+  const entry = await WaterTracker.findOne({ _id: entryId, userId });
+  if (!entry) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Water tracker entry not found');
+  }
+  return entry;
 };
 
 /**
@@ -277,6 +306,83 @@ const getSleepHistory = async (userId, days = 30) => {
   }).sort({ date: -1 });
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Get sleep tracker entry by ID
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @returns {Promise<Object>}
+ */
+const getSleepById = async (userId, entryId) => {
+  const entry = await SleepTracker.findOne({ _id: entryId, userId });
+  if (!entry) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Sleep tracker entry not found');
+  }
+  return entry;
+};
+
 /**
  * Get all tracker data for dashboard
  * @param {ObjectId} userId
@@ -329,13 +435,306 @@ const addWeightEntry = async (userId, weightData) => {
 };
 
 /**
- * Add water entry
+ * Add water entry with enhanced functionality
  * @param {ObjectId} userId
  * @param {Object} waterData
  * @returns {Promise<Object>}
  */
 const addWaterEntry = async (userId, waterData) => {
-  return WaterTracker.create({ userId, ...waterData });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Find or create today's water tracker
+  let waterTracker = await WaterTracker.findOne({ 
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
+  });
+
+  if (!waterTracker) {
+    // Create new water tracker for today
+    waterTracker = await WaterTracker.create({
+      userId,
+      date: today,
+      targetMl: 2000, // default target
+      targetGlasses: 8,
+      intakeTimeline: [],
+      totalIntake: 0,
+      status: 'Dehydrated',
+      weeklySummary: []
+    });
+  }
+
+  // Add new intake event
+  const currentTime = new Date();
+  const timeString = currentTime.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
+
+  const intakeEvent = {
+    amountMl: waterData.amountMl,
+    time: timeString
+  };
+
+  waterTracker.intakeTimeline.push(intakeEvent);
+  waterTracker.totalIntake += waterData.amountMl;
+
+  // Update hydration status based on target
+  const percentage = (waterTracker.totalIntake / waterTracker.targetMl) * 100;
+  if (percentage >= 100) {
+    waterTracker.status = 'Hydrated';
+  } else if (percentage >= 75) {
+    waterTracker.status = 'Mildly dehydrated';
+  } else {
+    waterTracker.status = 'Dehydrated';
+  }
+
+  // Update weekly summary
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+  
+  // Find or create weekly summary entry for today
+  const existingWeekEntry = waterTracker.weeklySummary.find(
+    entry => entry.date.getTime() === today.getTime()
+  );
+
+  if (existingWeekEntry) {
+    // Update existing entry
+    existingWeekEntry.totalMl = waterTracker.totalIntake;
+  } else {
+    // Add new weekly summary entry
+    waterTracker.weeklySummary.push({
+      date: today,
+      totalMl: waterTracker.totalIntake
+    });
+  }
+
+  // Calculate weekly statistics
+  if (waterTracker.weeklySummary.length > 0) {
+    const totalWeeklyIntake = waterTracker.weeklySummary.reduce((sum, entry) => sum + entry.totalMl, 0);
+    const daysWithData = waterTracker.weeklySummary.length;
+    waterTracker.dailyAverage = Math.round(totalWeeklyIntake / daysWithData);
+    waterTracker.bestDay = Math.max(...waterTracker.weeklySummary.map(entry => entry.totalMl));
+    
+    // Calculate streak (consecutive days with water intake)
+    let streak = 0;
+    const sortedEntries = waterTracker.weeklySummary
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+    
+    for (const entry of sortedEntries) {
+      if (entry.totalMl > 0) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    waterTracker.streak = streak;
+  }
+
+  await waterTracker.save();
+  return waterTracker;
+};
+
+/**
+ * Update water target/goal
+ * @param {ObjectId} userId
+ * @param {Object} targetData
+ * @returns {Promise<Object>}
+ */
+const updateWaterTarget = async (userId, targetData) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let waterTracker = await WaterTracker.findOne({ 
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
+  });
+
+  if (!waterTracker) {
+    // Create new water tracker for today
+    waterTracker = await WaterTracker.create({
+      userId,
+      date: today,
+      targetMl: targetData.targetMl || 2000,
+      targetGlasses: targetData.targetGlasses || 8,
+      intakeTimeline: [],
+      totalIntake: 0,
+      status: 'Dehydrated',
+      weeklySummary: []
+    });
+  } else {
+    // Update existing tracker
+    if (targetData.targetMl) waterTracker.targetMl = targetData.targetMl;
+    if (targetData.targetGlasses) waterTracker.targetGlasses = targetData.targetGlasses;
+    
+    // Recalculate status
+    const percentage = (waterTracker.totalIntake / waterTracker.targetMl) * 100;
+    if (percentage >= 100) {
+      waterTracker.status = 'Hydrated';
+    } else if (percentage >= 75) {
+      waterTracker.status = 'Mildly dehydrated';
+    } else {
+      waterTracker.status = 'Dehydrated';
+    }
+    
+    await waterTracker.save();
+  }
+
+  return waterTracker;
+};
+
+/**
+ * Get today's water data
+ * @param {ObjectId} userId
+ * @returns {Promise<Object>}
+ */
+const getTodayWaterData = async (userId) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let waterTracker = await WaterTracker.findOne({ 
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
+  });
+
+  if (!waterTracker) {
+    // Create default water tracker for today
+    waterTracker = await WaterTracker.create({
+      userId,
+      date: today,
+      targetMl: 2000,
+      targetGlasses: 8,
+      intakeTimeline: [],
+      totalIntake: 0,
+      status: 'Dehydrated',
+      weeklySummary: []
+    });
+  }
+
+  return waterTracker;
+};
+
+/**
+ * Get weekly water summary
+ * @param {ObjectId} userId
+ * @param {number} days - number of days to look back (default 7)
+ * @returns {Promise<Object>}
+ */
+const getWeeklyWaterSummary = async (userId, days = 7) => {
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  const weeklyData = await WaterTracker.find({
+    userId,
+    date: { $gte: startDate, $lte: endDate }
+  }).sort({ date: 1 });
+
+  // Calculate statistics
+  const totalDays = weeklyData.length;
+  const totalIntake = weeklyData.reduce((sum, day) => sum + day.totalIntake, 0);
+  const dailyAverage = totalDays > 0 ? Math.round(totalIntake / totalDays) : 0;
+  const bestDay = Math.max(...weeklyData.map(day => day.totalIntake), 0);
+
+  // Calculate streak (consecutive days with water intake)
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  for (let i = 0; i < days; i++) {
+    const checkDate = new Date(today);
+    checkDate.setDate(checkDate.getDate() - i);
+    
+    const dayData = weeklyData.find(day => 
+      day.date.getTime() === checkDate.getTime()
+    );
+    
+    if (dayData && dayData.totalIntake > 0) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  // Format data for charts
+  const chartData = weeklyData.map(day => ({
+    date: day.date.toISOString().split('T')[0],
+    totalMl: day.totalIntake,
+    targetMl: day.targetMl,
+    status: day.status
+  }));
+
+  return {
+    period: `${startDate.toISOString().split('T')[0]} - ${endDate.toISOString().split('T')[0]}`,
+    totalDays,
+    dailyAverage,
+    bestDay,
+    streak,
+    chartData,
+    summary: {
+      totalIntake,
+      averagePerDay: dailyAverage,
+      bestDay,
+      currentStreak: streak
+    }
+  };
+};
+
+/**
+ * Delete water intake entry
+ * @param {ObjectId} userId
+ * @param {ObjectId} trackerId - water tracker ID
+ * @param {number} amountMl - amount to remove
+ * @returns {Promise<Object>}
+ */
+const deleteWaterIntake = async (userId, trackerId, amountMl) => {
+  const waterTracker = await WaterTracker.findOne({ 
+    _id: trackerId,
+    userId
+  });
+
+  if (!waterTracker) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Water tracker not found');
+  }
+
+  // Remove the specific intake event
+  const eventIndex = waterTracker.intakeTimeline.findIndex(
+    event => event.amountMl === amountMl
+  );
+
+  if (eventIndex === -1) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Water intake event not found');
+  }
+
+  // Remove the event and update total
+  const removedEvent = waterTracker.intakeTimeline.splice(eventIndex, 1)[0];
+  waterTracker.totalIntake -= removedEvent.amountMl;
+
+  // Recalculate status
+  const percentage = (waterTracker.totalIntake / waterTracker.targetMl) * 100;
+  if (percentage >= 100) {
+    waterTracker.status = 'Hydrated';
+  } else if (percentage >= 75) {
+    waterTracker.status = 'Mildly dehydrated';
+  } else {
+    waterTracker.status = 'Dehydrated';
+  }
+
+  await waterTracker.save();
+  return waterTracker;
 };
 
 /**
@@ -409,6 +808,321 @@ const addSleepEntry = async (userId, sleepData) => {
 };
 
 /**
+ * Add workout entry
+ * @param {ObjectId} userId
+ * @param {Object} workoutData
+ * @returns {Promise<Object>}
+ */
+const addWorkoutEntry = async (userId, workoutData) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Find or create today's workout tracker
+  let workoutTracker = await WorkoutTracker.findOne({ 
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
+  });
+
+  if (!workoutTracker) {
+    // Create new workout tracker for today
+    workoutTracker = await WorkoutTracker.create({
+      userId,
+      date: today,
+      workoutEntries: [],
+      totalWorkoutTime: 0,
+      totalCaloriesBurned: 0,
+      weeklySummary: [],
+      workoutTypeSummary: [],
+      totalWeeklyTime: 0,
+      totalWeeklyCalories: 0
+    });
+  }
+
+  // Add new workout entry
+  const workoutEntry = {
+    workoutType: workoutData.workoutType,
+    intensity: workoutData.intensity,
+    distance: workoutData.distance,
+    duration: workoutData.duration,
+    calories: workoutData.calories,
+    date: new Date(),
+    notes: workoutData.notes
+  };
+
+  workoutTracker.workoutEntries.push(workoutEntry);
+  
+  // Update daily totals
+  workoutTracker.totalWorkoutTime += (workoutData.duration?.value || 0);
+  workoutTracker.totalCaloriesBurned += workoutData.calories;
+
+  // Update weekly summary
+  const weekStart = new Date(today);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
+  
+  // Find or create weekly summary entry for today
+  const existingWeekEntry = workoutTracker.weeklySummary.find(
+    entry => entry.date.getTime() === today.getTime()
+  );
+
+  if (existingWeekEntry) {
+    // Update existing entry
+    existingWeekEntry.totalTime = workoutTracker.totalWorkoutTime;
+    existingWeekEntry.totalCalories = workoutTracker.totalCaloriesBurned;
+    existingWeekEntry.workoutCount = workoutTracker.workoutEntries.length;
+  } else {
+    // Add new weekly summary entry
+    workoutTracker.weeklySummary.push({
+      date: today,
+      totalTime: workoutTracker.totalWorkoutTime,
+      totalCalories: workoutTracker.totalCaloriesBurned,
+      workoutCount: workoutTracker.workoutEntries.length
+    });
+  }
+
+  // Update workout type summary
+  const existingTypeSummary = workoutTracker.workoutTypeSummary.find(
+    summary => summary.workoutType === workoutData.workoutType
+  );
+
+  if (existingTypeSummary) {
+    // Update existing type summary
+    existingTypeSummary.totalTime += (workoutData.duration?.value || 0);
+    existingTypeSummary.totalCalories += workoutData.calories;
+    existingTypeSummary.workoutCount += 1;
+    existingTypeSummary.averageTime = existingTypeSummary.totalTime / existingTypeSummary.workoutCount;
+    existingTypeSummary.averageCalories = existingTypeSummary.totalCalories / existingTypeSummary.workoutCount;
+  } else {
+    // Add new workout type summary
+    workoutTracker.workoutTypeSummary.push({
+      workoutType: workoutData.workoutType,
+      totalTime: workoutData.duration?.value || 0,
+      totalCalories: workoutData.calories,
+      workoutCount: 1,
+      averageTime: workoutData.duration?.value || 0,
+      averageCalories: workoutData.calories
+    });
+  }
+
+  // Calculate weekly statistics
+  if (workoutTracker.weeklySummary.length > 0) {
+    const totalWeeklyTime = workoutTracker.weeklySummary.reduce((sum, entry) => sum + entry.totalTime, 0);
+    const totalWeeklyCalories = workoutTracker.weeklySummary.reduce((sum, entry) => sum + entry.totalCalories, 0);
+    const daysWithData = workoutTracker.weeklySummary.length;
+    
+    workoutTracker.totalWeeklyTime = totalWeeklyTime;
+    workoutTracker.totalWeeklyCalories = totalWeeklyCalories;
+    workoutTracker.dailyAverage = Math.round((totalWeeklyTime / daysWithData) * 100) / 100;
+    workoutTracker.bestDay = Math.max(...workoutTracker.weeklySummary.map(entry => entry.totalCalories));
+    
+    // Calculate streak (consecutive days with workouts)
+    let streak = 0;
+    const sortedEntries = workoutTracker.weeklySummary
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+    
+    for (const entry of sortedEntries) {
+      if (entry.totalCalories > 0) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    workoutTracker.streak = streak;
+  }
+
+  await workoutTracker.save();
+  return workoutTracker;
+};
+
+/**
+ * Get workout history
+ * @param {ObjectId} userId
+ * @param {number} days
+ * @returns {Promise<Array>}
+ */
+const getWorkoutHistory = async (userId, days = 30) => {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  return WorkoutTracker.find({
+    userId,
+    date: { $gte: startDate }
+  }).sort({ date: -1 });
+};
+
+/**
+ * Get workout by type
+ * @param {ObjectId} userId
+ * @param {string} workoutType
+ * @param {number} days
+ * @returns {Promise<Array>}
+ */
+const getWorkoutByType = async (userId, workoutType, days = 30) => {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  const query = {
+    userId,
+    date: { $gte: startDate }
+  };
+
+  if (workoutType) {
+    query['workoutEntries.workoutType'] = workoutType;
+  }
+
+  return WorkoutTracker.find(query).sort({ date: -1 });
+};
+
+/**
+ * Get workout summary
+ * @param {ObjectId} userId
+ * @param {string} period
+ * @param {number} days
+ * @returns {Promise<Object>}
+ */
+const getWorkoutSummary = async (userId, period = 'weekly', days = 7) => {
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+  
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  const workoutData = await WorkoutTracker.find({
+    userId,
+    date: { $gte: startDate, $lte: endDate }
+  }).sort({ date: 1 });
+
+  // Calculate summary statistics
+  const totalWorkoutTime = workoutData.reduce((sum, day) => sum + day.totalWorkoutTime, 0);
+  const totalCaloriesBurned = workoutData.reduce((sum, day) => sum + day.totalCaloriesBurned, 0);
+  const totalWorkouts = workoutData.reduce((sum, day) => sum + day.workoutEntries.length, 0);
+
+  // Calculate workout type breakdown
+  const workoutTypeBreakdown = {};
+  workoutData.forEach(day => {
+    day.workoutEntries.forEach(entry => {
+      if (!workoutTypeBreakdown[entry.workoutType]) {
+        workoutTypeBreakdown[entry.workoutType] = {
+          totalTime: 0,
+          totalCalories: 0,
+          workoutCount: 0
+        };
+      }
+      workoutTypeBreakdown[entry.workoutType].totalTime += (entry.duration?.value || 0);
+      workoutTypeBreakdown[entry.workoutType].totalCalories += entry.calories;
+      workoutTypeBreakdown[entry.workoutType].workoutCount += 1;
+    });
+  });
+
+  // Format data for charts
+  const chartData = workoutData.map(day => ({
+    date: day.date.toISOString().split('T')[0],
+    totalTime: day.totalWorkoutTime,
+    totalCalories: day.totalCaloriesBurned,
+    workoutCount: day.workoutEntries.length
+  }));
+
+  return {
+    period: `${startDate.toISOString().split('T')[0]} - ${endDate.toISOString().split('T')[0]}`,
+    totalWorkoutTime: Math.round(totalWorkoutTime * 100) / 100,
+    totalCaloriesBurned,
+    totalWorkouts,
+    dailyAverage: workoutData.length > 0 ? Math.round((totalWorkoutTime / workoutData.length) * 100) / 100 : 0,
+    workoutTypeBreakdown,
+    chartData,
+    summary: {
+      totalTime: Math.round(totalWorkoutTime * 100) / 100,
+      totalCalories: totalCaloriesBurned,
+      averagePerDay: workoutData.length > 0 ? Math.round((totalWorkoutTime / workoutData.length) * 100) / 100 : 0
+    }
+  };
+};
+
+/**
+ * Update workout entry
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @param {Object} updateData
+ * @returns {Promise<Object>}
+ */
+const updateWorkoutEntry = async (userId, entryId, updateData) => {
+  const workoutTracker = await WorkoutTracker.findOne({
+    userId,
+    'workoutEntries._id': entryId
+  });
+
+  if (!workoutTracker) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Workout entry not found');
+  }
+
+  // Find the specific entry
+  const entryIndex = workoutTracker.workoutEntries.findIndex(
+    entry => entry._id.toString() === entryId
+  );
+
+  if (entryIndex === -1) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Workout entry not found');
+  }
+
+  // Update the entry
+  const oldEntry = workoutTracker.workoutEntries[entryIndex];
+  Object.assign(workoutTracker.workoutEntries[entryIndex], updateData);
+
+  // Recalculate totals
+  workoutTracker.totalWorkoutTime = workoutTracker.workoutEntries.reduce(
+    (sum, entry) => sum + (entry.duration?.value || 0), 0
+  );
+  workoutTracker.totalCaloriesBurned = workoutTracker.workoutEntries.reduce(
+    (sum, entry) => sum + entry.calories, 0
+  );
+
+  await workoutTracker.save();
+  return workoutTracker;
+};
+
+/**
+ * Delete workout entry
+ * @param {ObjectId} userId
+ * @param {ObjectId} entryId
+ * @returns {Promise<Object>}
+ */
+const deleteWorkoutEntry = async (userId, entryId) => {
+  const workoutTracker = await WorkoutTracker.findOne({
+    userId,
+    'workoutEntries._id': entryId
+  });
+
+  if (!workoutTracker) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Workout entry not found');
+  }
+
+  // Find and remove the specific entry
+  const entryIndex = workoutTracker.workoutEntries.findIndex(
+    entry => entry._id.toString() === entryId
+  );
+
+  if (entryIndex === -1) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Workout entry not found');
+  }
+
+  const removedEntry = workoutTracker.workoutEntries.splice(entryIndex, 1)[0];
+
+  // Recalculate totals
+  workoutTracker.totalWorkoutTime = workoutTracker.workoutEntries.reduce(
+    (sum, entry) => sum + (entry.duration?.value || 0), 0
+  );
+  workoutTracker.totalCaloriesBurned = workoutTracker.workoutEntries.reduce(
+    (sum, entry) => sum + entry.calories, 0
+  );
+
+  await workoutTracker.save();
+  return workoutTracker;
+};
+
+/**
  * Update tracker entry
  * @param {string} trackerType
  * @param {ObjectId} entryId
@@ -475,7 +1189,9 @@ export {
   createInitialTrackers,
   updateTrackersFromProfile,
   getWeightHistory,
+  getWeightById,
   getWaterHistory,
+  getWaterById,
   getMoodHistory,
   getTemperatureHistory,
   getFatHistory,
@@ -484,9 +1200,14 @@ export {
   getBodyStatusById,
   getStepHistory,
   getSleepHistory,
+  getSleepById,
   getDashboardData,
   addWeightEntry,
   addWaterEntry,
+  updateWaterTarget,
+  getTodayWaterData,
+  getWeeklyWaterSummary,
+  deleteWaterIntake,
   addMoodEntry,
   addTemperatureEntry,
   addFatEntry,
@@ -494,6 +1215,12 @@ export {
   addBodyStatusEntry,
   addStepEntry,
   addSleepEntry,
+  addWorkoutEntry,
+  getWorkoutHistory,
+  getWorkoutByType,
+  getWorkoutSummary,
+  updateWorkoutEntry,
+  deleteWorkoutEntry,
   updateTrackerEntry,
   deleteTrackerEntry
 }; 
