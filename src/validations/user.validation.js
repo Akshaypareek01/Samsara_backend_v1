@@ -87,11 +87,17 @@ const updateProfile = {
     .min(1),
 };
 
+const updateProfileImage = {
+  body: Joi.object().keys({
+    profileImage: Joi.string().uri().required(),
+  }),
+};
+
 const deleteUser = {
   params: Joi.object().keys({
     userId: Joi.string().custom(objectId),
   }),
 };
 
-export { createUser, getUsers, getUser, updateUser, updateProfile, deleteUser };
+export { createUser, getUsers, getUser, updateUser, updateProfile, updateProfileImage, deleteUser };
 

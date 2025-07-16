@@ -12,6 +12,11 @@ router
   .get(auth(), userController.getProfile)
   .patch(auth(), validate(userValidation.updateProfile), userController.updateProfile);
 
+// Profile image route
+router
+  .route('/profile/image')
+  .post(auth(), validate(userValidation.updateProfileImage), userController.updateProfileImage);
+
 // User management routes
 router
   .route('/')

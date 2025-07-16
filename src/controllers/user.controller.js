@@ -48,6 +48,36 @@ const getProfile = catchAsync(async (req, res) => {
   res.send(user);
 });
 
+const updateProfileImage = catchAsync(async (req, res) => {
+  const { profileImage } = req.body;
+  const userId = req.user.id;
+
+  if (!profileImage) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Profile image URL is required');
+  }
+
+  // Validate URL format
+  const urlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i;
+  if (!urlPattern.test(profileImage)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid image URL format');
+  }
+
+  const user = await userService.updateUserById(userId, { profileImage });
+  
+  res.status(httpStatus.OK).json({
+    status: 'success',
+    message: 'Profile image updated successfully',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profileImage
+      }
+    }
+  });
+});
+
 const markAttendance = catchAsync(async (req, res) => {
   const { userId, classId } = req.params;
 
@@ -451,6 +481,7 @@ export {
   deleteUser,
   updateProfile,
   getProfile,
+  updateProfileImage,
   markAttendance,
   addAchievement,
   addAssessment,
