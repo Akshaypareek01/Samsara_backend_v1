@@ -8,6 +8,8 @@ const createUser = {
     password: Joi.string().required().custom(password),
     name: Joi.string().required(),
     role: Joi.string().required().valid('user', 'teacher'),
+    profileImage: Joi.string().uri().allow('').optional(),
+    AboutMe: Joi.string().allow('').optional(),
   }),
 };
 
@@ -36,6 +38,8 @@ const updateUser = {
       email: Joi.string().email(),
       password: Joi.string().custom(password),
       name: Joi.string(),
+      profileImage: Joi.string().uri().allow('').optional(),
+      AboutMe: Joi.string().allow('').optional(),
     })
     .min(1),
 };
@@ -77,6 +81,8 @@ const updateProfile = {
       company_name: Joi.string().custom(objectId),
       companyId: Joi.string(),
       corporate_id: Joi.string(),
+      profileImage: Joi.string().uri().allow('').optional(),
+      AboutMe: Joi.string().allow('').optional(),
     })
     .min(1),
 };

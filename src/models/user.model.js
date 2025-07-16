@@ -162,11 +162,20 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    images: [{
-        filename: String, // Store the filename of the image
-        path: String,
-        key: String,     // Store the path to the image in the media folder
-    }],
+        images: [{
+            filename: String, // Store the filename of the image
+            path: String,
+            key: String,     // Store the path to the image in the media folder
+        }],
+    profileImage: {
+        type: String,
+        default: "https://pub-4471af5ad08f4d59887c139e8f2cd164.r2.dev/d06d8c7c-ca07-4bab-a53b-8564f9bf0bb5.jpg"
+    },
+    AboutMe: {
+        type: String,
+        default: ""
+    },
+    
     notificationToken: {
         type: String,
         default: ""
