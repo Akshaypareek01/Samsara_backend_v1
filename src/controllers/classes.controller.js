@@ -10,10 +10,26 @@ const getTeacherData = (teacher) => {
         name: teacher.name,
         email: teacher.email,
         teacherCategory: teacher.teacherCategory,
-        expertise: teacher.expertise,
+        expertise: teacher.expertise || [],
         teachingExperience: teacher.teachingExperience,
-        qualification: teacher.qualification,
-        image: teacher.images && teacher.images.length > 0 ? teacher.images[0] : null
+        qualification: teacher.qualification || [],
+        additional_courses: teacher.additional_courses || [],
+        description: teacher.description,
+        AboutMe: teacher.AboutMe,
+        profileImage: teacher.profileImage,
+        achievements: teacher.achievements || [],
+        images: teacher.images || [],
+        image: teacher.images && teacher.images.length > 0 ? teacher.images[0] : null,
+        mobile: teacher.mobile,
+        gender: teacher.gender,
+        dob: teacher.dob,
+        age: teacher.age,
+        Address: teacher.Address,
+        city: teacher.city,
+        pincode: teacher.pincode,
+        country: teacher.country,
+        status: teacher.status,
+        active: teacher.active
     };
 };
 
@@ -21,7 +37,7 @@ const getTeacherData = (teacher) => {
 export const getAllTeachers = async (req, res) => {
   try {
     const teachers = await User.find({ role: 'teacher' })
-      .select('name email teacherCategory expertise teachingExperience qualification images')
+      .select('name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .exec();
       
     const teachersWithImages = teachers.map(teacher => {
@@ -65,7 +81,7 @@ export const createClass = async (req, res) => {
     
     const newClass = await Class.create(req.body);
     const populatedClass = await Class.findById(newClass._id)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
       
@@ -81,7 +97,7 @@ export const createClass = async (req, res) => {
 export const getAllClasses = async (req, res) => {
   try {
     const classes = await Class.find()
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
       
@@ -103,7 +119,7 @@ export const getAllUpcomingClasses = async (req, res) => {
     currentDate.setHours(0, 0, 0, 0); // Reset time to 00:00:00 for the current day
 
     const classes = await Class.find({ schedule: { $gte: currentDate } }) // Includes today & future dates
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
 
@@ -123,7 +139,7 @@ export const getClassById = async (req, res) => {
   const { classId } = req.params;
   try {
     const foundClass = await Class.findById(classId)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
     
@@ -151,7 +167,7 @@ export const updateClass = async (req, res) => {
     }
     
     const updatedClass = await Class.findByIdAndUpdate(classId, updatedData, { new: true })
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
       
@@ -227,7 +243,7 @@ export const addStudentToClass = async (req, res) => {
     });
 
     const updatedClass = await Class.findById(classId)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
 
@@ -257,7 +273,7 @@ export const getStudentClasses = async (req, res) => {
 
     // Find all classes where studentId exists in the students array
     const classes = await Class.find({ students: studentId })
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .exec();
 
     const classesWithTeacherData = classes.map(classItem => {
@@ -287,7 +303,7 @@ export const getStudentUpcomingClasses = async (req, res) => {
       students: studentId, 
       schedule: { $gte: currentDate } // Only fetch today's and future classes
     })
-    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
     .exec();
 
     const classesWithTeacherData = classes.map(classItem => {
@@ -354,7 +370,7 @@ export const assignTeacherToClass = async (req, res) => {
       { $set: { teacher: teacherId } },
       { new: true }
     )
-    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
     .populate('students', 'name email')
     .exec();
     
@@ -379,7 +395,7 @@ export const removeStudentFromClass = async (req, res) => {
         { $pull: { students: studentId } },
         { new: true }
       )
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
       
@@ -407,7 +423,7 @@ export const removeStudentFromClass = async (req, res) => {
         { $set: { recordingPath: recordingPath } },
         { new: true }
       )
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
       

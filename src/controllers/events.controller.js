@@ -12,10 +12,26 @@ const getTeacherData = (teacher) => {
         name: teacher.name,
         email: teacher.email,
         teacherCategory: teacher.teacherCategory,
-        expertise: teacher.expertise,
+        expertise: teacher.expertise || [],
         teachingExperience: teacher.teachingExperience,
-        qualification: teacher.qualification,
-        image: teacher.images && teacher.images.length > 0 ? teacher.images[0] : null
+        qualification: teacher.qualification || [],
+        additional_courses: teacher.additional_courses || [],
+        description: teacher.description,
+        AboutMe: teacher.AboutMe,
+        profileImage: teacher.profileImage,
+        achievements: teacher.achievements || [],
+        images: teacher.images || [],
+        image: teacher.images && teacher.images.length > 0 ? teacher.images[0] : null,
+        mobile: teacher.mobile,
+        gender: teacher.gender,
+        dob: teacher.dob,
+        age: teacher.age,
+        Address: teacher.Address,
+        city: teacher.city,
+        pincode: teacher.pincode,
+        country: teacher.country,
+        status: teacher.status,
+        active: teacher.active
     };
 };
 
@@ -68,7 +84,7 @@ export const getEventById = async (req, res) => {
 export const getAllEvents = async (req, res) => {
     try {
         const events = await Event.find()
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
             .populate('students', 'name email')
             .exec();
             
@@ -93,7 +109,7 @@ export const getAllEventsUpcoming = async (req, res) => {
         const events = await Event.find({ 
             startDate: { $gte: currentDate } 
         })
-        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
         .populate('students', 'name email')
         .exec();
 
@@ -113,7 +129,7 @@ export const getAllEventsUpcoming = async (req, res) => {
 export const updateEvent = async (req, res) => {
     try {
         const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true })
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
             .populate('students', 'name email')
             .exec();
             
@@ -206,7 +222,7 @@ const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassw
         const { eventId, userId } = req.body;
 
         const event = await Event.findById(eventId)
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
             .populate('students', 'name email')
             .exec();
             
@@ -252,7 +268,7 @@ export const getUserRegisteredEvents = async (req, res) => {
         const { userId } = req.params;
 
         const events = await Event.find({ students: userId })
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
             .populate('students', 'name email')
             .exec();
             
@@ -280,7 +296,7 @@ export const getUserRegisteredEventsUpcoming = async (req, res) => {
             students: userId, 
             startDate: { $gte: currentDate } // Ensures only today's and future events are included
         })
-        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
         .populate('students', 'name email')
         .exec();
 
