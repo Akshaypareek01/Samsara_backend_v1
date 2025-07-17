@@ -347,6 +347,14 @@ const deleteWaterIntake = catchAsync(async (req, res) => {
   res.send(entry);
 });
 
+/**
+ * Get hydration status
+ */
+const getHydrationStatus = catchAsync(async (req, res) => {
+  const status = await trackerService.getHydrationStatus(req.user.id);
+  res.send(status);
+});
+
 export {
   getDashboardData,
   getTrackerStatus,
@@ -383,5 +391,6 @@ export {
   updateWaterTarget,
   getTodayWaterData,
   getWeeklyWaterSummary,
-  deleteWaterIntake
+  deleteWaterIntake,
+  getHydrationStatus
 };

@@ -52,6 +52,13 @@ router.get('/water/history', validate(trackerValidation.getTrackerHistory), trac
 router.get('/water/today', trackerController.getTodayWaterData);
 
 /**
+ * @route   GET /v1/trackers/water/hydration-status
+ * @desc    Get hydration status based on current intake and target
+ * @access  Private
+ */
+router.get('/water/hydration-status', trackerController.getHydrationStatus);
+
+/**
  * @route   GET /v1/trackers/water/weekly-summary
  * @desc    Get weekly water summary
  * @access  Private

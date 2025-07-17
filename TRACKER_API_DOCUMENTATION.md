@@ -1,453 +1,328 @@
 # Tracker API Documentation
 
-This document provides comprehensive information about all tracker-related API endpoints in the Samsara backend.
+This document provides comprehensive documentation for all tracker-related APIs in the Samsara backend.
 
-## Base URL
-```
-/v1/trackers
-```
+## Table of Contents
+
+1. [Authentication](#authentication)
+2. [Water Tracker](#water-tracker)
+3. [Weight Tracker](#weight-tracker)
+4. [Mood Tracker](#mood-tracker)
+5. [Temperature Tracker](#temperature-tracker)
+6. [Fat Tracker](#fat-tracker)
+7. [BMI Tracker](#bmi-tracker)
+8. [Body Status Tracker](#body-status-tracker)
+9. [Step Tracker](#step-tracker)
+10. [Sleep Tracker](#sleep-tracker)
+11. [Workout Tracker](#workout-tracker)
+12. [General Tracker Operations](#general-tracker-operations)
 
 ## Authentication
-All endpoints require authentication. Include the JWT token in the Authorization header:
+
+All tracker endpoints require authentication. Include the JWT token in the Authorization header:
+
 ```
 Authorization: Bearer <your-jwt-token>
 ```
 
-## Endpoints Overview
+## Water Tracker
 
-### Dashboard
-- `GET /dashboard` - Get latest data from all trackers
+### 1. Add Water Intake Entry
 
-### History Endpoints
-- `GET /weight/history` - Get weight tracking history
-- `GET /water/history` - Get water intake history
-- `GET /mood/history` - Get mood tracking history
-- `GET /temperature/history` - Get temperature tracking history
-- `GET /fat/history` - Get body fat tracking history
-- `GET /bmi/history` - Get BMI tracking history
-- `GET /body-status/history` - Get body measurements history
-- `GET /step/history` - Get step tracking history
-- `GET /sleep/history` - Get sleep tracking history
+**Endpoint:** `POST /v1/trackers/water`
 
-### Add Entry Endpoints
-- `POST /weight` - Add weight entry
-- `POST /water` - Add water intake entry
-- `POST /mood` - Add mood entry
-- `POST /temperature` - Add temperature entry
-- `POST /fat` - Add body fat entry
-- `POST /bmi` - Add BMI entry
-- `POST /body-status` - Add body measurements entry
-- `POST /step` - Add step entry
-- `POST /sleep` - Add sleep entry
-
-### Update/Delete Endpoints
-- `PUT /:trackerType/:entryId` - Update tracker entry
-- `DELETE /:trackerType/:entryId` - Delete tracker entry
-
----
-
-## Detailed Endpoint Documentation
-
-### 1. Dashboard Data
-**GET** `/v1/trackers/dashboard`
-
-Returns the latest entry from each tracker for the authenticated user.
-
-**Response:**
-```json
-{
-  "weight": {
-    "id": "tracker_id",
-    "currentWeight": { "value": 70, "unit": "kg" },
-    "goalWeight": { "value": 65, "unit": "kg" },
-    "bmi": { "value": 22.5, "category": "Normal" },
-    "status": "On Track",
-    "measurementDate": "2024-01-15T10:30:00Z"
-  },
-  "water": {
-    "id": "tracker_id",
-    "targetMl": 2000,
-    "totalIntake": 1800,
-    "status": "Hydrated",
-    "date": "2024-01-15T00:00:00Z"
-  },
-  "mood": {
-    "id": "tracker_id",
-    "mood": "Happy",
-    "note": "Feeling great today!",
-    "createdAt": "2024-01-15T14:30:00Z"
-  },
-  "temperature": {
-    "id": "tracker_id",
-    "temperature": { "value": 98.6, "unit": "F" },
-    "status": "Normal",
-    "measurementDate": "2024-01-15T09:00:00Z"
-  },
-  "fat": {
-    "id": "tracker_id",
-    "bodyFat": { "value": 15, "unit": "%" },
-    "healthRangeCategory": "Fitness",
-    "measurementDate": "2024-01-15T08:00:00Z"
-  },
-  "bmi": {
-    "id": "tracker_id",
-    "bmi": { "value": 22.5, "category": "Normal" },
-    "measurementDate": "2024-01-15T08:00:00Z"
-  },
-  "bodyStatus": {
-    "id": "tracker_id",
-    "height": { "value": 170, "unit": "cm" },
-    "weight": { "value": 70, "unit": "kg" },
-    "measurementDate": "2024-01-15T08:00:00Z"
-  },
-  "step": {
-    "id": "tracker_id",
-    "steps": 8500,
-    "goal": 10000,
-    "distance": { "value": 6.8, "unit": "km" },
-    "calories": 425,
-    "measurementDate": "2024-01-15T00:00:00Z"
-  },
-  "sleep": {
-    "id": "tracker_id",
-    "hoursSlept": 7.5,
-    "goal": 8,
-    "bedtime": "22:30",
-    "wakeUpTime": "06:00",
-    "date": "2024-01-15T00:00:00Z"
-  }
-}
-```
-
-### 2. History Endpoints
-
-All history endpoints support the following query parameters:
-- `days` (optional): Number of days to fetch (default: 30, max: 365)
-
-**Example:** `GET /v1/trackers/weight/history?days=7`
-
-**Response:**
-```json
-[
-  {
-    "id": "tracker_id_1",
-    "currentWeight": { "value": 70, "unit": "kg" },
-    "goalWeight": { "value": 65, "unit": "kg" },
-    "bmi": { "value": 22.5, "category": "Normal" },
-    "status": "On Track",
-    "measurementDate": "2024-01-15T10:30:00Z"
-  },
-  {
-    "id": "tracker_id_2",
-    "currentWeight": { "value": 70.5, "unit": "kg" },
-    "goalWeight": { "value": 65, "unit": "kg" },
-    "bmi": { "value": 22.7, "category": "Normal" },
-    "status": "On Track",
-    "measurementDate": "2024-01-14T10:30:00Z"
-  }
-]
-```
-
-### 3. Add Entry Endpoints
-
-#### Weight Tracker
-**POST** `/v1/trackers/weight`
+**Description:** Add a new water intake entry for today. If no water tracker exists for today, one will be created automatically.
 
 **Request Body:**
 ```json
 {
-  "currentWeight": {
-    "value": 70,
-    "unit": "kg"
-  },
-  "goalWeight": {
-    "value": 65,
-    "unit": "kg"
-  },
-  "startingWeight": {
-    "value": 75,
-    "unit": "kg"
-  },
-  "notes": "Weekly weigh-in"
+  "amountMl": 250
 }
 ```
 
-#### Water Tracker
-**POST** `/v1/trackers/water`
-
-**Request Body:**
+**Response:**
 ```json
 {
+  "id": "68792aa74f8f79006289f5c9",
+  "userId": "686e7dc1553ea000624618f2",
+  "date": "2025-07-17T00:00:00.000Z",
   "targetGlasses": 8,
   "targetMl": 2000,
   "intakeTimeline": [
     {
       "amountMl": 250,
-      "time": "08:00 AM"
-    },
-    {
-      "amountMl": 500,
-      "time": "12:00 PM"
+      "time": "4:54 PM"
     }
   ],
-  "totalIntake": 1800,
-  "notes": "Good hydration day"
-}
-```
-
-#### Mood Tracker
-**POST** `/v1/trackers/mood`
-
-**Request Body:**
-```json
-{
-  "mood": "Happy",
-  "note": "Had a great workout session"
-}
-```
-
-**Valid mood values:** Happy, Sad, Angry, Anxious, Excited, Calm, Stressed, Energetic, Tired, Neutral
-
-#### Temperature Tracker
-**POST** `/v1/trackers/temperature`
-
-**Request Body:**
-```json
-{
-  "temperature": {
-    "value": 98.6,
-    "unit": "F"
-  },
-  "notes": "Morning temperature reading"
-}
-```
-
-#### Fat Tracker
-**POST** `/v1/trackers/fat`
-
-**Request Body:**
-```json
-{
-  "age": 30,
-  "gender": "Male",
-  "height": {
-    "value": 175,
-    "unit": "cm"
-  },
-  "weight": {
-    "value": 70,
-    "unit": "kg"
-  },
-  "bodyFat": {
-    "value": 15,
-    "unit": "%"
-  },
-  "goal": 12,
-  "notes": "Monthly body composition check"
-}
-```
-
-#### BMI Tracker
-**POST** `/v1/trackers/bmi`
-
-**Request Body:**
-```json
-{
-  "age": 30,
-  "gender": "Male",
-  "height": {
-    "value": 175,
-    "unit": "cm"
-  },
-  "weight": {
-    "value": 70,
-    "unit": "kg"
-  },
-  "notes": "Monthly BMI check"
-}
-```
-
-#### Body Status Tracker
-**POST** `/v1/trackers/body-status`
-
-**Request Body:**
-```json
-{
-  "height": {
-    "value": 175,
-    "unit": "cm"
-  },
-  "weight": {
-    "value": 70,
-    "unit": "kg"
-  },
-  "chest": {
-    "value": 95,
-    "unit": "cm"
-  },
-  "waist": {
-    "value": 80,
-    "unit": "cm"
-  },
-  "hips": {
-    "value": 95,
-    "unit": "cm"
-  },
-  "arms": {
-    "value": 30,
-    "unit": "cm"
-  },
-  "thighs": {
-    "value": 55,
-    "unit": "cm"
-  },
-  "bodyFat": {
-    "value": 15,
-    "unit": "%"
-  },
-  "notes": "Complete body measurements"
-}
-```
-
-#### Step Tracker
-**POST** `/v1/trackers/step`
-
-**Request Body:**
-```json
-{
-  "steps": 8500,
-  "goal": 10000,
-  "distance": {
-    "value": 6.8,
-    "unit": "km"
-  },
-  "calories": 425,
-  "activeTime": 45,
-  "notes": "Good walking day"
-}
-```
-
-#### Sleep Tracker
-**POST** `/v1/trackers/sleep`
-
-**Request Body:**
-```json
-{
-  "sleepRate": 85,
-  "sleepTime": 450,
-  "hoursSlept": 7.5,
-  "bedtime": "22:30",
-  "wakeUpTime": "06:00",
-  "goal": 8,
-  "notes": "Good quality sleep"
-}
-```
-
-### 4. Update Entry
-**PUT** `/v1/trackers/:trackerType/:entryId`
-
-**Parameters:**
-- `trackerType`: One of: weight, water, mood, temperature, fat, bmi, bodyStatus, step, sleep
-- `entryId`: The ID of the entry to update
-
-**Request Body:** Same as the corresponding POST endpoint
-
-### 5. Delete Entry
-**DELETE** `/v1/trackers/:trackerType/:entryId`
-
-**Parameters:**
-- `trackerType`: One of: weight, water, mood, temperature, fat, bmi, bodyStatus, step, sleep
-- `entryId`: The ID of the entry to delete
-
----
-
-## Error Responses
-
-### 400 Bad Request
-```json
-{
-  "code": 400,
-  "message": "Validation error",
-  "details": [
+  "totalIntake": 250,
+  "status": "Dehydrated",
+  "weeklySummary": [
     {
-      "field": "currentWeight.value",
-      "message": "\"currentWeight.value\" must be a number"
+      "date": "2025-07-17T00:00:00.000Z",
+      "totalMl": 250
     }
-  ]
+  ],
+  "dailyAverage": 250,
+  "bestDay": 250,
+  "streak": 1
 }
 ```
 
-### 401 Unauthorized
+### 2. Get Hydration Status
+
+**Endpoint:** `GET /v1/trackers/water/hydration-status`
+
+**Description:** Get current hydration status based on intake vs target. Automatically calculates and updates status based on three ranges:
+- **Dehydrated**: 0-74% of target
+- **Mildly dehydrated**: 75-99% of target
+- **Hydrated**: 100%+ of target
+
+**Response:**
 ```json
 {
-  "code": 401,
-  "message": "Please authenticate"
+  "currentIntake": 250,
+  "targetMl": 2000,
+  "targetGlasses": 8,
+  "percentage": 12.5,
+  "status": "Dehydrated",
+  "remainingMl": 1750,
+  "remainingGlasses": 7,
+  "intakeTimeline": [
+    {
+      "amountMl": 250,
+      "time": "4:54 PM"
+    }
+  ],
+  "date": "2025-07-17T00:00:00.000Z"
 }
 ```
 
-### 404 Not Found
+**Status Calculation:**
+- If percentage >= 100%: "Hydrated"
+- If percentage >= 75%: "Mildly dehydrated"  
+- If percentage < 75%: "Dehydrated"
+
+### 3. Get Today's Water Data
+
+**Endpoint:** `GET /v1/trackers/water/today`
+
+**Description:** Get today's water tracker data. Creates a new tracker if none exists for today.
+
+**Response:**
 ```json
 {
-  "code": 404,
-  "message": "Entry not found"
+  "id": "68792aa74f8f79006289f5c9",
+  "userId": "686e7dc1553ea000624618f2",
+  "date": "2025-07-17T00:00:00.000Z",
+  "targetGlasses": 8,
+  "targetMl": 2000,
+  "intakeTimeline": [
+    {
+      "amountMl": 250,
+      "time": "4:54 PM"
+    }
+  ],
+  "totalIntake": 250,
+  "status": "Dehydrated",
+  "weeklySummary": [
+    {
+      "date": "2025-07-17T00:00:00.000Z",
+      "totalMl": 250
+    }
+  ],
+  "dailyAverage": 250,
+  "bestDay": 250,
+  "streak": 1
 }
 ```
 
-### 500 Internal Server Error
+### 4. Update Water Target
+
+**Endpoint:** `PUT /v1/trackers/water/target`
+
+**Description:** Update the daily water intake target. This will also recalculate the current hydration status.
+
+**Request Body:**
 ```json
 {
-  "code": 500,
-  "message": "Internal server error"
+  "targetMl": 2500,
+  "targetGlasses": 10
 }
 ```
 
----
+**Response:**
+```json
+{
+  "id": "68792aa74f8f79006289f5c9",
+  "userId": "686e7dc1553ea000624618f2",
+  "date": "2025-07-17T00:00:00.000Z",
+  "targetGlasses": 10,
+  "targetMl": 2500,
+  "intakeTimeline": [
+    {
+      "amountMl": 250,
+      "time": "4:54 PM"
+    }
+  ],
+  "totalIntake": 250,
+  "status": "Dehydrated",
+  "weeklySummary": [
+    {
+      "date": "2025-07-17T00:00:00.000Z",
+      "totalMl": 250
+    }
+  ],
+  "dailyAverage": 250,
+  "bestDay": 250,
+  "streak": 1
+}
+```
 
-## Automatic Tracker Creation
+### 5. Get Weekly Water Summary
 
-When a new user registers, the system automatically creates initial tracker entries for all tracker types. This ensures that every user has a complete set of trackers from the moment they join.
+**Endpoint:** `GET /v1/trackers/water/weekly-summary?days=7`
 
----
+**Description:** Get weekly water consumption summary with statistics.
 
-## Data Validation Rules
+**Query Parameters:**
+- `days` (optional): Number of days to look back (default: 7)
 
-### Weight Tracker
-- `currentWeight.value`: Required number
-- `currentWeight.unit`: Must be 'kg' or 'lbs'
-- `goalWeight.value`: Required number
-- `goalWeight.unit`: Must be 'kg' or 'lbs'
+**Response:**
+```json
+{
+  "period": "2025-07-11 - 2025-07-17",
+  "totalDays": 7,
+  "dailyAverage": 1428,
+  "bestDay": 2250,
+  "streak": 5,
+  "chartData": [
+    {
+      "date": "2025-07-11",
+      "totalMl": 1200,
+      "targetMl": 2000,
+      "status": "Dehydrated"
+    },
+    {
+      "date": "2025-07-12",
+      "totalMl": 1800,
+      "targetMl": 2000,
+      "status": "Mildly dehydrated"
+    }
+  ],
+  "summary": {
+    "totalIntake": 10000,
+    "averagePerDay": 1428,
+    "bestDay": 2250,
+    "currentStreak": 5
+  }
+}
+```
 
-### Water Tracker
-- `targetGlasses`: Number between 1-20
-- `targetMl`: Number between 500-5000
-- `totalIntake`: Number >= 0
+### 6. Get Water History
 
-### Mood Tracker
-- `mood`: Must be one of the predefined mood values
-- `note`: Maximum 500 characters
+**Endpoint:** `GET /v1/trackers/water/history?days=30`
 
-### Temperature Tracker
-- `temperature.value`: Required number
-- `temperature.unit`: Must be 'F' or 'C'
+**Description:** Get water tracker history for the specified number of days.
 
-### Fat Tracker
-- `age`: Number between 1-120
-- `gender`: Must be 'Male', 'Female', or 'Other'
-- `bodyFat.value`: Number between 0-100
+**Query Parameters:**
+- `days` (optional): Number of days to look back (default: 30)
 
-### BMI Tracker
-- `age`: Number between 1-120
-- `gender`: Must be 'Male', 'Female', or 'Other'
+**Response:**
+```json
+[
+  {
+    "id": "68792aa74f8f79006289f5c9",
+    "userId": "686e7dc1553ea000624618f2",
+    "date": "2025-07-17T00:00:00.000Z",
+    "targetGlasses": 8,
+    "targetMl": 2000,
+    "totalIntake": 250,
+    "status": "Dehydrated",
+    "intakeTimeline": [
+      {
+        "amountMl": 250,
+        "time": "4:54 PM"
+      }
+    ],
+    "weeklySummary": [
+      {
+        "date": "2025-07-17T00:00:00.000Z",
+        "totalMl": 250
+      }
+    ],
+    "bestDay": 250,
+    "dailyAverage": 250,
+    "streak": 1
+  }
+]
+```
 
-### Body Status Tracker
-- All measurement values must be positive numbers
-- Units must be valid for each measurement type
+### 7. Delete Water Intake Entry
 
-### Step Tracker
-- `steps`: Number between 0-100000
-- `goal`: Number between 1000-50000
+**Endpoint:** `DELETE /v1/trackers/water/intake/:trackerId`
 
-### Sleep Tracker
-- `hoursSlept`: Number between 0-24
-- `goal`: Number between 1-24
-- `bedtime` and `wakeUpTime`: Must be in HH:MM format 
+**Description:** Remove a specific water intake entry from today's tracker.
+
+**Request Body:**
+```json
+{
+  "amountMl": 250
+}
+```
+
+**Response:**
+```json
+{
+  "id": "68792aa74f8f79006289f5c9",
+  "userId": "686e7dc1553ea000624618f2",
+  "date": "2025-07-17T00:00:00.000Z",
+  "targetGlasses": 8,
+  "targetMl": 2000,
+  "intakeTimeline": [],
+  "totalIntake": 0,
+  "status": "Dehydrated",
+  "weeklySummary": [
+    {
+      "date": "2025-07-17T00:00:00.000Z",
+      "totalMl": 0
+    }
+  ],
+  "dailyAverage": 0,
+  "bestDay": 0,
+  "streak": 0
+}
+```
+
+### 8. Get Water Entry by ID
+
+**Endpoint:** `GET /v1/trackers/water/:entryId`
+
+**Description:** Get a specific water tracker entry by its ID.
+
+**Response:**
+```json
+{
+  "id": "68792aa74f8f79006289f5c9",
+  "userId": "686e7dc1553ea000624618f2",
+  "date": "2025-07-17T00:00:00.000Z",
+  "targetGlasses": 8,
+  "targetMl": 2000,
+  "totalIntake": 250,
+  "status": "Dehydrated",
+  "intakeTimeline": [
+    {
+      "amountMl": 250,
+      "time": "4:54 PM"
+    }
+  ],
+  "weeklySummary": [
+    {
+      "date": "2025-07-17T00:00:00.000Z",
+      "totalMl": 250
+    }
+  ],
+  "bestDay": 250,
+  "dailyAverage": 250,
+  "streak": 1
+}
+``` 

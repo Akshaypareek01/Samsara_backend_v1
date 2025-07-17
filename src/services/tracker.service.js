@@ -1185,6 +1185,69 @@ const deleteTrackerEntry = async (trackerType, entryId) => {
   }
 };
 
+/**
+ * Get hydration status based on current intake and target
+ * @param {ObjectId} userId
+ * @returns {Promise<Object>}
+ */
+const getHydrationStatus = async (userId) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let waterTracker = await WaterTracker.findOne({ 
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
+  });
+
+  if (!waterTracker) {
+    // Create default water tracker for today
+    waterTracker = await WaterTracker.create({
+      userId,
+      date: today,
+      targetMl: 2000,
+      targetGlasses: 8,
+      intakeTimeline: [],
+      totalIntake: 0,
+      status: 'Dehydrated',
+      weeklySummary: []
+    });
+  }
+
+  // Calculate hydration percentage
+  const percentage = (waterTracker.totalIntake / waterTracker.targetMl) * 100;
+  
+  // Determine status based on percentage ranges
+  let status;
+  if (percentage >= 100) {
+    status = 'Hydrated';
+  } else if (percentage >= 75) {
+    status = 'Mildly dehydrated';
+  } else {
+    status = 'Dehydrated';
+  }
+
+  // Update status if it has changed
+  if (waterTracker.status !== status) {
+    waterTracker.status = status;
+    await waterTracker.save();
+  }
+
+  return {
+    currentIntake: waterTracker.totalIntake,
+    targetMl: waterTracker.targetMl,
+    targetGlasses: waterTracker.targetGlasses,
+    percentage: Math.round(percentage * 100) / 100,
+    status: status,
+    remainingMl: Math.max(0, waterTracker.targetMl - waterTracker.totalIntake),
+    remainingGlasses: Math.max(0, Math.ceil((waterTracker.targetMl - waterTracker.totalIntake) / 250)), // Assuming 250ml per glass
+    intakeTimeline: waterTracker.intakeTimeline,
+    date: waterTracker.date
+  };
+};
+
 export {
   createInitialTrackers,
   updateTrackersFromProfile,
@@ -1222,5 +1285,6 @@ export {
   updateWorkoutEntry,
   deleteWorkoutEntry,
   updateTrackerEntry,
-  deleteTrackerEntry
+  deleteTrackerEntry,
+  getHydrationStatus
 }; 
