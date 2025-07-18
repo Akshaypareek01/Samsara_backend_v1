@@ -73,10 +73,13 @@ const updateTrackersFromProfile = async (userId, profileData) => {
     }
 
     // Create new Body Status entry if height or weight is provided
-    if (profileData.height || profileData.weight) {
+     // Create new Body Status entry if height, weight, age, or gender is provided
+     if (profileData.height || profileData.weight || profileData.age || profileData.gender) {
       const bodyStatusData = {};
       if (profileData.height) bodyStatusData.height = { value: parseFloat(profileData.height), unit: 'cm' };
       if (profileData.weight) bodyStatusData.weight = { value: parseFloat(profileData.weight), unit: 'kg' };
+      if (profileData.age) bodyStatusData.age = parseInt(profileData.age);
+      if (profileData.gender) bodyStatusData.gender = profileData.gender;
       
       updates.push(
         BodyStatus.create({ userId, ...bodyStatusData })

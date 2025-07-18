@@ -93,6 +93,8 @@ const createBmiTracker = {
 
 const createBodyStatusTracker = {
   body: Joi.object().keys({
+    age: Joi.number().min(1).max(120),
+    gender: Joi.string().valid('Male', 'Female', 'Other'),
     height: Joi.object({
       value: Joi.number().required(),
       unit: Joi.string().valid('cm', 'ft').default('cm')

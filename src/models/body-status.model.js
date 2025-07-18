@@ -8,6 +8,18 @@ const BodyStatusSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    // Personal information
+    age: {
+      type: Number,
+      min: 1,
+      max: 120,
+      required: false,
+    },
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other'],
+      required: false,
+    },
     // Basic measurements
     height: {
       value: {
