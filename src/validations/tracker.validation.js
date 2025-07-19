@@ -293,6 +293,23 @@ const deleteWorkoutEntry = {
   }),
 };
 
+// Calories Target validations
+const createCaloriesTarget = {
+  body: Joi.object().keys({
+    dailyTarget: Joi.number().min(500).max(5000).default(2000),
+  }),
+};
+
+const updateCaloriesTarget = {
+  body: Joi.object().keys({
+    dailyTarget: Joi.number().min(500).max(5000).required(),
+  }),
+};
+
+const getCaloriesTarget = {
+  // No validation needed for this endpoint
+};
+
 export {
   createWeightTracker,
   createWaterTracker,
@@ -317,4 +334,7 @@ export {
   getWorkoutSummary,
   updateWorkoutEntry,
   deleteWorkoutEntry,
+  createCaloriesTarget,
+  updateCaloriesTarget,
+  getCaloriesTarget,
 }; 

@@ -272,4 +272,32 @@ router.delete(
   trackerController.deleteTrackerEntry
 );
 
+/**
+ * @route   GET /v1/trackers/hydration-status
+ * @desc    Get hydration status
+ * @access  Private
+ */
+router.get('/hydration-status', trackerController.getHydrationStatus);
+
+/**
+ * @route   POST /v1/trackers/calories-target
+ * @desc    Create calories target
+ * @access  Private
+ */
+router.post('/calories-target', validate(trackerValidation.createCaloriesTarget), trackerController.createCaloriesTarget);
+
+/**
+ * @route   PUT /v1/trackers/calories-target
+ * @desc    Update calories target
+ * @access  Private
+ */
+router.put('/calories-target', validate(trackerValidation.updateCaloriesTarget), trackerController.updateCaloriesTarget);
+
+/**
+ * @route   GET /v1/trackers/calories-target
+ * @desc    Get calories target and progress
+ * @access  Private
+ */
+router.get('/calories-target', trackerController.getCaloriesTarget);
+
 export default router; 

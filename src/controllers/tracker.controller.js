@@ -355,6 +355,30 @@ const getHydrationStatus = catchAsync(async (req, res) => {
   res.send(status);
 });
 
+/**
+ * Create calories target
+ */
+const createCaloriesTarget = catchAsync(async (req, res) => {
+  const entry = await trackerService.createCaloriesTarget(req.user.id, req.body);
+  res.status(httpStatus.CREATED).send(entry);
+});
+
+/**
+ * Update calories target
+ */
+const updateCaloriesTarget = catchAsync(async (req, res) => {
+  const entry = await trackerService.updateCaloriesTarget(req.user.id, req.body);
+  res.send(entry);
+});
+
+/**
+ * Get calories target and progress
+ */
+const getCaloriesTarget = catchAsync(async (req, res) => {
+  const data = await trackerService.getCaloriesTarget(req.user.id);
+  res.send(data);
+});
+
 export {
   getDashboardData,
   getTrackerStatus,
@@ -392,5 +416,8 @@ export {
   getTodayWaterData,
   getWeeklyWaterSummary,
   deleteWaterIntake,
-  getHydrationStatus
+  getHydrationStatus,
+  createCaloriesTarget,
+  updateCaloriesTarget,
+  getCaloriesTarget
 };

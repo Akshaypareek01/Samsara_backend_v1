@@ -9,7 +9,8 @@ import {
   BodyStatus, 
   StepTracker, 
   SleepTracker,
-  WorkoutTracker
+  WorkoutTracker,
+  CaloriesTarget
 } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 
@@ -401,7 +402,9 @@ const getDashboardData = async (userId) => {
     latestBmi,
     latestBodyStatus,
     latestStep,
-    latestSleep
+    latestSleep,
+    latestWorkout,
+    caloriesTarget
   ] = await Promise.all([
     WeightTracker.getLatestByUserId(userId),
     WaterTracker.findOne({ userId }).sort({ date: -1 }),
@@ -411,7 +414,9 @@ const getDashboardData = async (userId) => {
     BmiTracker.getLatestByUserId(userId),
     BodyStatus.getLatestByUserId(userId),
     StepTracker.getLatestByUserId(userId),
-    SleepTracker.findOne({ userId }).sort({ date: -1 })
+    SleepTracker.findOne({ userId }).sort({ date: -1 }),
+    WorkoutTracker.findOne({ userId }).sort({ date: -1 }),
+    getCaloriesTarget(userId)
   ]);
 
   return {
@@ -423,7 +428,9 @@ const getDashboardData = async (userId) => {
     bmi: latestBmi,
     bodyStatus: latestBodyStatus,
     step: latestStep,
-    sleep: latestSleep
+    sleep: latestSleep,
+    workout: latestWorkout,
+    caloriesTarget
   };
 };
 
@@ -1251,6 +1258,151 @@ const getHydrationStatus = async (userId) => {
   };
 };
 
+/**
+ * Create or get today's calories target
+ * @param {ObjectId} userId
+ * @param {Object} targetData
+ * @returns {Promise<Object>}
+ */
+const createCaloriesTarget = async (userId, targetData) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Check if today's calories target already exists
+  let caloriesTarget = await CaloriesTarget.getTodayByUserId(userId);
+  
+  if (!caloriesTarget) {
+    // Create new calories target for today
+    caloriesTarget = await CaloriesTarget.create({
+      userId,
+      date: today,
+      dailyTarget: targetData.dailyTarget || 2000,
+      currentCalories: 0,
+      caloriesBreakdown: {
+        workout: 0,
+        steps: 0,
+        other: 0
+      },
+      weeklySummary: []
+    });
+  } else {
+    // Update existing target
+    if (targetData.dailyTarget) {
+      caloriesTarget.dailyTarget = targetData.dailyTarget;
+      await caloriesTarget.save();
+    }
+  }
+  
+  return caloriesTarget;
+};
+
+/**
+ * Update calories target
+ * @param {ObjectId} userId
+ * @param {Object} targetData
+ * @returns {Promise<Object>}
+ */
+const updateCaloriesTarget = async (userId, targetData) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let caloriesTarget = await CaloriesTarget.getTodayByUserId(userId);
+  
+  if (!caloriesTarget) {
+    // Create new calories target for today
+    caloriesTarget = await CaloriesTarget.create({
+      userId,
+      date: today,
+      dailyTarget: targetData.dailyTarget,
+      currentCalories: 0,
+      caloriesBreakdown: {
+        workout: 0,
+        steps: 0,
+        other: 0
+      },
+      weeklySummary: []
+    });
+  } else {
+    // Update existing target
+    caloriesTarget.dailyTarget = targetData.dailyTarget;
+    await caloriesTarget.save();
+  }
+  
+  return caloriesTarget;
+};
+
+/**
+ * Get calories target and progress
+ * @param {ObjectId} userId
+ * @returns {Promise<Object>}
+ */
+const getCaloriesTarget = async (userId) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let caloriesTarget = await CaloriesTarget.getTodayByUserId(userId);
+  
+  if (!caloriesTarget) {
+    // Create default calories target for today
+    caloriesTarget = await CaloriesTarget.create({
+      userId,
+      date: today,
+      dailyTarget: 2000, // Default globally accepted calories target
+      currentCalories: 0,
+      caloriesBreakdown: {
+        workout: 0,
+        steps: 0,
+        other: 0
+      },
+      weeklySummary: []
+    });
+  }
+  
+  // Calculate remaining calories
+  const remainingCalories = Math.max(0, caloriesTarget.dailyTarget - caloriesTarget.currentCalories);
+  
+  return {
+    ...caloriesTarget.toJSON(),
+    remainingCalories,
+    progressDisplay: `${caloriesTarget.currentCalories}/${caloriesTarget.dailyTarget}`
+  };
+};
+
+/**
+ * Update calories from different sources (called by other services)
+ * @param {ObjectId} userId
+ * @param {string} source - 'workout', 'steps', or 'other'
+ * @param {number} calories
+ * @returns {Promise<Object>}
+ */
+const updateCaloriesFromSource = async (userId, source, calories) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let caloriesTarget = await CaloriesTarget.getTodayByUserId(userId);
+  
+  if (!caloriesTarget) {
+    // Create new calories target for today
+    caloriesTarget = await CaloriesTarget.create({
+      userId,
+      date: today,
+      dailyTarget: 2000,
+      currentCalories: 0,
+      caloriesBreakdown: {
+        workout: 0,
+        steps: 0,
+        other: 0
+      },
+      weeklySummary: []
+    });
+  }
+  
+  // Update calories from the specific source
+  await caloriesTarget.updateCalories(source, calories);
+  
+  return caloriesTarget;
+};
+
 export {
   createInitialTrackers,
   updateTrackersFromProfile,
@@ -1289,5 +1441,9 @@ export {
   deleteWorkoutEntry,
   updateTrackerEntry,
   deleteTrackerEntry,
-  getHydrationStatus
+  getHydrationStatus,
+  createCaloriesTarget,
+  updateCaloriesTarget,
+  getCaloriesTarget,
+  updateCaloriesFromSource
 }; 

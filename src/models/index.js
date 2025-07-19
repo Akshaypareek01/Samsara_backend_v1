@@ -25,6 +25,7 @@ import { TemperatureTracker } from './temperature-tracker.model.js';
 import { BmiTracker } from './bmi-tracker.model.js';
 import { StepTracker } from './step-tracker.model.js';
 import { WorkoutTracker } from './workout-tracker.model.js';
+import { CaloriesTarget } from './calories-target.model.js';
 import { Meditation } from './meditation.model.js';
 import { MasterCategory } from './master-category.model.js';
 import { ClassRating } from './class-rating.model.js';
@@ -60,6 +61,7 @@ export {
   BmiTracker,
   StepTracker,
   WorkoutTracker,
+  CaloriesTarget,
   Meditation,
   MasterCategory,
   ClassRating,
