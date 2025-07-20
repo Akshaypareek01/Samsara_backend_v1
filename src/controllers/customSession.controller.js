@@ -15,7 +15,11 @@ const createSession = async (req, res) => {
 // Get all custom sessions
 const getAllSessions = async (req, res) => {
   try {
-    const sessions = await CustomSession.find().populate('teacher').populate('user').populate('timeSlot').exec();
+    const sessions = await CustomSession.find()
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+        .populate('user', 'name email profileImage AboutMe mobile gender dob age Address city pincode country status active userCategory corporate_id')
+        .populate('timeSlot', 'timeRange')
+        .exec();
     res.status(200).json(sessions);
   } catch (error) {
     res.status(500).json({ error: 'Error fetching sessions', details: error.message });
@@ -26,7 +30,11 @@ const getAllSessions = async (req, res) => {
 const getSessionById = async (req, res) => {
   const sessionId = req.params.id;
   try {
-    const session = await CustomSession.findById(sessionId).populate('teacher').populate('user').populate('timeSlot').exec();
+    const session = await CustomSession.findById(sessionId)
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+        .populate('user', 'name email profileImage AboutMe mobile gender dob age Address city pincode country status active userCategory corporate_id')
+        .populate('timeSlot', 'timeRange')
+        .exec();
     if (!session) {
       res.status(404).json({ error: 'Session not found' });
       return;
@@ -114,7 +122,7 @@ const approveSession = async (req, res) => {
         }
 
         const sessions = await CustomSession.find({ user: userId })
-            .populate('teacher', 'name email')  // Populating teacher details
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')  // Populating teacher details
             .populate('timeSlot', 'timeRange') // Populating time slot details
             .exec();
 
@@ -139,7 +147,7 @@ export const getAllSessionsByUserIdUpcoming = async (req, res) => {
           user: userId,
           date: { $gte: currentDate.toISOString().split('T')[0] } // Filter only today's and future sessions
       })
-      .populate('teacher', 'name email')  
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')  
       .populate('timeSlot', 'timeRange') 
       .exec();
 
@@ -159,7 +167,7 @@ export const getSessionDetails = async (req, res) => {
         }
 
         const session = await CustomSession.findOne({ _id: sessionId, user: userId })
-            .populate('teacher')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
             .populate('timeSlot', 'timeRange')
             .exec();
 
@@ -279,7 +287,7 @@ export const getSessionDetails = async (req, res) => {
         }
 
         const sessions = await CustomSession.find({ teacher: teacherId })
-            .populate('user', 'name email')  // Populating user details
+            .populate('user', 'name email profileImage AboutMe mobile gender dob age Address city pincode country status active userCategory corporate_id')  // Populating user details with more fields
             .populate('timeSlot', 'timeRange') // Populating time slot details
             .exec();
 
