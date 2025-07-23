@@ -31,13 +31,69 @@ const calculateDoshaScores = async (answers) => {
     }
   }
   
-  // Calculate percentages
+  // Calculate percentages with proper rounding to ensure total = 100%
   const totalAnswers = answers.length;
-  const doshaPercentages = {
-    vata: totalAnswers > 0 ? Math.round((doshaScore.vata / totalAnswers) * 100) : 0,
-    pitta: totalAnswers > 0 ? Math.round((doshaScore.pitta / totalAnswers) * 100) : 0,
-    kapha: totalAnswers > 0 ? Math.round((doshaScore.kapha / totalAnswers) * 100) : 0
-  };
+  let doshaPercentages = { vata: 0, pitta: 0, kapha: 0 };
+  
+  if (totalAnswers > 0) {
+    // Calculate raw percentages
+    const rawPercentages = {
+      vata: (doshaScore.vata / totalAnswers) * 100,
+      pitta: (doshaScore.pitta / totalAnswers) * 100,
+      kapha: (doshaScore.kapha / totalAnswers) * 100
+    };
+    
+    // Round to nearest integer
+    const roundedPercentages = {
+      vata: Math.round(rawPercentages.vata),
+      pitta: Math.round(rawPercentages.pitta),
+      kapha: Math.round(rawPercentages.kapha)
+    };
+    
+    // Calculate the difference from 100%
+    const totalRounded = roundedPercentages.vata + roundedPercentages.pitta + roundedPercentages.kapha;
+    const difference = 100 - totalRounded;
+    
+    // If there's a difference, distribute it to the dosha with the largest decimal part
+    if (difference !== 0) {
+      const decimalParts = {
+        vata: rawPercentages.vata - roundedPercentages.vata,
+        pitta: rawPercentages.pitta - roundedPercentages.pitta,
+        kapha: rawPercentages.kapha - roundedPercentages.kapha
+      };
+      
+      // Find the dosha with the largest decimal part (or smallest if difference is negative)
+      let targetDosha = 'vata';
+      let maxDecimal = decimalParts.vata;
+      
+      if (difference > 0) {
+        // Need to add, so find largest decimal part
+        if (decimalParts.pitta > maxDecimal) {
+          maxDecimal = decimalParts.pitta;
+          targetDosha = 'pitta';
+        }
+        if (decimalParts.kapha > maxDecimal) {
+          maxDecimal = decimalParts.kapha;
+          targetDosha = 'kapha';
+        }
+      } else {
+        // Need to subtract, so find smallest decimal part (most negative)
+        if (decimalParts.pitta < maxDecimal) {
+          maxDecimal = decimalParts.pitta;
+          targetDosha = 'pitta';
+        }
+        if (decimalParts.kapha < maxDecimal) {
+          maxDecimal = decimalParts.kapha;
+          targetDosha = 'kapha';
+        }
+      }
+      
+      // Apply the difference
+      roundedPercentages[targetDosha] += difference;
+    }
+    
+    doshaPercentages = roundedPercentages;
+  }
   
   return { doshaScore, doshaPercentages };
 };

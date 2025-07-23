@@ -10,13 +10,22 @@ const router = express.Router();
 router.post('/start', auth(), validate(doshaValidation.startAssessment), doshaController.startAssessment);
 
 // Get questions for assessment type
-router.get('/questions/:assessmentType', validate(doshaValidation.getAssessmentQuestions), doshaController.getAssessmentQuestions);
+router.get(
+  '/questions/:assessmentType',
+  validate(doshaValidation.getAssessmentQuestions),
+  doshaController.getAssessmentQuestions
+);
 
 // Submit answer
 router.post('/submit-answer', auth(), validate(doshaValidation.submitAnswer), doshaController.submitAnswer);
 
 // Calculate dosha score
-router.post('/:assessmentId/calculate', auth(), validate(doshaValidation.calculateDoshaScore), doshaController.calculateDoshaScore);
+router.post(
+  '/:assessmentId/calculate',
+  auth(),
+  validate(doshaValidation.calculateDoshaScore),
+  doshaController.calculateDoshaScore
+);
 
 // Get all assessment results
 router.get('/', auth(), validate(doshaValidation.getAssessmentResults), doshaController.getAssessmentResults);
