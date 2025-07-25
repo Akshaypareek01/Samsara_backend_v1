@@ -323,6 +323,24 @@ export const getSessionDetails = async (req, res) => {
     }
   };
 
+  const checkMeetingStatus = async (token, meetingId) => {
+    try {
+      const result = await axios.get("https://api.zoom.us/v2/meetings/" + meetingId, {
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'User-Agent': 'Zoom-api-Jwt-Request',
+          'content-type': 'application/json'
+        }
+      });
+      return { exists: true, data: result.data };
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return { exists: false, message: 'Meeting does not exist' };
+      }
+      throw error;
+    }
+  };
+
   const deleteMeeting = async (token, meetingId) => {
     // console.log("Token ====>",token);
     // console.log("MeetingId ====>",meetingId);
@@ -338,6 +356,11 @@ export const getSessionDetails = async (req, res) => {
       // sendResponse.setSuccess(200, 'Success', result.data);
       return result;
     } catch (error) {
+      // Handle 404 error gracefully (meeting already ended by Zoom)
+      if (error.response && error.response.status === 404) {
+        console.log("Meeting already ended or doesn't exist:", meetingId);
+        return { status: 'ended', message: 'Meeting already ended' };
+      }
       console.log(error);
       throw error;
     }
@@ -345,11 +368,31 @@ export const getSessionDetails = async (req, res) => {
 
  const EndSessionMeeting = async (req, res) => {
     const { classId } = req.params;
-    const { token, meetingId } = req.body;
+    const { meetingId } = req.body;
     try {
+      // Generate fresh Zoom token
+      const clientId = "_nLks8WMQDO1I34y6RQNXA";
+      const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
+      const accountId = "C76CruAJSpitbs_UIRb4eQ";
+      const authHeader = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
+      const tokenRes = await axios.post(
+        'https://zoom.us/oauth/token',
+        null,
+        {
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          params: {
+            grant_type: 'account_credentials',
+            account_id: accountId,
+          },
+        }
+      );
+      const zoomToken = tokenRes.data.access_token;
+
       await updateClassMeetingInfo(classId);
-      // console.log("End meeting ====>",token,"ID ==================>",meetingId)
-      await deleteMeeting(token, meetingId);
+      await deleteMeeting(zoomToken, meetingId);
       res.json({ success: true, message: "Meeting End" });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });

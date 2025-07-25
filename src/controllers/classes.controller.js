@@ -486,18 +486,43 @@ export const removeStudentFromClass = async (req, res) => {
       // sendResponse.setSuccess(200, 'Success', result.data);
       return result;
     } catch (error) {
+      // Handle 404 error gracefully (meeting already ended by Zoom)
+      if (error.response && error.response.status === 404) {
+        console.log("Meeting already ended or doesn't exist:", meetingId);
+        return { status: 'ended', message: 'Meeting already ended' };
+      }
       console.log(error);
-     
+      throw error;
     }
   }
 
   export const EndMeeting = async (req, res) => {
     const { classId } = req.params;
-    const {token,meetingId} = req.body;
+    const { meetingId } = req.body;
     try {
+      // Generate fresh Zoom token
+      const clientId = "_nLks8WMQDO1I34y6RQNXA";
+      const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
+      const accountId = "C76CruAJSpitbs_UIRb4eQ";
+      const authHeader = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
+      const tokenRes = await axios.post(
+        'https://zoom.us/oauth/token',
+        null,
+        {
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          params: {
+            grant_type: 'account_credentials',
+            account_id: accountId,
+          },
+        }
+      );
+      const zoomToken = tokenRes.data.access_token;
+
       updateClassMeetingInfo(classId);
-      // console.log("End meeting ====>",token,"ID ==================>",meetingId)
-      deleteMeeting(token,meetingId);
+      deleteMeeting(zoomToken, meetingId);
       res.json({ success: true, message:"Meeting End" });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
