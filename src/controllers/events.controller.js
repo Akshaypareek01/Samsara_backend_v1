@@ -318,7 +318,47 @@ const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassw
     }
   };
 
+// Check if a user is enrolled in an event
+export const isUserEnrolledInEvent = async (req, res) => {
+  const { eventId, userId } = req.params;
 
+  try {
+    // Find the event by ID
+    const foundEvent = await Event.findById(eventId);
+
+    if (!foundEvent) {
+      return res.status(404).json({ success: false, message: "Event not found" });
+    }
+
+    // Convert userId to string for comparison (handles ObjectId vs string mismatch)
+    const userIdStr = userId.toString();
+    
+    // Check if user is in the event - convert all user IDs to strings for comparison
+    const isEnrolled = foundEvent.students.some(student => student.toString() === userIdStr);
+
+    // Add debug information
+    console.log('Checking event enrollment for:', {
+      eventId,
+      userId: userIdStr,
+      totalStudents: foundEvent.students.length,
+      studentIds: foundEvent.students.map(s => s.toString()),
+      isEnrolled
+    });
+
+    res.json({ 
+      success: true, 
+      enrolled: isEnrolled,
+      debug: {
+        eventId,
+        userId: userIdStr,
+        totalStudents: foundEvent.students.length
+      }
+    });
+  } catch (error) {
+    console.error('Error in isUserEnrolledInEvent:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
   export const registerUserToEvent = async (req, res) => {
     try {
