@@ -1,5 +1,5 @@
 import express from 'express';
-import { EndMeeting, addPredefinedClasses, addStudentToClass, assignTeacherToClass, createClass, deleteClass, getAllClasses, getAllUpcomingClasses, getClassById, getClassesByTeacher, getStudentClasses, getStudentUpcomingClasses, isStudentEnrolled, removeStudentFromClass, updateClass, getAllTeachers } from '../../controllers/classes.controller.js';
+import { EndMeeting, addPredefinedClasses, addStudentToClass, assignTeacherToClass, createClass, deleteClass, getAllClasses, getAllUpcomingClasses, getClassById, getClassesByTeacher, getStudentClasses, getStudentUpcomingClasses, isStudentEnrolled, removeStudentFromClass, updateClass, getAllTeachers, startClassMeeting } from '../../controllers/classes.controller.js';
 
 
 const classRouter = express.Router();
@@ -40,5 +40,7 @@ classRouter.put('/:classId/remove-student/:studentId', removeStudentFromClass);
 classRouter.get('/teacher/:teacherId', getClassesByTeacher);
 
 classRouter.post('/end_meeting/:classId', EndMeeting);
+// Start a Zoom meeting for a class (single API call)
+classRouter.post('/start-meeting/:classId', startClassMeeting);
 
 export default classRouter;

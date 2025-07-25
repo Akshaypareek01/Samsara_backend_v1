@@ -60,6 +60,84 @@ const updateSessionById = async (req, res) => {
   }
 };
 
+// Start a Zoom meeting for a custom session (single API call)
+ const startSessionMeeting = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const sessionDoc = await CustomSession.findById(sessionId);
+    if (!sessionDoc) return res.status(404).json({ success: false, error: "Session not found" });
+
+    // 1. Get Zoom OAuth token (account credentials grant)
+    const clientId = "_nLks8WMQDO1I34y6RQNXA";
+    const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
+    const accountId = "C76CruAJSpitbs_UIRb4eQ";
+    const authHeader = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
+    const tokenRes = await axios.post(
+      'https://zoom.us/oauth/token',
+      null,
+      {
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        params: {
+          grant_type: 'account_credentials',
+          account_id: accountId,
+        },
+      }
+    );
+    const zoomToken = tokenRes.data.access_token;
+
+    // 2. Build Zoom meeting request
+    const userId = 'developer@theodin.in';
+    const requestBody = {
+      topic: sessionDoc.title || "Session Meeting",
+      type: 2,
+      start_time: new Date(sessionDoc.date).toISOString(),
+      duration: sessionDoc.duration || 60,
+      timezone: 'Asia/Kolkata',
+      password: sessionDoc.password || "",
+      agenda: sessionDoc.description || "",
+      settings: {
+        host_video: true,
+        participant_video: true,
+        join_before_host: true,
+        approval_type: 1,
+        audio: 'both',
+        auto_recording: 'local',
+        waiting_room: false,
+      },
+    };
+
+    // 3. Create Zoom meeting
+    const response = await axios.post(
+      `https://api.zoom.us/v2/users/${userId}/meetings`,
+      requestBody,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${zoomToken}`,
+        },
+      }
+    );
+
+    // 4. Save meeting info to session
+    sessionDoc.meeting_number = response.data.id;
+    sessionDoc.password = response.data.password;
+    sessionDoc.status = true;
+    await sessionDoc.save();
+
+    res.json({
+      success: true,
+      meetingNumber: response.data.id,
+      password: response.data.password,
+    });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Delete a custom session by ID
 const deleteSessionById = async (req, res) => {
   const sessionId = req.params.id;
@@ -310,5 +388,6 @@ export {
   updateTimeSlot,
   deleteTimeSlot,
   EndSessionMeeting,
-  getAllSessionsByTeacherId
+  getAllSessionsByTeacherId,
+  startSessionMeeting
 };

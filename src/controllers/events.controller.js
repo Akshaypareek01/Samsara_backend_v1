@@ -146,6 +146,84 @@ export const updateEvent = async (req, res) => {
     }
 };
 
+// Start a Zoom meeting for an event (single API call)
+export const startEventMeeting = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const eventDoc = await Event.findById(eventId);
+    if (!eventDoc) return res.status(404).json({ success: false, error: "Event not found" });
+
+    // 1. Get Zoom OAuth token (account credentials grant)
+    const clientId = "_nLks8WMQDO1I34y6RQNXA";
+    const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
+    const accountId = "C76CruAJSpitbs_UIRb4eQ";
+    const authHeader = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
+    const tokenRes = await axios.post(
+      'https://zoom.us/oauth/token',
+      null,
+      {
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        params: {
+          grant_type: 'account_credentials',
+          account_id: accountId,
+        },
+      }
+    );
+    const zoomToken = tokenRes.data.access_token;
+
+    // 2. Build Zoom meeting request
+    const userId = 'developer@theodin.in';
+    const requestBody = {
+      topic: eventDoc.eventName || "Event Meeting",
+      type: 2,
+      start_time: new Date(eventDoc.startDate).toISOString(),
+      duration: eventDoc.duration || 60,
+      timezone: 'Asia/Kolkata',
+      password: eventDoc.password || "",
+      agenda: eventDoc.details || "",
+      settings: {
+        host_video: true,
+        participant_video: true,
+        join_before_host: true,
+        approval_type: 1,
+        audio: 'both',
+        auto_recording: 'local',
+        waiting_room: false,
+      },
+    };
+
+    // 3. Create Zoom meeting
+    const response = await axios.post(
+      `https://api.zoom.us/v2/users/${userId}/meetings`,
+      requestBody,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${zoomToken}`,
+        },
+      }
+    );
+
+    // 4. Save meeting info to event
+    eventDoc.meeting_number = response.data.id;
+    eventDoc.password = response.data.password;
+    eventDoc.status = true;
+    await eventDoc.save();
+
+    res.json({
+      success: true,
+      meetingNumber: response.data.id,
+      password: response.data.password,
+    });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Delete event
 export const deleteEvent = async (req, res) => {
     try {

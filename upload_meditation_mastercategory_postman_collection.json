@@ -1,0 +1,576 @@
+{
+  "info": {
+    "name": "Samsara Backend v1 - Upload, Meditation & Master Category APIs",
+    "description": "Complete Postman collection for Upload, Meditation, and Master Category management APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "baseUrl": "https://samsara-backend-v1.onrender.com/v1"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "authToken",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    },
+    {
+      "key": "meditationId",
+      "value": "meditation_object_id_here",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "category_object_id_here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Upload APIs",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload"]
+            },
+            "description": "Upload a file (max 5MB) and get back the URL and filename"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Meditation APIs",
+      "item": [
+        {
+          "name": "Create Meditation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Morning Mindfulness\",\n  \"description\": \"A peaceful morning meditation to start your day\",\n  \"duration\": 15,\n  \"level\": \"Beginner\",\n  \"imageUrl\": \"https://example.com/image.jpg\",\n  \"audioUrl\": \"https://example.com/audio.mp3\",\n  \"category\": \"{{categoryId}}\",\n  \"tags\": [\"morning\", \"mindfulness\", \"beginner\"],\n  \"benefits\": \"Reduces stress, improves focus, promotes calmness\",\n  \"howToPractice\": [\n    \"Find a quiet place\",\n    \"Sit comfortably\",\n    \"Close your eyes\",\n    \"Focus on your breath\"\n  ],\n  \"focus\": 85,\n  \"mood\": \"calm\",\n  \"recommended\": [\"{{meditationId}}\"],\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/meditations",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations"]
+            },
+            "description": "Create a new meditation (Admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Meditations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meditations?title=morning&level=Beginner&mood=calm&category={{categoryId}}&isActive=true&sortBy=createdAt:desc&limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations"],
+              "query": [
+                {
+                  "key": "title",
+                  "value": "morning",
+                  "description": "Filter by meditation title"
+                },
+                {
+                  "key": "level",
+                  "value": "Beginner",
+                  "description": "Filter by level (Beginner, Intermediate, Advanced, All Levels)"
+                },
+                {
+                  "key": "mood",
+                  "value": "calm",
+                  "description": "Filter by mood"
+                },
+                {
+                  "key": "category",
+                  "value": "{{categoryId}}",
+                  "description": "Filter by category ID"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "description": "Filter by active status"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt:desc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get all meditations with optional filtering and pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Meditations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meditations/search?searchTerm=mindfulness&sortBy=title:asc&limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations", "search"],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "mindfulness",
+                  "description": "Search term to look for in title, description, tags"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "title:asc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Search meditations by term"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Meditations by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meditations/category/{{categoryId}}?sortBy=duration:asc&limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations", "category", "{{categoryId}}"],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "duration:asc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get all meditations in a specific category"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Meditations by Level",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meditations/level/Beginner?sortBy=title:asc&limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations", "level", "Beginner"],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "title:asc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get all meditations by level (Beginner, Intermediate, Advanced, All Levels)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Meditations by Mood",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meditations/mood/calm?sortBy=duration:asc&limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations", "mood", "calm"],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "duration:asc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get all meditations by mood"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Meditation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meditations/{{meditationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations", "{{meditationId}}"]
+            },
+            "description": "Get a specific meditation by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Meditation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Morning Mindfulness\",\n  \"description\": \"Updated description for morning meditation\",\n  \"duration\": 20,\n  \"level\": \"Intermediate\",\n  \"imageUrl\": \"https://example.com/updated-image.jpg\",\n  \"audioUrl\": \"https://example.com/updated-audio.mp3\",\n  \"category\": \"{{categoryId}}\",\n  \"tags\": [\"morning\", \"mindfulness\", \"intermediate\"],\n  \"benefits\": \"Updated benefits description\",\n  \"howToPractice\": [\n    \"Find a quiet place\",\n    \"Sit comfortably\",\n    \"Close your eyes\",\n    \"Focus on your breath\",\n    \"Practice daily\"\n  ],\n  \"focus\": 90,\n  \"mood\": \"peaceful\",\n  \"recommended\": [\"{{meditationId}}\"],\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/meditations/{{meditationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations", "{{meditationId}}"]
+            },
+            "description": "Update a meditation (Admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Meditation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meditations/{{meditationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations", "{{meditationId}}"]
+            },
+            "description": "Delete a meditation (Admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recommended Meditations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meditations/{{meditationId}}/recommended?sortBy=title:asc&limit=5&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["meditations", "{{meditationId}}", "recommended"],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "title:asc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "5",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get recommended meditations based on a specific meditation"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Master Category APIs",
+      "item": [
+        {
+          "name": "Create Master Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mindfulness\",\n  \"description\": \"Mindfulness and awareness practices\",\n  \"imageUrl\": \"https://example.com/mindfulness.jpg\",\n  \"soundUrl\": \"https://example.com/mindfulness-sound.mp3\",\n  \"tags\": [\"awareness\", \"present-moment\", \"meditation\"],\n  \"order\": 1,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/master-categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["master-categories"]
+            },
+            "description": "Create a new master category (Admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Master Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/master-categories?name=mindfulness&isActive=true&sortBy=order:asc&limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["master-categories"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "mindfulness",
+                  "description": "Filter by category name"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true",
+                  "description": "Filter by active status"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "order:asc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get all master categories with optional filtering and pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Master Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/master-categories/active?sortBy=order:asc&limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["master-categories", "active"],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "order:asc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Get only active master categories"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Master Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/master-categories/search?searchTerm=mindfulness&sortBy=name:asc&limit=10&page=1",
+              "host": ["{{baseUrl}}"],
+              "path": ["master-categories", "search"],
+              "query": [
+                {
+                  "key": "searchTerm",
+                  "value": "mindfulness",
+                  "description": "Search term to look for in name, description, tags"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "name:asc",
+                  "description": "Sort by field:desc/asc"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                }
+              ]
+            },
+            "description": "Search master categories by term"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Master Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/master-categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["master-categories", "{{categoryId}}"]
+            },
+            "description": "Get a specific master category by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Master Category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Mindfulness\",\n  \"description\": \"Updated mindfulness and awareness practices\",\n  \"imageUrl\": \"https://example.com/updated-mindfulness.jpg\",\n  \"soundUrl\": \"https://example.com/updated-mindfulness-sound.mp3\",\n  \"tags\": [\"awareness\", \"present-moment\", \"meditation\", \"updated\"],\n  \"order\": 2,\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/master-categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["master-categories", "{{categoryId}}"]
+            },
+            "description": "Update a master category (Admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Master Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/master-categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["master-categories", "{{categoryId}}"]
+            },
+            "description": "Delete a master category (Admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderData\": [\n    {\n      \"id\": \"{{categoryId}}\",\n      \"order\": 1\n    },\n    {\n      \"id\": \"another_category_id\",\n      \"order\": 2\n    },\n    {\n      \"id\": \"third_category_id\",\n      \"order\": 3\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/master-categories/order",
+              "host": ["{{baseUrl}}"],
+              "path": ["master-categories", "order"]
+            },
+            "description": "Update the order of multiple categories (Admin only)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+} 

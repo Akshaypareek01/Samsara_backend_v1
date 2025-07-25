@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samsara - Master Category Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 25px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #495057;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        .sounds-count-btn {
+            min-width: 80px;
+            justify-content: center;
+        }
+
+        .sounds-list {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .sounds-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sounds-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .sounds-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        .sounds-list::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        .sound-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            min-height: 100px;
+        }
+
+        .sound-item:hover {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .sound-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 2px solid #e9ecef;
+        }
+
+        .sound-details {
+            flex: 1;
+            margin-left: 15px;
+        }
+
+        .sound-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .sound-meta {
+            font-size: 14px;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+
+        .sound-description {
+            margin-bottom: 12px;
+            color: #495057;
+            font-style: italic;
+        }
+
+        .sound-duration {
+            background: #28a745;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .sound-level {
+            background: #ffc107;
+            color: #212529;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .sound-mood {
+            background: #6f42c1;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .upload-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .upload-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: #17a2b8;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .upload-btn:hover {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        .upload-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-info {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            background: #f8f9fa;
+            font-size: 14px;
+            color: #495057;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .file-info.has-file {
+            border-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            padding: 20px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .table td {
+            padding: 20px 15px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .category-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #e9ecef;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 2% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: modalSlideIn 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 20px 20px 0 0;
+            flex-shrink: 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 300;
+        }
+
+        .close {
+            color: white;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 30px;
+            overflow-y: auto;
+            flex: 1;
+            max-height: calc(90vh - 140px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px 30px;
+            text-align: right;
+            border-top: 1px solid #e9ecef;
+            flex-shrink: 0;
+            background: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left-color: #17a2b8;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .search-box {
+                max-width: none;
+            }
+            
+            .table {
+                font-size: 14px;
+            }
+            
+            .table th,
+            .table td {
+                padding: 15px 10px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+                max-height: 95vh;
+            }
+            
+            .modal-body {
+                max-height: calc(95vh - 120px);
+                padding: 20px;
+            }
+            
+            .modal-footer {
+                padding: 15px 20px 20px;
+            }
+            
+            .sounds-list {
+                max-height: 50vh;
+            }
+            
+            .sound-item {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+            
+            .sound-image {
+                width: 50px;
+                height: 50px;
+                margin-right: 10px;
+            }
+            
+            .sound-details {
+                margin-left: 10px;
+            }
+            
+            .sound-title {
+                font-size: 14px;
+            }
+            
+            .sound-meta {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Master Category Management</h1>
+            <p>Manage meditation categories and their associated sounds</p>
+        </div>
+
+        <div class="content">
+            <div id="alert-container"></div>
+
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search categories...">
+                    <button class="btn btn-secondary" onclick="searchCategories()">Search</button>
+                </div>
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <span>+</span> Add Category
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Category Name</th>
+                            <th>Tags</th>
+                            <th>Image</th>
+                            <th>Sounds</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody">
+                        <tr>
+                            <td colspan="4" class="loading">
+                                <div class="spinner"></div>
+                                Loading categories...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Category</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <div class="form-group">
+                        <label for="categoryName">Category Name *</label>
+                        <input type="text" id="categoryName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryDescription">Description</label>
+                        <textarea id="categoryDescription"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryImageUrl">Category Image</label>
+                        <div class="upload-section">
+                            <input type="file" id="categoryImageInput" class="upload-input" accept="image/*">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('categoryImageInput').click()">
+                                📁 Upload Image
+                            </button>
+                            <div id="categoryImageInfo" class="file-info">No file selected</div>
+                        </div>
+                        <div id="categoryImageProgress" class="upload-progress" style="display: none;">
+                            <div class="upload-progress-bar"></div>
+                        </div>
+                        <input type="hidden" id="categoryImageUrl" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryTags">Tags (comma-separated)</label>
+                        <input type="text" id="categoryTags" placeholder="meditation, mindfulness, awareness">
+                    </div>
+                    <div class="form-group">
+                        <label for="categoryOrder">Order</label>
+                        <input type="number" id="categoryOrder" value="1" min="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Sound Modal -->
+    <div id="soundModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Meditation Sound</h2>
+                <span class="close" onclick="closeSoundModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="soundForm">
+                    <div class="form-group">
+                        <label for="meditationTitle">Meditation Title *</label>
+                        <input type="text" id="meditationTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="meditationDescription">Description</label>
+                        <textarea id="meditationDescription"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="meditationDuration">Duration (minutes) *</label>
+                        <input type="number" id="meditationDuration" required min="1" max="180">
+                    </div>
+                    <div class="form-group">
+                        <label for="meditationLevel">Level</label>
+                        <select id="meditationLevel">
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                            <option value="All Levels">All Levels</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="meditationImageUrl">Meditation Image</label>
+                        <div class="upload-section">
+                            <input type="file" id="meditationImageInput" class="upload-input" accept="image/*">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('meditationImageInput').click()">
+                                📁 Upload Image
+                            </button>
+                            <div id="meditationImageInfo" class="file-info">No file selected</div>
+                        </div>
+                        <div id="meditationImageProgress" class="upload-progress" style="display: none;">
+                            <div class="upload-progress-bar"></div>
+                        </div>
+                        <input type="hidden" id="meditationImageUrl" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label for="meditationAudioUrl">Audio File *</label>
+                        <div class="upload-section">
+                            <input type="file" id="meditationAudioInput" class="upload-input" accept="audio/*">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('meditationAudioInput').click()">
+                                🎵 Upload Audio
+                            </button>
+                            <div id="meditationAudioInfo" class="file-info">No file selected</div>
+                        </div>
+                        <div id="meditationAudioProgress" class="upload-progress" style="display: none;">
+                            <div class="upload-progress-bar"></div>
+                        </div>
+                        <input type="hidden" id="meditationAudioUrl" required placeholder="https://example.com/audio.mp3">
+                    </div>
+                    <div class="form-group">
+                        <label for="meditationTags">Tags (comma-separated)</label>
+                        <input type="text" id="meditationTags" placeholder="morning, mindfulness, beginner">
+                    </div>
+                    <div class="form-group">
+                        <label for="meditationBenefits">Benefits</label>
+                        <textarea id="meditationBenefits"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="meditationMood">Mood</label>
+                        <input type="text" id="meditationMood" placeholder="calm, peaceful, energizing">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSoundModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveMeditation()">Add Meditation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sounds List Modal -->
+    <div id="soundsListModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="soundsListTitle">Category Sounds</h2>
+                <span class="close" onclick="closeSoundsListModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="soundsListContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading sounds...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSoundsListModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'https://samsara-backend-v1.onrender.com/v1';
+        let authToken = localStorage.getItem('authToken') || 'your_jwt_token_here';
+        let currentCategoryId = null;
+        let categories = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCategories();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Search input event listener
+            document.getElementById('searchInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchCategories();
+                }
+            });
+
+            // Close modals when clicking outside
+            window.onclick = function(event) {
+                const categoryModal = document.getElementById('categoryModal');
+                const soundModal = document.getElementById('soundModal');
+                const soundsListModal = document.getElementById('soundsListModal');
+                if (event.target === categoryModal) {
+                    closeModal();
+                }
+                if (event.target === soundModal) {
+                    closeSoundModal();
+                }
+                if (event.target === soundsListModal) {
+                    closeSoundsListModal();
+                }
+            }
+
+            // File upload event listeners
+            setupFileUploadListeners();
+        }
+
+        function setupFileUploadListeners() {
+            // Category image upload
+            const categoryImageInput = document.getElementById('categoryImageInput');
+            if (categoryImageInput) {
+                categoryImageInput.addEventListener('change', function(e) {
+                    handleFileUpload(e.target.files[0], 'categoryImage');
+                });
+            }
+
+            // Meditation image upload
+            const meditationImageInput = document.getElementById('meditationImageInput');
+            if (meditationImageInput) {
+                meditationImageInput.addEventListener('change', function(e) {
+                    handleFileUpload(e.target.files[0], 'meditationImage');
+                });
+            }
+
+            // Meditation audio upload
+            const meditationAudioInput = document.getElementById('meditationAudioInput');
+            if (meditationAudioInput) {
+                meditationAudioInput.addEventListener('change', function(e) {
+                    handleFileUpload(e.target.files[0], 'meditationAudio');
+                });
+            }
+        }
+
+        // API Functions
+        async function makeRequest(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            };
+
+            const finalOptions = { ...defaultOptions, ...options };
+            
+            try {
+                const response = await fetch(url, finalOptions);
+                
+                // Handle empty responses (like DELETE requests)
+                const contentType = response.headers.get('content-type');
+                let data = null;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        data = await response.json();
+                    } catch (jsonError) {
+                        // If JSON parsing fails but status is success, treat as successful
+                        if (response.ok) {
+                            return { success: true };
+                        }
+                        throw jsonError;
+                    }
+                } else if (response.status === 204 || response.status === 200) {
+                    // Success response with no content (common for DELETE)
+                    return { success: true };
+                }
+                
+                if (!response.ok) {
+                    throw new Error(data?.message || `HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return data || { success: true };
+            } catch (error) {
+                console.error('API Error:', error);
+                showAlert(error.message, 'error');
+                throw error;
+            }
+        }
+
+        // Category Management
+        async function loadCategories() {
+            try {
+                const data = await makeRequest(`${API_BASE_URL}/master-categories?limit=50`);
+                categories = data.results || data;
+                console.log('Loaded categories:', categories);
+                console.log('First category structure:', categories[0]);
+                renderCategoriesTable();
+            } catch (error) {
+                showEmptyState('Failed to load categories');
+            }
+        }
+
+        async function searchCategories() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm) {
+                loadCategories();
+                return;
+            }
+
+            try {
+                const data = await makeRequest(`${API_BASE_URL}/master-categories/search?searchTerm=${encodeURIComponent(searchTerm)}&limit=50`);
+                categories = data.results || data;
+                renderCategoriesTable();
+            } catch (error) {
+                showEmptyState('Search failed');
+            }
+        }
+
+        async function createCategory(categoryData) {
+            return await makeRequest(`${API_BASE_URL}/master-categories`, {
+                method: 'POST',
+                body: JSON.stringify(categoryData)
+            });
+        }
+
+        async function updateCategory(categoryId, categoryData) {
+            return await makeRequest(`${API_BASE_URL}/master-categories/${categoryId}`, {
+                method: 'PATCH',
+                body: JSON.stringify(categoryData)
+            });
+        }
+
+        async function deleteCategory(categoryId) {
+            // Validate categoryId
+            if (!categoryId || categoryId === 'undefined' || categoryId === 'null') {
+                showAlert('Invalid category ID', 'error');
+                console.error('Invalid categoryId:', categoryId);
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this category?')) {
+                return;
+            }
+
+            try {
+                console.log('Deleting category with ID:', categoryId);
+                const result = await makeRequest(`${API_BASE_URL}/master-categories/${categoryId}`, {
+                    method: 'DELETE'
+                });
+                
+                // Check if deletion was successful
+                if (result && (result.success || result.message)) {
+                    showAlert('Category deleted successfully', 'success');
+                } else {
+                    showAlert('Category deleted successfully', 'success');
+                }
+                
+                // Always refresh the data after delete attempt
+                await loadCategories();
+                
+            } catch (error) {
+                console.error('Delete category error:', error);
+                // Even if there's an error, refresh the data to show current state
+                showAlert('Category may have been deleted. Refreshing data...', 'info');
+                await loadCategories();
+            }
+        }
+
+        // Meditation Management
+        async function createMeditation(meditationData) {
+            return await makeRequest(`${API_BASE_URL}/meditations`, {
+                method: 'POST',
+                body: JSON.stringify(meditationData)
+            });
+        }
+
+        async function getMeditationsByCategory(categoryId) {
+            return await makeRequest(`${API_BASE_URL}/meditations/category/${categoryId}?limit=100`);
+        }
+
+        async function getMeditationCount(categoryId) {
+            try {
+                const data = await getMeditationsByCategory(categoryId);
+                return data.results ? data.results.length : (Array.isArray(data) ? data.length : 0);
+            } catch (error) {
+                console.error('Error getting meditation count:', error);
+                return 0;
+            }
+        }
+
+        // File Upload Functions
+        async function uploadFile(file, type) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Upload failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Upload error:', error);
+                throw error;
+            }
+        }
+
+        async function handleFileUpload(file, type) {
+            if (!file) return;
+
+            // Validate file size (5MB limit)
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.size > maxSize) {
+                showAlert(`File size must be less than 5MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`, 'error');
+                return;
+            }
+
+            // Validate file type
+            const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            const validAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a'];
+
+            if (type.includes('Image') && !validImageTypes.includes(file.type)) {
+                showAlert('Please select a valid image file (JPEG, PNG, GIF, WebP)', 'error');
+                return;
+            }
+
+            if (type.includes('Audio') && !validAudioTypes.includes(file.type)) {
+                showAlert('Please select a valid audio file (MP3, WAV, OGG, M4A)', 'error');
+                return;
+            }
+
+            // Update UI
+            const infoElement = document.getElementById(`${type}Info`);
+            const progressElement = document.getElementById(`${type}Progress`);
+            const progressBar = progressElement.querySelector('.upload-progress-bar');
+            const urlInput = document.getElementById(`${type}Url`);
+
+            infoElement.textContent = `Uploading ${file.name}...`;
+            infoElement.className = 'file-info';
+            progressElement.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            try {
+                // Simulate progress (since we can't track actual upload progress with fetch)
+                const progressInterval = setInterval(() => {
+                    const currentWidth = parseInt(progressBar.style.width) || 0;
+                    if (currentWidth < 90) {
+                        progressBar.style.width = (currentWidth + 10) + '%';
+                    }
+                }, 200);
+
+                const result = await uploadFile(file, type);
+                clearInterval(progressInterval);
+
+                // Update progress to 100%
+                progressBar.style.width = '100%';
+
+                // Update UI with success
+                infoElement.textContent = `✅ ${file.name} uploaded successfully`;
+                infoElement.className = 'file-info has-file';
+                urlInput.value = result.url || result.data?.url;
+
+                setTimeout(() => {
+                    progressElement.style.display = 'none';
+                }, 1000);
+
+                showAlert(`${file.name} uploaded successfully!`, 'success');
+
+            } catch (error) {
+                // Reset UI on error
+                infoElement.textContent = 'Upload failed. Please try again.';
+                infoElement.className = 'file-info';
+                progressElement.style.display = 'none';
+                showAlert(`Upload failed: ${error.message}`, 'error');
+            }
+        }
+
+        // UI Functions
+        function renderCategoriesTable() {
+            const tbody = document.getElementById('categoriesTableBody');
+            
+            if (!categories || categories.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <h3>No categories found</h3>
+                            <p>Create your first category to get started</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = categories.map(category => {
+                const categoryId = category._id || category.id;
+                return `
+                <tr>
+                    <td>
+                        <strong>${category.name}</strong>
+                        ${category.description ? `<br><small style="color: #6c757d;">${category.description}</small>` : ''}
+                    </td>
+                    <td>
+                        <div class="tags">
+                            ${(category.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </td>
+                    <td>
+                        ${category.imageUrl ? 
+                            `<img src="${category.imageUrl}" alt="${category.name}" class="category-image" onerror="this.style.display='none'">` : 
+                            '<div style="width: 60px; height: 60px; background: #e9ecef; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 12px;">No Image</div>'
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-info btn-sm sounds-count-btn" data-category-id="${categoryId}" onclick="loadCategorySounds(this.dataset.categoryId, '${category.name}')">
+                            <span class="sounds-count">Loading...</span>
+                        </button>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-success btn-sm" data-category-id="${categoryId}" onclick="openAddSoundModal(this.dataset.categoryId)">
+                                Add Sound
+                            </button>
+                            <button class="btn btn-warning btn-sm" data-category-id="${categoryId}" onclick="openEditModal(this.dataset.categoryId)">
+                                Edit
+                            </button>
+                            <button class="btn btn-danger btn-sm" data-category-id="${categoryId}" onclick="deleteCategory(this.dataset.categoryId)">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            }).join('');
+
+            // Load sound counts for each category
+            loadAllSoundCounts();
+        }
+
+        function showEmptyState(message) {
+            const tbody = document.getElementById('categoriesTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="empty-state">
+                        <h3>${message}</h3>
+                        <p>Please try again later</p>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Sound Count Functions
+        async function loadAllSoundCounts() {
+            const countButtons = document.querySelectorAll('.sounds-count-btn');
+            
+            for (const button of countButtons) {
+                const categoryId = button.dataset.categoryId;
+                const countSpan = button.querySelector('.sounds-count');
+                
+                try {
+                    const count = await getMeditationCount(categoryId);
+                    countSpan.textContent = `${count} Sounds`;
+                } catch (error) {
+                    countSpan.textContent = '0 Sounds';
+                }
+            }
+        }
+
+        async function loadCategorySounds(categoryId, categoryName) {
+            try {
+                document.getElementById('soundsListTitle').textContent = `${categoryName} - Meditation Sounds`;
+                document.getElementById('soundsListModal').style.display = 'block';
+                
+                const container = document.getElementById('soundsListContainer');
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading sounds...
+                    </div>
+                `;
+
+                const data = await getMeditationsByCategory(categoryId);
+                const meditations = data.results || data;
+
+                if (!meditations || meditations.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No sounds found</h3>
+                            <p>No meditation sounds have been added to this category yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="sounds-list">
+                        ${meditations.map(meditation => `
+                            <div class="sound-item">
+                                <img src="${meditation.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRTlFQ0VGIi8+CjxwYXRoIGQ9Ik0yMCAyMEg0MFY0MEgyMFYyMFoiIGZpbGw9IiM2Qzc1N0QiLz4KPC9zdmc+'}" 
+                                     alt="${meditation.title}" 
+                                     class="sound-image" 
+                                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjYwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjRTlFQ0VGIi8+CjxwYXRoIGQ9Ik0yMCAyMEg0MFY0MEgyMFYyMFoiIGZpbGw9IiM2Qzc1N0QiLz4KPC9zdmc+'">
+                                <div class="sound-details">
+                                    <div class="sound-title">${meditation.title}</div>
+                                    <div class="sound-meta">
+                                        ${meditation.description ? `<div class="sound-description">${meditation.description}</div>` : ''}
+                                        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                                            <span class="sound-duration">${meditation.duration} min</span>
+                                            <span class="sound-level">${meditation.level}</span>
+                                            ${meditation.mood ? `<span class="sound-mood">${meditation.mood}</span>` : ''}
+                                        </div>
+                                        ${meditation.tags && meditation.tags.length > 0 ? `
+                                            <div style="margin-top: 8px;">
+                                                <div class="tags">
+                                                    ${meditation.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                                </div>
+                                            </div>
+                                        ` : ''}
+                                        ${meditation.benefits ? `
+                                            <div style="margin-top: 8px; padding: 8px; background: #e8f5e8; border-radius: 8px; border-left: 3px solid #28a745;">
+                                                <strong style="color: #28a745; font-size: 12px;">Benefits:</strong>
+                                                <div style="font-size: 13px; color: #495057; margin-top: 4px;">${meditation.benefits}</div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading category sounds:', error);
+                document.getElementById('soundsListContainer').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading sounds</h3>
+                        <p>Failed to load meditation sounds for this category.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function closeSoundsListModal() {
+            document.getElementById('soundsListModal').style.display = 'none';
+        }
+
+        function resetFileUploadState(type) {
+            const infoElement = document.getElementById(`${type}Info`);
+            const progressElement = document.getElementById(`${type}Progress`);
+            const urlInput = document.getElementById(`${type}Url`);
+            const fileInput = document.getElementById(`${type}Input`);
+
+            if (infoElement) {
+                infoElement.textContent = 'No file selected';
+                infoElement.className = 'file-info';
+            }
+            if (progressElement) {
+                progressElement.style.display = 'none';
+            }
+            if (urlInput) {
+                urlInput.value = '';
+            }
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        }
+
+        // Modal Functions
+        function openAddModal() {
+            currentCategoryId = null;
+            document.getElementById('modalTitle').textContent = 'Add New Category';
+            document.getElementById('categoryForm').reset();
+            
+            // Reset file upload states
+            resetFileUploadState('categoryImage');
+            
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+
+        function openEditModal(categoryId) {
+            currentCategoryId = categoryId;
+            const category = categories.find(c => c._id === categoryId);
+            if (!category) return;
+
+            document.getElementById('modalTitle').textContent = 'Edit Category';
+            document.getElementById('categoryName').value = category.name || '';
+            document.getElementById('categoryDescription').value = category.description || '';
+            document.getElementById('categoryImageUrl').value = category.imageUrl || '';
+            document.getElementById('categoryTags').value = (category.tags || []).join(', ');
+            document.getElementById('categoryOrder').value = category.order || 1;
+            
+            // Reset file upload states
+            resetFileUploadState('categoryImage');
+            if (category.imageUrl) {
+                document.getElementById('categoryImageInfo').textContent = '✅ Image already uploaded';
+                document.getElementById('categoryImageInfo').className = 'file-info has-file';
+            }
+            
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('categoryModal').style.display = 'none';
+            currentCategoryId = null;
+        }
+
+        function openAddSoundModal(categoryId) {
+            currentCategoryId = categoryId;
+            document.getElementById('soundForm').reset();
+            
+            // Reset file upload states
+            resetFileUploadState('meditationImage');
+            resetFileUploadState('meditationAudio');
+            
+            document.getElementById('soundModal').style.display = 'block';
+        }
+
+        function closeSoundModal() {
+            document.getElementById('soundModal').style.display = 'none';
+            currentCategoryId = null;
+        }
+
+        async function saveCategory() {
+            const formData = {
+                name: document.getElementById('categoryName').value.trim(),
+                description: document.getElementById('categoryDescription').value.trim(),
+                imageUrl: document.getElementById('categoryImageUrl').value.trim(),
+                tags: document.getElementById('categoryTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+                order: parseInt(document.getElementById('categoryOrder').value) || 1,
+                isActive: true
+            };
+
+            if (!formData.name) {
+                showAlert('Category name is required', 'error');
+                return;
+            }
+
+            try {
+                if (currentCategoryId) {
+                    await updateCategory(currentCategoryId, formData);
+                    showAlert('Category updated successfully', 'success');
+                } else {
+                    await createCategory(formData);
+                    showAlert('Category created successfully', 'success');
+                }
+                
+                closeModal();
+                loadCategories();
+            } catch (error) {
+                // Error already handled in makeRequest
+            }
+        }
+
+        async function saveMeditation() {
+            const formData = {
+                title: document.getElementById('meditationTitle').value.trim(),
+                description: document.getElementById('meditationDescription').value.trim(),
+                duration: parseInt(document.getElementById('meditationDuration').value),
+                level: document.getElementById('meditationLevel').value,
+                imageUrl: document.getElementById('meditationImageUrl').value.trim(),
+                audioUrl: document.getElementById('meditationAudioUrl').value.trim(),
+                category: currentCategoryId,
+                tags: document.getElementById('meditationTags').value.split(',').map(tag => tag.trim()).filter(tag => tag),
+                benefits: document.getElementById('meditationBenefits').value.trim(),
+                mood: document.getElementById('meditationMood').value.trim(),
+                focus: 85,
+                isActive: true
+            };
+
+            if (!formData.title || !formData.duration || !formData.audioUrl) {
+                showAlert('Title, duration, and audio URL are required', 'error');
+                return;
+            }
+
+            try {
+                await createMeditation(formData);
+                showAlert('Meditation added successfully', 'success');
+                closeSoundModal();
+                
+                // Refresh sound counts after adding new meditation
+                await loadAllSoundCounts();
+            } catch (error) {
+                // Error already handled in makeRequest
+            }
+        }
+
+        // Add select styling
+        const style = document.createElement('style');
+        style.textContent = `
+            select {
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid #e1e5e9;
+                border-radius: 10px;
+                font-size: 16px;
+                background: white;
+                transition: all 0.3s ease;
+            }
+            select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

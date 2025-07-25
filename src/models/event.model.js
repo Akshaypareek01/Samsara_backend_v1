@@ -78,8 +78,9 @@ howItWillnotHelp:{
     type: String,
     required: false
 },
-   password: { type: String,default:""},
-    meeting_number:{ type: String,default:""},
+
+password: { type: String,default:""},
+meeting_number:{ type: String,default:""},
     status: {
         type: Boolean,
         default: false,
