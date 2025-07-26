@@ -65,6 +65,12 @@ const getRecommendedMeditations = catchAsync(async (req, res) => {
   res.send(result);
 });
 
+const getSimilarMeditations = catchAsync(async (req, res) => {
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  const result = await meditationService.getSimilarMeditations(req.params.meditationId, options);
+  res.send(result);
+});
+
 export {
   createMeditation,
   getMeditations,
@@ -76,4 +82,5 @@ export {
   getMeditationsByMood,
   searchMeditations,
   getRecommendedMeditations,
+  getSimilarMeditations,
 }; 

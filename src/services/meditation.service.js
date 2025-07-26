@@ -141,6 +141,61 @@ const getRecommendedMeditations = async (meditationId, options) => {
   return meditations;
 };
 
+/**
+ * Get similar meditations based on tags and benefits
+ * @param {ObjectId} meditationId
+ * @param {Object} options - Query options
+ * @returns {Promise<QueryResult>}
+ */
+const getSimilarMeditations = async (meditationId, options) => {
+  const meditation = await getMeditationById(meditationId);
+  if (!meditation) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Meditation not found');
+  }
+
+  // Build similarity query based on tags and benefits
+  const similarityQuery = {
+    _id: { $ne: meditationId }, // Exclude the current meditation
+    isActive: true,
+    $or: []
+  };
+
+  // Add tag-based similarity
+  if (meditation.tags && meditation.tags.length > 0) {
+    similarityQuery.$or.push({
+      tags: { $in: meditation.tags }
+    });
+  }
+
+  // Add benefits-based similarity using text search
+  if (meditation.benefits) {
+    similarityQuery.$or.push({
+      benefits: { $regex: meditation.benefits.split(' ').slice(0, 3).join('|'), $options: 'i' }
+    });
+  }
+
+  // If no tags or benefits, fall back to category-based similarity
+  if (similarityQuery.$or.length === 0) {
+    similarityQuery.$or.push({
+      category: meditation.category
+    });
+  }
+
+  // Add level-based similarity as a bonus factor
+  if (meditation.level && meditation.level !== 'All Levels') {
+    similarityQuery.$or.push({
+      level: meditation.level
+    });
+  }
+
+  const meditations = await Meditation.paginate(similarityQuery, {
+    ...options,
+    sortBy: 'createdAt:desc' // Default sort by newest first
+  });
+
+  return meditations;
+};
+
 export {
   createMeditation,
   queryMeditations,
@@ -152,4 +207,5 @@ export {
   getMeditationsByMood,
   searchMeditations,
   getRecommendedMeditations,
+  getSimilarMeditations,
 }; 

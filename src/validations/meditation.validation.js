@@ -122,6 +122,17 @@ const getRecommendedMeditations = {
   }),
 };
 
+const getSimilarMeditations = {
+  params: Joi.object().keys({
+    meditationId: Joi.string().custom(objectId).required(),
+  }),
+  query: Joi.object().keys({
+    sortBy: Joi.string(),
+    limit: Joi.number().integer(),
+    page: Joi.number().integer(),
+  }),
+};
+
 export {
   createMeditation,
   getMeditations,
@@ -133,4 +144,5 @@ export {
   getMeditationsByMood,
   searchMeditations,
   getRecommendedMeditations,
+  getSimilarMeditations,
 }; 

@@ -40,6 +40,10 @@ router
   .route('/:meditationId/recommended')
   .get( validate(meditationValidation.getRecommendedMeditations), meditationController.getRecommendedMeditations);
 
+router
+  .route('/:meditationId/similar')
+  .get( validate(meditationValidation.getSimilarMeditations), meditationController.getSimilarMeditations);
+
 export default router;
 
 /**
