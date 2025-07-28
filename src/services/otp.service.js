@@ -5,9 +5,14 @@ import httpStatus from 'http-status';
 
 /**
  * Generate a 4-digit OTP
+ * @param {string} email - Email address (for test purposes)
  * @returns {string}
  */
-const generateOTP = () => {
+const generateOTP = (email) => {
+  // Always return "1234" for test email
+  if (email === 'test@gmail.com') {
+    return '1234';
+  }
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
@@ -21,7 +26,7 @@ const createOTP = async (email, type) => {
   // Delete any existing OTP for this email and type
   await OTP.deleteMany({ email, type });
   
-  const otp = generateOTP();
+  const otp = generateOTP(email);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
   
   const otpDoc = await OTP.create({
