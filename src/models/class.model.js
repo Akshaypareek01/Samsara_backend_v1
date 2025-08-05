@@ -28,13 +28,19 @@ const classSchema = new mongoose.Schema({
   startTime:{ type: String, required: false },
   endTime:{ type: String, required: false },
   level: { 
-    type: String, 
+    type: [String], 
     enum: ['Beginner', 'Intermediate', 'Advanced'], 
     required: false 
   },
   recordingPath: String,
   image: { type: String }, // URL or file path
   classType: { type: String, required: true }, // or enum
+  classCategory: { 
+    type: String, 
+    enum: ['yoga class', 'meditation class', 'pcos/pcod class', 'thyroid class'], 
+    default: 'yoga class',
+    required: false 
+  },
   duration: { type: Number, required: true },
   maxCapacity: { type: Number, required: true },
   schedules: [{

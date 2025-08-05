@@ -1,5 +1,5 @@
 import express from 'express';
-import { EndMeeting, addPredefinedClasses, addStudentToClass, assignTeacherToClass, createClass, deleteClass, getAllClasses, getAllUpcomingClasses, getClassById, getClassesByTeacher, getStudentClasses, getStudentUpcomingClasses, isStudentEnrolled, removeStudentFromClass, updateClass, getAllTeachers, startClassMeeting } from '../../controllers/classes.controller.js';
+import { EndMeeting, addPredefinedClasses, addStudentToClass, assignTeacherToClass, createClass, deleteClass, getAllClasses, getAllUpcomingClasses, getUpcomingClassesByCategory, getClassById, getClassesByTeacher, getStudentClasses, getStudentUpcomingClasses, isStudentEnrolled, removeStudentFromClass, updateClass, getAllTeachers, startClassMeeting } from '../../controllers/classes.controller.js';
 
 
 const classRouter = express.Router();
@@ -10,6 +10,7 @@ classRouter.post('/', createClass);
 // Route for getting all classes
 classRouter.get('/', getAllClasses);
 classRouter.get('/upcoming', getAllUpcomingClasses);
+classRouter.get('/upcoming/category/:classCategory', getUpcomingClassesByCategory);
 
 // Route for getting all teachers
 classRouter.get('/teachers', getAllTeachers);

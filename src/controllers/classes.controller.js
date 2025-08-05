@@ -136,6 +136,46 @@ export const getAllUpcomingClasses = async (req, res) => {
   }
 };
 
+export const getUpcomingClassesByCategory = async (req, res) => {
+  try {
+    const { classCategory } = req.params;
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Reset time to 00:00:00 for the current day
+
+    // Validate class category
+    const validCategories = ['yoga class', 'meditation class', 'pcos/pcod class', 'thyroid class'];
+    if (!validCategories.includes(classCategory)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: `Invalid class category. Must be one of: ${validCategories.join(', ')}` 
+      });
+    }
+
+    const classes = await Class.find({ 
+      schedule: { $gte: currentDate }, // Includes today & future dates
+      classCategory: classCategory 
+    })
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('students', 'name email')
+      .exec();
+
+    const classesWithTeacherData = classes.map(classItem => {
+      const classData = classItem.toObject();
+      classData.teacher = getTeacherData(classData.teacher);
+      return classData;
+    });
+
+    res.json({ 
+      success: true, 
+      data: classesWithTeacherData,
+      category: classCategory,
+      totalClasses: classesWithTeacherData.length
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 export const getClassById = async (req, res) => {
   const { classId } = req.params;
   try {

@@ -72,6 +72,12 @@ const userSchema = new mongoose.Schema({
         unique: true,
         sparse: true // Allow multiple null values
     },
+    emergencyMobile: {
+        type: String,
+        required: [false, 'Please provide a emergency mobile number'],
+        minlength: 10,
+        sparse: true // Allow multiple null values
+    },
     dob: {
         type: String,
         required: [false, 'Please provide date of birth'],

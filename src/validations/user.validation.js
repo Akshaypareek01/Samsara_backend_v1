@@ -49,6 +49,7 @@ const updateProfile = {
     .keys({
       name: Joi.string().max(20),
       mobile: Joi.string().min(10).max(15),
+      emergencyMobile: Joi.string().min(10).max(15),
       gender: Joi.string(),
       dob: Joi.string(),
       age: Joi.string(),
