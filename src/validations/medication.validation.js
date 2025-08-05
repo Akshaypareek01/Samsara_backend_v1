@@ -72,7 +72,7 @@ const addMedication = {
       preset: Joi.string().valid('1 week', '1 month', '3 months', 'Ongoing')
     }),
     frequency: Joi.string().valid('Daily', 'Weekly', 'Custom').required(),
-    daysOfWeek: Joi.array().items(Joi.string().valid('M', 'T', 'W', 'T', 'F', 'S', 'S')),
+    daysOfWeek: Joi.array().items(Joi.string().valid('M', 'T', 'W', 'Th', 'F', 'S', 'Su')),
     times: Joi.array().items(
       Joi.object().keys({
         time: Joi.string().required(),
@@ -106,7 +106,7 @@ const updateMedication = {
       preset: Joi.string().valid('1 week', '1 month', '3 months', 'Ongoing')
     }),
     frequency: Joi.string().valid('Daily', 'Weekly', 'Custom'),
-    daysOfWeek: Joi.array().items(Joi.string().valid('M', 'T', 'W', 'T', 'F', 'S', 'S')),
+    daysOfWeek: Joi.array().items(Joi.string().valid('M', 'T', 'W', 'Th', 'F', 'S', 'Su')),
     times: Joi.array().items(
       Joi.object().keys({
         time: Joi.string(),

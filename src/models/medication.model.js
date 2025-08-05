@@ -60,7 +60,7 @@ const MedicationItemSchema = new mongoose.Schema({
   },
   daysOfWeek: [{
     type: String,
-    enum: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+    enum: ['M', 'T', 'W', 'Th', 'F', 'S', 'Su']
   }],
   times: [
     {
