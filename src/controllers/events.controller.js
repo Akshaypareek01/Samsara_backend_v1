@@ -455,6 +455,28 @@ export const getUserRegisteredEventsUpcoming = async (req, res) => {
     }
 };
 
+// Get all events by teacher ID
+export const getEventsByTeacher = async (req, res) => {
+    try {
+        const { teacherId } = req.params;
+
+        const events = await Event.find({ teacher: teacherId })
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+            .populate('students', 'name email')
+            .exec();
+            
+        const eventsWithTeacherData = events.map(event => {
+            const eventData = event.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            return eventData;
+        });
+        
+        res.status(200).json({ events: eventsWithTeacherData });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
 const preDefineEvents = [
     {
       "eventName": "Sunrise Yoga & Meditation",

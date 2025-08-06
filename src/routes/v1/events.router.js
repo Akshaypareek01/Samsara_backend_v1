@@ -2,7 +2,7 @@
 
 // routes/eventRoutes.js
 import express from 'express';
-import { EndEventMeeting, addPredefinedEvents, createEvent, deleteEvent, getAllEvents, getAllEventsUpcoming, getEventById, getStudentsForEvent, getUserRegisteredEvents, getUserRegisteredEventsUpcoming, registerUserToEvent, updateEvent } from '../../controllers/events.controller.js';
+import { EndEventMeeting, addPredefinedEvents, createEvent, deleteEvent, getAllEvents, getAllEventsUpcoming, getEventById, getEventsByTeacher, getStudentsForEvent, getUserRegisteredEvents, getUserRegisteredEventsUpcoming, registerUserToEvent, updateEvent } from '../../controllers/events.controller.js';
 import { startEventMeeting } from '../../controllers/events.controller.js';
 import { isUserEnrolledInEvent } from '../../controllers/events.controller.js';
 
@@ -42,5 +42,8 @@ eventsRouter.get('/students/:eventId', getStudentsForEvent);
 eventsRouter.get('/user-events/:userId', getUserRegisteredEvents);
 
 eventsRouter.get('/user-events/:userId/upcoming', getUserRegisteredEventsUpcoming);
+
+// Route to get all events by teacher ID
+eventsRouter.get('/teacher/:teacherId', getEventsByTeacher);
 
 export default eventsRouter;
