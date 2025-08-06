@@ -2,7 +2,7 @@
 
 // routes/eventRoutes.js
 import express from 'express';
-import { EndEventMeeting, addPredefinedEvents, createEvent, deleteEvent, getAllEvents, getAllEventsUpcoming, getEventById, getEventsByTeacher, getStudentsForEvent, getUserRegisteredEvents, getUserRegisteredEventsUpcoming, registerUserToEvent, updateEvent } from '../../controllers/events.controller.js';
+import { EndEventMeeting, addPredefinedEvents, createEvent, deleteEvent, getAllEvents, getAllEventsUpcoming, getEventById, getEventsByTeacher, getEventsBySessionStatus, getEventsByTeacherAndStatus, getStudentsForEvent, getUserRegisteredEvents, getUserRegisteredEventsUpcoming, registerUserToEvent, updateEvent, updateEventSessionStatus } from '../../controllers/events.controller.js';
 import { startEventMeeting } from '../../controllers/events.controller.js';
 import { isUserEnrolledInEvent } from '../../controllers/events.controller.js';
 
@@ -45,5 +45,14 @@ eventsRouter.get('/user-events/:userId/upcoming', getUserRegisteredEventsUpcomin
 
 // Route to get all events by teacher ID
 eventsRouter.get('/teacher/:teacherId', getEventsByTeacher);
+
+// Route to update event session status
+eventsRouter.patch('/:eventId/session-status', updateEventSessionStatus);
+
+// Route to get events by session status
+eventsRouter.get('/status/:sessionStatus', getEventsBySessionStatus);
+
+// Route to get events by teacher and session status
+eventsRouter.get('/teacher/:teacherId/status/:sessionStatus', getEventsByTeacherAndStatus);
 
 export default eventsRouter;

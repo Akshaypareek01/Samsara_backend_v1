@@ -477,6 +477,105 @@ export const getEventsByTeacher = async (req, res) => {
     }
 };
 
+// Update event session status
+export const updateEventSessionStatus = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const { sessionStatus } = req.body;
+
+        // Validate session status
+        if (!['pending', 'accepted', 'rejected'].includes(sessionStatus)) {
+            return res.status(400).json({ 
+                message: 'Invalid session status. Must be one of: pending, accepted, rejected' 
+            });
+        }
+
+        const event = await Event.findByIdAndUpdate(
+            eventId, 
+            { sessionStatus }, 
+            { new: true }
+        )
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+        .populate('students', 'name email')
+        .exec();
+            
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+        
+        const eventData = event.toObject();
+        eventData.teacher = getTeacherData(eventData.teacher);
+        
+        res.status(200).json({ 
+            message: 'Event session status updated successfully', 
+            event: eventData 
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+// Get events by session status
+export const getEventsBySessionStatus = async (req, res) => {
+    try {
+        const { sessionStatus } = req.params;
+
+        // Validate session status
+        if (!['pending', 'accepted', 'rejected'].includes(sessionStatus)) {
+            return res.status(400).json({ 
+                message: 'Invalid session status. Must be one of: pending, accepted, rejected' 
+            });
+        }
+
+        const events = await Event.find({ sessionStatus })
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+            .populate('students', 'name email')
+            .exec();
+            
+        const eventsWithTeacherData = events.map(event => {
+            const eventData = event.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            return eventData;
+        });
+        
+        res.status(200).json({ events: eventsWithTeacherData });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+// Get events by teacher and session status
+export const getEventsByTeacherAndStatus = async (req, res) => {
+    try {
+        const { teacherId, sessionStatus } = req.params;
+
+        // Validate session status
+        if (!['pending', 'accepted', 'rejected'].includes(sessionStatus)) {
+            return res.status(400).json({ 
+                message: 'Invalid session status. Must be one of: pending, accepted, rejected' 
+            });
+        }
+
+        const events = await Event.find({ 
+            teacher: teacherId, 
+            sessionStatus 
+        })
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+        .populate('students', 'name email')
+        .exec();
+            
+        const eventsWithTeacherData = events.map(event => {
+            const eventData = event.toObject();
+            eventData.teacher = getTeacherData(eventData.teacher);
+            return eventData;
+        });
+        
+        res.status(200).json({ events: eventsWithTeacherData });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
 const preDefineEvents = [
     {
       "eventName": "Sunrise Yoga & Meditation",

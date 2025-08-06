@@ -85,6 +85,11 @@ meeting_number:{ type: String,default:""},
         type: Boolean,
         default: false,
       },
+    sessionStatus: {
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending'
+    },
 }, { timestamps: true });
 
 const Event = mongoose.model('Event', eventSchema);
