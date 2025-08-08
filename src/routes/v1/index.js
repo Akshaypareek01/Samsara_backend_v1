@@ -22,6 +22,9 @@ import ratingRoute from './rating.router.js';
 import userAnalyticsRoute from './userAnalytics.router.js';
 import config from '../../config/config.js';
 import doshaRoute from './dosha.router.js';
+import menopauseAssessmentRoute from './menopauseAssessment.router.js';
+import pcosAssessmentRoute from './pcosAssessment.router.js';
+import thyroidAssessmentRoute from './thyroidAssessment.router.js';
 
 const router = express.Router();
 
@@ -101,6 +104,18 @@ const defaultRoutes = [
   {
     path: '/dosha',
     route: doshaRoute,
+  },
+  {
+    path: '/menopause-assessment',
+    route: menopauseAssessmentRoute,
+  },
+  {
+    path: '/pcos-assessment',
+    route: pcosAssessmentRoute,
+  },
+  {
+    path: '/thyroid-assessment',
+    route: thyroidAssessmentRoute,
   },
   {
     path: '/ratings',

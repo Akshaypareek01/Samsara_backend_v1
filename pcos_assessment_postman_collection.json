@@ -1,0 +1,275 @@
+{
+  "info": {
+    "name": "PCOS Assessment API",
+    "description": "Complete Postman collection for PCOS/PCOD Assessment API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Get Assessment Questions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/questions",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "questions"]
+        },
+        "description": "Get all PCOS assessment questions and options (public endpoint)"
+      },
+      "response": []
+    },
+    {
+      "name": "Create Assessment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answers\": {\n    \"lastCycleDate\": \"2024-01-15T00:00:00.000Z\",\n    \"cycleRegularity\": \"Irregular\",\n    \"periodDuration\": \"5-7 days\",\n    \"menstrualFlow\": \"Heavy\",\n    \"bloodColor\": \"Bright red\",\n    \"facialHair\": \"No\",\n    \"weightGain\": \"Yes\",\n    \"foodCravings\": \"Sugar and chocolate cravings\",\n    \"hormonalMedications\": \"No\",\n    \"periodPain\": \"Bearable\",\n    \"facialAcne\": \"Yes\",\n    \"lowLibido\": \"No\",\n    \"hairLoss\": \"Normal\",\n    \"darkSkinPatches\": \"No\",\n    \"difficultyConceiving\": \"Other\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", ""]
+        },
+        "description": "Create a new PCOS assessment (requires authentication)"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Latest Assessment",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/latest",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "latest"]
+        },
+        "description": "Get the latest assessment for the authenticated user"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Assessment History",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/history?page=1&limit=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "history"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "description": "Get assessment history with pagination"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Assessment History - Filtered",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/history?riskLevel=High%20risk",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "history"],
+          "query": [
+            {
+              "key": "riskLevel",
+              "value": "High risk"
+            }
+          ]
+        },
+        "description": "Get assessment history filtered by risk level"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Assessment Statistics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/stats",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "stats"]
+        },
+        "description": "Get assessment statistics for the authenticated user"
+      },
+      "response": []
+    },
+    {
+      "name": "Calculate Risk Level",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answers\": {\n    \"lastCycleDate\": \"2024-01-01T00:00:00.000Z\",\n    \"cycleRegularity\": \"Irregular\",\n    \"periodDuration\": \"7+ days\",\n    \"menstrualFlow\": \"Heavy\",\n    \"bloodColor\": \"Brown-Blackish\",\n    \"facialHair\": \"Yes\",\n    \"weightGain\": \"Yes\",\n    \"foodCravings\": \"Sugar and chocolate cravings\",\n    \"hormonalMedications\": \"Yes\",\n    \"periodPain\": \"Unbearable\",\n    \"facialAcne\": \"Yes\",\n    \"lowLibido\": \"Yes\",\n    \"hairLoss\": \"Excess\",\n    \"darkSkinPatches\": \"Yes\",\n    \"difficultyConceiving\": \"Never conceived\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/calculate-risk",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "calculate-risk"]
+        },
+        "description": "Calculate risk level without saving the assessment"
+      },
+      "response": []
+    },
+    {
+      "name": "Submit Reassessment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answers\": {\n    \"lastCycleDate\": \"2024-02-01T00:00:00.000Z\",\n    \"cycleRegularity\": \"Regular\",\n    \"periodDuration\": \"3-5 days\",\n    \"menstrualFlow\": \"Normal\",\n    \"bloodColor\": \"Bright red\",\n    \"facialHair\": \"No\",\n    \"weightGain\": \"No\",\n    \"foodCravings\": \"No specific cravings\",\n    \"hormonalMedications\": \"No\",\n    \"periodPain\": \"Absent\",\n    \"facialAcne\": \"No\",\n    \"lowLibido\": \"No\",\n    \"hairLoss\": \"Normal\",\n    \"darkSkinPatches\": \"No\",\n    \"difficultyConceiving\": \"Other\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/reassessment",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "reassessment"]
+        },
+        "description": "Submit a reassessment (creates new assessment)"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Assessment by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/{{assessmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "{{assessmentId}}"]
+        },
+        "description": "Get a specific assessment by ID"
+      },
+      "response": []
+    },
+    {
+      "name": "Update Assessment",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answers\": {\n    \"lastCycleDate\": \"2024-01-20T00:00:00.000Z\",\n    \"cycleRegularity\": \"Irregular\",\n    \"periodDuration\": \"5-7 days\",\n    \"menstrualFlow\": \"Heavy\",\n    \"bloodColor\": \"Bright red\",\n    \"facialHair\": \"No\",\n    \"weightGain\": \"Yes\",\n    \"foodCravings\": \"Sugar cravings\",\n    \"hormonalMedications\": \"No\",\n    \"periodPain\": \"Bearable\",\n    \"facialAcne\": \"Yes\",\n    \"lowLibido\": \"No\",\n    \"hairLoss\": \"Normal\",\n    \"darkSkinPatches\": \"No\",\n    \"difficultyConceiving\": \"Other\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/{{assessmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "{{assessmentId}}"]
+        },
+        "description": "Update an existing assessment"
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Assessment",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/v1/pcos-assessment/{{assessmentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "pcos-assessment", "{{assessmentId}}"]
+        },
+        "description": "Delete a specific assessment"
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set auth token if available",
+          "if (pm.environment.get('authToken')) {",
+          "    pm.collectionVariables.set('authToken', pm.environment.get('authToken'));",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common test script",
+          "pm.test(\"Status code is 200 or 201\", function () {",
+          "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+          "});",
+          "",
+          "pm.test(\"Response has required fields\", function () {",
+          "    const jsonData = pm.response.json();",
+          "    pm.expect(jsonData).to.have.property('status');",
+          "    pm.expect(jsonData.status).to.eql('success');",
+          "});",
+          "",
+          "// Extract assessment ID if present",
+          "if (pm.response.code === 201 && pm.response.json().data && pm.response.json().data.assessment) {",
+          "    const assessmentId = pm.response.json().data.assessment._id;",
+          "    pm.collectionVariables.set('assessmentId', assessmentId);",
+          "}"
+        ]
+      }
+    }
+  ]
+}

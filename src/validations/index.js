@@ -11,6 +11,9 @@ import medicationValidation from './medication.validation.js';
 import doshaValidation from './dosha.validation.js';
 import * as ratingValidation from './rating.validation.js';
 import * as userAnalyticsValidation from './userAnalytics.validation.js';
+import * as menopauseAssessmentValidation from './menopauseAssessment.validation.js';
+import * as pcosAssessmentValidation from './pcosAssessment.validation.js';
+import * as thyroidAssessmentValidation from './thyroidAssessment.validation.js';
 
 export { 
   authValidation, 
@@ -25,5 +28,8 @@ export {
   medicationValidation,
   doshaValidation,
   ratingValidation,
-  userAnalyticsValidation
+  userAnalyticsValidation,
+  menopauseAssessmentValidation,
+  pcosAssessmentValidation,
+  thyroidAssessmentValidation
 };

@@ -30,6 +30,9 @@ import { Meditation } from './meditation.model.js';
 import { MasterCategory } from './master-category.model.js';
 import { ClassRating } from './class-rating.model.js';
 import { EventRating } from './event-rating.model.js';
+import { MenopauseAssessment } from './menopause-assessment.model.js';
+import { PcosAssessment } from './pcos-assessment.model.js';
+import { ThyroidAssessment } from './thyroid-assessment.model.js';
 
 export {
   Token,
@@ -65,6 +68,9 @@ export {
   Meditation,
   MasterCategory,
   ClassRating,
-  EventRating
+  EventRating,
+  MenopauseAssessment,
+  PcosAssessment,
+  ThyroidAssessment
 };
 

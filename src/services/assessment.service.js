@@ -1,5 +1,5 @@
 import { QuestionMaster, AssessmentResult } from '../models/index.js';
-import { ApiError } from '../utils/ApiError.js';
+import ApiError from '../utils/ApiError.js';
 import httpStatus from 'http-status';
 
 /**

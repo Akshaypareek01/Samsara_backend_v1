@@ -36,3 +36,12 @@ export * as scheduleService from './schedule.service.js';
 // Export user analytics service
 export * as userAnalyticsService from './userAnalytics.service.js';
 
+// Export menopause assessment service
+export * as menopauseAssessmentService from './menopauseAssessment.service.js';
+
+// Export PCOS assessment service
+export * as pcosAssessmentService from './pcosAssessment.service.js';
+
+// Export Thyroid assessment service
+export * as thyroidAssessmentService from './thyroidAssessment.service.js';
+
