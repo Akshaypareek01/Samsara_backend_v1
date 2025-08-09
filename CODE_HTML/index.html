@@ -829,10 +829,14 @@
 
     <script>
         // Configuration
-        const API_BASE_URL = 'https://samsara-backend-v1.onrender.com/v1';
+        const API_BASE_URL = 'http://localhost:3000/v1';
         let authToken = localStorage.getItem('authToken') || 'your_jwt_token_here';
         let currentCategoryId = null;
         let categories = [];
+
+        // Upload size limits (increase as needed)
+        const MAX_IMAGE_SIZE_BYTES = 25 * 1024 * 1024; // 25MB
+        const MAX_AUDIO_SIZE_BYTES = 200 * 1024 * 1024; // 200MB
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -1070,10 +1074,14 @@
         async function handleFileUpload(file, type) {
             if (!file) return;
 
-            // Validate file size (5MB limit)
-            const maxSize = 5 * 1024 * 1024; // 5MB
+            const isImage = type.includes('Image');
+            const isAudio = type.includes('Audio');
+
+            // Validate file size (raised limits)
+            const maxSize = isImage ? MAX_IMAGE_SIZE_BYTES : isAudio ? MAX_AUDIO_SIZE_BYTES : 50 * 1024 * 1024;
             if (file.size > maxSize) {
-                showAlert(`File size must be less than 5MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`, 'error');
+                const maxMb = (maxSize / 1024 / 1024).toFixed(0);
+                showAlert(`File is too large. Max allowed is ${maxMb}MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`, 'error');
                 return;
             }
 
@@ -1081,12 +1089,12 @@
             const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             const validAudioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a'];
 
-            if (type.includes('Image') && !validImageTypes.includes(file.type)) {
+            if (isImage && !validImageTypes.includes(file.type)) {
                 showAlert('Please select a valid image file (JPEG, PNG, GIF, WebP)', 'error');
                 return;
             }
 
-            if (type.includes('Audio') && !validAudioTypes.includes(file.type)) {
+            if (isAudio && !validAudioTypes.includes(file.type)) {
                 showAlert('Please select a valid audio file (MP3, WAV, OGG, M4A)', 'error');
                 return;
             }

@@ -5,10 +5,12 @@ import uploadController from '../../controllers/upload.controller.js';
 const router = express.Router();
 
 // Configure multer for memory storage
+// NOTE: Large files are held in memory before being sent to R2. For very large uploads
+// or high concurrency, consider switching to a streaming approach instead of memoryStorage.
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 200 * 1024 * 1024, // 200MB limit
   },
 });
 
