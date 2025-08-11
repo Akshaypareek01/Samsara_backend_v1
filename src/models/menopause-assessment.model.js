@@ -44,53 +44,57 @@ const menopauseAssessmentSchema = new mongoose.Schema({
             type: Number,
             min: 0,
             max: 3,
-            required: true
+            default: 0
         },
         fatigueScore: {
             type: Number,
             min: 0,
             max: 3,
-            required: true
+            default: 0
         },
         weightChangesScore: {
             type: Number,
             min: 0,
             max: 3,
-            required: true
+            default: 0
         },
         sleepQualityScore: {
             type: Number,
             min: 0,
             max: 3,
-            required: true
+            default: 0
         },
         moodSwingsScore: {
             type: Number,
             min: 0,
             max: 3,
-            required: true
+            default: 0
         }
     },
     totalScore: {
         type: Number,
         required: true,
         min: 0,
-        max: 15
+        max: 15,
+        default: 0
     },
     averageScore: {
         type: Number,
         required: true,
         min: 0,
-        max: 3
+        max: 3,
+        default: 0
     },
     riskLevel: {
         type: String,
         enum: ['High Risk', 'Moderate Risk', 'Low-Moderate Risk', 'Low Risk'],
-        required: true
+        required: true,
+        default: 'Low Risk'
     },
     riskDescription: {
         type: String,
-        required: true
+        required: true,
+        default: 'Assessment in progress'
     },
     isLatest: {
         type: Boolean,

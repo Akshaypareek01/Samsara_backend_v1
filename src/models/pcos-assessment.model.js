@@ -225,6 +225,16 @@ pcosAssessmentSchema.plugin(paginate);
 
 // Pre-save middleware to calculate scores and risk level
 pcosAssessmentSchema.pre('save', function(next) {
+    // Only run middleware if we have answers
+    if (!this.answers) {
+        return next();
+    }
+    
+    // Initialize scores object if it doesn't exist
+    if (!this.scores) {
+        this.scores = {};
+    }
+    
     // Calculate individual scores based on answers
     this.scores.cycleIrregularityScore = this.getScoreForAnswer('cycleRegularity', this.answers.cycleRegularity);
     this.scores.periodDurationScore = this.getScoreForAnswer('periodDuration', this.answers.periodDuration);
@@ -245,7 +255,9 @@ pcosAssessmentSchema.pre('save', function(next) {
     this.totalScore = Object.values(this.scores).reduce((sum, score) => sum + score, 0);
     
     // Calculate cycle length
+    console.log('Pre-save: lastCycleDate from answers:', this.answers.lastCycleDate);
     this.cycleLength = this.calculateCycleLength(this.answers.lastCycleDate);
+    console.log('Pre-save: calculated cycleLength:', this.cycleLength);
     
     // Determine risk level and description
     const { riskLevel, riskDescription, recommendations } = this.calculateRiskLevel(this.totalScore);
@@ -338,10 +350,30 @@ pcosAssessmentSchema.methods.getScoreForAnswer = function(field, answer) {
 
 // Method to calculate cycle length
 pcosAssessmentSchema.methods.calculateCycleLength = function(lastCycleDate) {
+    // Add validation and debugging
+    if (!lastCycleDate) {
+        console.log('Warning: lastCycleDate is undefined or null');
+        return 0;
+    }
+    
     const today = new Date();
     const lastCycle = new Date(lastCycleDate);
+    
+    // Check if the date is valid
+    if (isNaN(lastCycle.getTime())) {
+        console.log('Warning: Invalid lastCycleDate:', lastCycleDate);
+        return 0;
+    }
+    
     const diffTime = Math.abs(today - lastCycle);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Ensure we return a valid number
+    if (isNaN(diffDays)) {
+        console.log('Warning: Calculated diffDays is NaN');
+        return 0;
+    }
+    
     return diffDays;
 };
 

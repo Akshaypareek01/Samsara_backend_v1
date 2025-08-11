@@ -157,9 +157,31 @@ export const getAssessmentQuestions = () => {
  * @returns {number} Cycle length in days
  */
 const calculateCycleLength = (lastCycleDate) => {
+    // Ensure we have a valid date
+    if (!lastCycleDate) {
+        console.log('Warning: lastCycleDate is undefined or null');
+        return 0;
+    }
+    
+    // Convert to Date object if it's a string
+    const lastCycle = new Date(lastCycleDate);
+    
+    // Check if the date is valid
+    if (isNaN(lastCycle.getTime())) {
+        console.log('Warning: Invalid lastCycleDate:', lastCycleDate);
+        return 0;
+    }
+    
     const today = new Date();
-    const diffTime = Math.abs(today - lastCycleDate);
+    const diffTime = Math.abs(today - lastCycle);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Ensure we return a valid number
+    if (isNaN(diffDays)) {
+        console.log('Warning: Calculated diffDays is NaN');
+        return 0;
+    }
+    
     return diffDays;
 };
 
@@ -310,17 +332,23 @@ const calculateRiskLevel = (scores) => {
  * @returns {Promise<PcosAssessment>}
  */
 export const createAssessment = async (userId, answers) => {
-    // Calculate cycle length
-    const cycleLength = calculateCycleLength(answers.lastCycleDate);
+    console.log('createAssessment called with:', { userId, answers });
+    console.log('answers type:', typeof answers);
+    console.log('answers keys:', Object.keys(answers || {}));
+    console.log('lastCycleDate:', answers?.lastCycleDate);
     
-    // Calculate individual scores
+    // Calculate all required fields before creating the assessment
     const scores = calculateScores(answers);
+    console.log('scores calculated:', scores);
     
-    // Calculate risk level
     const riskAssessment = calculateRiskLevel(scores);
+    console.log('risk assessment calculated:', riskAssessment);
     
-    // Create assessment
-    const assessment = await PcosAssessment.create({
+    const cycleLength = calculateCycleLength(answers.lastCycleDate);
+    console.log('cycle length calculated:', cycleLength);
+    
+    // Create assessment with all calculated fields
+    const assessment = new PcosAssessment({
         userId,
         answers,
         scores,
@@ -328,9 +356,15 @@ export const createAssessment = async (userId, answers) => {
         riskLevel: riskAssessment.riskLevel,
         riskDescription: riskAssessment.riskDescription,
         recommendations: riskAssessment.recommendations,
-        cycleLength
+        cycleLength,
+        assessmentDate: new Date(),
+        isCompleted: true
     });
-
+    
+    console.log('assessment object created:', assessment);
+    
+    // Save the assessment
+    await assessment.save();
     return assessment;
 };
 
@@ -395,26 +429,20 @@ export const getAssessmentHistory = async (userId, filter, options) => {
 export const updateAssessment = async (assessmentId, userId, answers) => {
     const assessment = await getAssessmentById(assessmentId, userId);
     
-    // Calculate cycle length
+    // Recalculate all fields based on new answers
+    const scores = calculateScores(answers);
+    const riskAssessment = calculateRiskLevel(scores);
     const cycleLength = calculateCycleLength(answers.lastCycleDate);
     
-    // Calculate individual scores
-    const scores = calculateScores(answers);
-    
-    // Calculate risk level
-    const riskAssessment = calculateRiskLevel(scores);
-    
-    // Update assessment
-    Object.assign(assessment, {
-        answers,
-        scores,
-        totalScore: riskAssessment.totalScore,
-        riskLevel: riskAssessment.riskLevel,
-        riskDescription: riskAssessment.riskDescription,
-        recommendations: riskAssessment.recommendations,
-        cycleLength,
-        assessmentDate: new Date()
-    });
+    // Update all fields
+    assessment.answers = answers;
+    assessment.scores = scores;
+    assessment.totalScore = riskAssessment.totalScore;
+    assessment.riskLevel = riskAssessment.riskLevel;
+    assessment.riskDescription = riskAssessment.riskDescription;
+    assessment.recommendations = riskAssessment.recommendations;
+    assessment.cycleLength = cycleLength;
+    assessment.assessmentDate = new Date();
 
     await assessment.save();
     return assessment;
@@ -487,9 +515,11 @@ export const getAssessmentStats = async (userId) => {
 export const calculateRiskFromAnswers = async (answers) => {
     const scores = calculateScores(answers);
     const riskAssessment = calculateRiskLevel(scores);
+    const cycleLength = calculateCycleLength(answers.lastCycleDate);
     
     return {
         scores,
+        cycleLength,
         ...riskAssessment
     };
 };

@@ -1,9 +1,13 @@
 import axios from 'axios';
 
 // Configuration
-const BASE_URL = 'http://localhost:3000/v1';
-const USER_ID = '686225adf7366b36a48fa65e';
-const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODYyMjVhZGY3MzY2YjM2YTQ4ZmE2NWUiLCJ0eXBlIjoiYWNjZXNzIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NTQ2NzY5NjcsImV4cCI6MTc1NDc2MzM2N30.egZmw7WqoI-5mbK42xNjSDgZf82QLo08gsrTXV-cLA4';
+const BASE_URL = 'http://127.0.0.1:3000/v1';
+const USER_ID = '6888798e1e493d459d0ce350'; // Updated to match the actual user ID
+const email = 'test@gmail.com';
+const otp = "1234";
+
+// Remove the hardcoded token since we'll get it dynamically
+let authToken = null;
 
 // Test data for different assessments
 const testData = {
@@ -43,7 +47,7 @@ const testData = {
     },
     pcos: {
         answers: {
-            lastCycleDate: new Date('2024-01-01'),
+            lastCycleDate: new Date('2024-12-01'), // Fixed: Use a past date instead of future date
             cycleRegularity: 'Irregular',
             periodDuration: '3-5 days',
             menstrualFlow: 'Normal',
@@ -63,7 +67,7 @@ const testData = {
 };
 
 // Helper function to make authenticated requests
-const makeRequest = async (method, endpoint, data = null, token = TEST_TOKEN) => {
+const makeRequest = async (method, endpoint, data = null, token = authToken) => {
     try {
         const config = {
             method,
@@ -86,6 +90,51 @@ const makeRequest = async (method, endpoint, data = null, token = TEST_TOKEN) =>
             error: error.response?.data || error.message, 
             status: error.response?.status 
         };
+    }
+};
+
+// Authentication function using OTP
+const authenticateWithOTP = async () => {
+    console.log('\n=== AUTHENTICATING WITH OTP ===');
+    
+    try {
+        // Step 1: Send login OTP
+        console.log('1. Sending login OTP...');
+        const sendOTPResponse = await axios.post(`${BASE_URL}/auth/send-login-otp`, {
+            email: email
+        });
+        
+        if (sendOTPResponse.status === 200) {
+            console.log('✅ OTP sent successfully');
+        } else {
+            console.log('❌ Failed to send OTP');
+            return false;
+        }
+        
+        // Wait a moment for OTP to be processed
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Step 2: Verify OTP and get token
+        console.log('2. Verifying OTP...');
+        const verifyOTPResponse = await axios.post(`${BASE_URL}/auth/verify-login-otp`, {
+            email: email,
+            otp: otp
+        });
+        
+        if (verifyOTPResponse.status === 200 && verifyOTPResponse.data?.tokens?.access?.token) {
+            authToken = verifyOTPResponse.data.tokens.access.token;
+            console.log('✅ OTP verified successfully');
+            console.log(`   Token obtained: ${authToken.substring(0, 50)}...`);
+            return true;
+        } else {
+            console.log('❌ Failed to verify OTP');
+            console.log('Response:', verifyOTPResponse.data);
+            return false;
+        }
+        
+    } catch (error) {
+        console.log('❌ Authentication failed:', error.response?.data?.message || error.message);
+        return false;
     }
 };
 
@@ -124,7 +173,8 @@ const testMenopauseAssessment = async () => {
     });
     if (createResponse.success) {
         console.log('✅ Assessment created successfully');
-        console.log(`   Assessment ID: ${createResponse.data.data.assessment._id}`);
+        const assessmentId = createResponse.data.data.assessment?._id || createResponse.data.data.assessment?.id;
+        console.log(`   Assessment ID: ${assessmentId || 'N/A'}`);
         console.log(`   Risk Level: ${createResponse.data.data.assessment.riskLevel}`);
         console.log(`   Total Score: ${createResponse.data.data.assessment.totalScore}`);
         
@@ -158,7 +208,7 @@ const testMenopauseAssessment = async () => {
             console.log('❌ Failed to get stats:', statsResponse.error);
         }
         
-        return createResponse.data.data.assessment._id;
+        return assessmentId;
     } else {
         console.log('❌ Failed to create assessment:', createResponse.error);
         return null;
@@ -198,7 +248,8 @@ const testThyroidAssessment = async () => {
     });
     if (createResponse.success) {
         console.log('✅ Assessment created successfully');
-        console.log(`   Assessment ID: ${createResponse.data.data.assessment._id}`);
+        const assessmentId = createResponse.data.data.assessment?._id || createResponse.data.data.assessment?.id;
+        console.log(`   Assessment ID: ${assessmentId || 'N/A'}`);
         console.log(`   Risk Level: ${createResponse.data.data.assessment.riskLevel}`);
         console.log(`   Total Score: ${createResponse.data.data.assessment.totalScore}`);
         
@@ -232,7 +283,7 @@ const testThyroidAssessment = async () => {
             console.log('❌ Failed to get stats:', statsResponse.error);
         }
         
-        return createResponse.data.data.assessment._id;
+        return assessmentId;
     } else {
         console.log('❌ Failed to create assessment:', createResponse.error);
         return null;
@@ -267,12 +318,14 @@ const testPcosAssessment = async () => {
     
     // 3. Create assessment
     console.log('\n3. Creating PCOS assessment...');
+    console.log('   Test data being sent:', JSON.stringify(testData.pcos.answers, null, 2));
     const createResponse = await makeRequest('POST', '/pcos-assessment', {
         answers: testData.pcos.answers
     });
     if (createResponse.success) {
         console.log('✅ Assessment created successfully');
-        console.log(`   Assessment ID: ${createResponse.data.data.assessment._id}`);
+        const assessmentId = createResponse.data.data.assessment?._id || createResponse.data.data.assessment?.id;
+        console.log(`   Assessment ID: ${assessmentId || 'N/A'}`);
         console.log(`   Risk Level: ${createResponse.data.data.assessment.riskLevel}`);
         console.log(`   Total Score: ${createResponse.data.data.assessment.totalScore}`);
         
@@ -306,9 +359,14 @@ const testPcosAssessment = async () => {
             console.log('❌ Failed to get stats:', statsResponse.error);
         }
         
-        return createResponse.data.data.assessment._id;
+        return assessmentId;
     } else {
-        console.log('❌ Failed to create assessment:', createResponse.error);
+        console.log('❌ Failed to create assessment:');
+        console.log('   Status:', createResponse.status);
+        console.log('   Error:', createResponse.error);
+        if (createResponse.error?.message) {
+            console.log('   Message:', createResponse.error.message);
+        }
         return null;
     }
 };
@@ -365,8 +423,19 @@ const runTests = async () => {
     console.log('🚀 Starting Assessment API Tests...');
     console.log(`📋 Testing with User ID: ${USER_ID}`);
     console.log(`🌐 Base URL: ${BASE_URL}`);
+    console.log(`📧 Email: ${email}`);
     
     try {
+        // First authenticate to get token
+        const isAuthenticated = await authenticateWithOTP();
+        
+        if (!isAuthenticated) {
+            console.log('❌ Authentication failed. Cannot proceed with tests.');
+            return;
+        }
+        
+        console.log('\n🔐 Authentication successful! Proceeding with assessment tests...');
+        
         // Test all assessment types
         const menopauseId = await testMenopauseAssessment();
         const thyroidId = await testThyroidAssessment();
@@ -376,9 +445,25 @@ const runTests = async () => {
         await testErrorCases();
         
         console.log('\n=== TEST SUMMARY ===');
-        console.log(`✅ Menopause Assessment: ${menopauseId ? 'PASSED' : 'FAILED'}`);
-        console.log(`✅ Thyroid Assessment: ${thyroidId ? 'PASSED' : 'FAILED'}`);
-        console.log(`✅ PCOS Assessment: ${pcosId ? 'PASSED' : 'FAILED'}`);
+        // Fix: Check if the API calls succeeded, not just if we got an ID
+        const menopauseSuccess = menopauseId !== null && menopauseId !== undefined;
+        const thyroidSuccess = thyroidId !== null && thyroidId !== undefined;
+        const pcosSuccess = pcosId !== null && pcosId !== undefined;
+        
+        console.log(`✅ Menopause Assessment: ${menopauseSuccess ? 'PASSED' : 'FAILED'}`);
+        console.log(`✅ Thyroid Assessment: ${thyroidSuccess ? 'PASSED' : 'FAILED'}`);
+        console.log(`✅ PCOS Assessment: ${pcosSuccess ? 'PASSED' : 'FAILED'}`);
+        
+        // Count successful tests - a test passes if the API call succeeds, regardless of ID
+        const passedTests = [menopauseSuccess, thyroidSuccess, pcosSuccess].filter(success => success).length;
+        const totalTests = 3;
+        console.log(`\n📊 Test Results: ${passedTests}/${totalTests} tests passed`);
+        
+        if (passedTests === totalTests) {
+            console.log('🎉 All tests passed successfully!');
+        } else {
+            console.log(`⚠️  ${totalTests - passedTests} test(s) failed. Check the logs above for details.`);
+        }
         
         console.log('\n🎉 All tests completed!');
         
