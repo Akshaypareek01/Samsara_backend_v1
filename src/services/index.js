@@ -45,3 +45,8 @@ export * as pcosAssessmentService from './pcosAssessment.service.js';
 // Export Thyroid assessment service
 export * as thyroidAssessmentService from './thyroidAssessment.service.js';
 
+// Export period tracker services
+export * as periodTrackerService from './period/periodTracker.service.js';
+export * as periodPredictionService from './period/prediction.service.js';
+export * as birthControlService from './period/birthControl.service.js';
+

@@ -33,6 +33,9 @@ import { EventRating } from './event-rating.model.js';
 import { MenopauseAssessment } from './menopause-assessment.model.js';
 import { PcosAssessment } from './pcos-assessment.model.js';
 import { ThyroidAssessment } from './thyroid-assessment.model.js';
+import { PeriodCycle } from './period-cycle.model.js';
+import { BirthControl } from './birth-control.model.js';
+import { PeriodSettings } from './period-settings.model.js';
 
 export {
   Token,
@@ -72,5 +75,8 @@ export {
   MenopauseAssessment,
   PcosAssessment,
   ThyroidAssessment
+  ,PeriodCycle
+  ,BirthControl
+  ,PeriodSettings
 };
 

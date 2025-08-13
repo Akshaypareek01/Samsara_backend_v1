@@ -25,6 +25,7 @@ import doshaRoute from './dosha.router.js';
 import menopauseAssessmentRoute from './menopauseAssessment.router.js';
 import pcosAssessmentRoute from './pcosAssessment.router.js';
 import thyroidAssessmentRoute from './thyroidAssessment.router.js';
+import periodTrackerRoute from './periodTracker.router.js';
 
 const router = express.Router();
 
@@ -116,6 +117,10 @@ const defaultRoutes = [
   {
     path: '/thyroid-assessment',
     route: thyroidAssessmentRoute,
+  },
+  {
+    path: '/period-tracker',
+    route: periodTrackerRoute,
   },
   {
     path: '/ratings',

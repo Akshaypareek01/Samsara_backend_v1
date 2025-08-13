@@ -832,6 +832,7 @@
         const API_BASE_URL = 'https://apis-samsarawellness.in/v1';
         let authToken = localStorage.getItem('authToken') || 'your_jwt_token_here';
         let currentCategoryId = null;
+        let currentCategoryName = null;
         let categories = [];
 
         // Upload size limits (increase as needed)
@@ -1250,6 +1251,9 @@
 
         async function loadCategorySounds(categoryId, categoryName) {
             try {
+                // keep context so we can refresh after deletions
+                currentCategoryId = categoryId;
+                currentCategoryName = categoryName;
                 document.getElementById('soundsListTitle').textContent = `${categoryName} - Meditation Sounds`;
                 document.getElementById('soundsListModal').style.display = 'block';
                 
@@ -1304,6 +1308,9 @@
                                                 <div style="font-size: 13px; color: #495057; margin-top: 4px;">${meditation.benefits}</div>
                                             </div>
                                         ` : ''}
+                                        <div class="action-buttons" style="margin-top: 8px;">
+                                            <button class="btn btn-danger btn-sm" onclick="deleteMeditationItem('${meditation._id || meditation.id}')">Delete</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1323,6 +1330,31 @@
 
         function closeSoundsListModal() {
             document.getElementById('soundsListModal').style.display = 'none';
+        }
+
+        async function deleteMeditationItem(meditationId) {
+            if (!meditationId || meditationId === 'undefined' || meditationId === 'null') {
+                showAlert('Invalid meditation ID', 'error');
+                return;
+            }
+
+            if (!confirm('Delete this meditation? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                await makeRequest(`${API_BASE_URL}/meditations/${meditationId}`, {
+                    method: 'DELETE'
+                });
+                showAlert('Meditation deleted successfully', 'success');
+                // refresh counts and current modal list
+                await loadAllSoundCounts();
+                if (currentCategoryId && currentCategoryName) {
+                    await loadCategorySounds(currentCategoryId, currentCategoryName);
+                }
+            } catch (error) {
+                // error surfaced by makeRequest
+            }
         }
 
         function resetFileUploadState(type) {
