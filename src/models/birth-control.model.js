@@ -11,7 +11,7 @@ const BirthControlSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    enum: ['pill', 'iud', 'implant', 'condom', 'ring', 'patch', 'none', 'other'],
+    enum: ['pill', 'iud', 'implant', 'condom', 'ring','spermicide','shot', 'patch', 'none', 'other'],
     default: 'none',
   },
   reminderEnabled: { type: Boolean, default: false },

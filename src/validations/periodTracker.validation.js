@@ -78,7 +78,7 @@ export const getBirthControl = {};
 
 export const updateBirthControl = {
   body: Joi.object().keys({
-    method: Joi.string().valid('pill', 'iud', 'implant', 'condom', 'ring', 'patch', 'none', 'other'),
+    method: Joi.string().valid('pill', 'iud', 'implant', 'condom', 'ring', 'spermicide', 'shot', 'patch', 'none', 'other'),
     reminderEnabled: Joi.boolean(),
     nextPillTime: timeHHmm,
     pillTimezone: Joi.string(),
