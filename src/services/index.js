@@ -50,3 +50,6 @@ export * as periodTrackerService from './period/periodTracker.service.js';
 export * as periodPredictionService from './period/prediction.service.js';
 export * as birthControlService from './period/birthControl.service.js';
 
+// Export period cycle service
+export * as periodCycleService from './periodCycle.service.js';
+

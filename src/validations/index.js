@@ -14,6 +14,7 @@ import * as userAnalyticsValidation from './userAnalytics.validation.js';
 import * as menopauseAssessmentValidation from './menopauseAssessment.validation.js';
 import * as pcosAssessmentValidation from './pcosAssessment.validation.js';
 import * as thyroidAssessmentValidation from './thyroidAssessment.validation.js';
+import periodCycleValidation from './periodCycle.validation.js';
 
 export { 
   authValidation, 
@@ -31,5 +32,6 @@ export {
   userAnalyticsValidation,
   menopauseAssessmentValidation,
   pcosAssessmentValidation,
-  thyroidAssessmentValidation
+  thyroidAssessmentValidation,
+  periodCycleValidation
 };

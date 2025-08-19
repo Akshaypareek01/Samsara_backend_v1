@@ -49,6 +49,7 @@ const PeriodCycleSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  cycleNumber: { type: Number, required: true }, // Sequential cycle number for this user
   cycleStartDate: { type: Date, required: true, index: true },
   cycleEndDate: { type: Date },
   periodDurationDays: { type: Number },
@@ -57,18 +58,33 @@ const PeriodCycleSchema = new mongoose.Schema({
   predictedOvulationDate: { type: Date },
   predictedFertileWindowStart: { type: Date },
   predictedFertileWindowEnd: { type: Date },
+  cycleStatus: {
+    type: String,
+    enum: ['Active', 'Completed', 'Predicted'],
+    default: 'Active',
+    index: true,
+  },
   regularity: { type: String, enum: ['Regular', 'Irregular'] },
   currentPhase: {
     type: String,
     enum: ['Menstruation', 'Follicular', 'Ovulation', 'Luteal'],
   },
   dailyLogs: { type: [DailyLogSchema], default: [] },
+  // Enhanced tracking fields
+  actualOvulationDate: { type: Date },
+  actualFertileWindowStart: { type: Date },
+  actualFertileWindowEnd: { type: Date },
+  cycleNotes: { type: String },
+  predictionAccuracy: { type: Number, min: 0, max: 100 }, // How accurate were our predictions
 }, { timestamps: true });
 
 PeriodCycleSchema.plugin(toJSON);
 PeriodCycleSchema.plugin(paginate);
 
+// Compound indexes for efficient queries
 PeriodCycleSchema.index({ userId: 1, cycleStartDate: -1 });
+PeriodCycleSchema.index({ userId: 1, cycleStatus: 1 });
+PeriodCycleSchema.index({ userId: 1, cycleNumber: -1 });
 
 export const PeriodCycle = mongoose.model('PeriodCycle', PeriodCycleSchema);
 

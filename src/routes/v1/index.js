@@ -26,6 +26,7 @@ import menopauseAssessmentRoute from './menopauseAssessment.router.js';
 import pcosAssessmentRoute from './pcosAssessment.router.js';
 import thyroidAssessmentRoute from './thyroidAssessment.router.js';
 import periodTrackerRoute from './periodTracker.router.js';
+import periodCycleRoute from './periodCycle.router.js';
 
 const router = express.Router();
 
@@ -121,6 +122,10 @@ const defaultRoutes = [
   {
     path: '/period-tracker',
     route: periodTrackerRoute,
+  },
+  {
+    path: '/period-cycles',
+    route: periodCycleRoute,
   },
   {
     path: '/ratings',
