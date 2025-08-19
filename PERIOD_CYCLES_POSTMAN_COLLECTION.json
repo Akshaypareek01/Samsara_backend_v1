@@ -1,0 +1,391 @@
+{
+  "info": {
+    "name": "Samsara Period Cycles API",
+    "description": "Complete API collection for the new Period Cycles system with intelligent predictions and comprehensive tracking",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://apis-samsarawellness.in/v1",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "YOUR_JWT_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "cycle_id",
+      "value": "CYCLE_ID_FROM_START_RESPONSE",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Start New Period Cycle",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/period-cycles/start",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "start"]
+        },
+        "description": "Starts a new period cycle when user begins their period. No request body needed - system uses current date automatically."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Get Current Active Cycle",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/period-cycles/current",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "current"]
+        },
+        "description": "Retrieves the user's currently active period cycle. Returns null if no active cycle exists."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Get Cycle History",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/period-cycles/history?limit=6",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "history"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "6",
+              "description": "Number of cycles to return (default: 6, max: 12)"
+            }
+          ]
+        },
+        "description": "Retrieves user's cycle history for analytics and predictions."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Get Cycle Predictions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/period-cycles/predictions",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "predictions"]
+        },
+        "description": "Retrieves upcoming cycle predictions including next period, ovulation, and fertile window."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Get Cycle Analytics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/period-cycles/analytics",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "analytics"]
+        },
+        "description": "Retrieves comprehensive cycle analytics and insights."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Get Specific Cycle by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/period-cycles/{{cycle_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "{{cycle_id}}"]
+        },
+        "description": "Retrieves a specific cycle by its ID. Use cycle_id from start cycle response."
+      },
+      "response": []
+    },
+    {
+      "name": "7. Add/Update Daily Log",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"date\": \"2025-08-19\",\n  \"flowIntensity\": 3,\n  \"crampingIntensity\": \"Moderate\",\n  \"painLevel\": 6,\n  \"energyPattern\": \"Low\",\n  \"restNeeded\": true,\n  \"symptoms\": [\"bloating\", \"fatigue\", \"mood swings\"],\n  \"cravings\": [\"chocolate\", \"salty foods\"],\n  \"medicationTaken\": true,\n  \"supplementTaken\": false,\n  \"exercise\": {\n    \"type\": \"walking\",\n    \"minutes\": 30,\n    \"intensity\": \"light\"\n  },\n  \"discharge\": {\n    \"type\": \"normal\",\n    \"color\": \"clear\",\n    \"consistency\": \"watery\",\n    \"amount\": \"moderate\",\n    \"notableChanges\": [\"increased amount\"]\n  },\n  \"sexualActivity\": {\n    \"hadSex\": false,\n    \"protected\": null\n  },\n  \"pregnancyTest\": {\n    \"taken\": false,\n    \"result\": null\n  },\n  \"notes\": \"Feeling better today, flow is lighter\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/period-cycles/{{cycle_id}}/daily-log",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "{{cycle_id}}", "daily-log"]
+        },
+        "description": "Adds or updates a daily log entry for tracking symptoms, flow, and other data. Requires cycle ID from active cycle."
+      },
+      "response": []
+    },
+    {
+      "name": "8. Complete Cycle",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/period-cycles/{{cycle_id}}/complete",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "{{cycle_id}}", "complete"]
+        },
+        "description": "Manually completes an active cycle when the period ends. Requires cycle ID from active cycle."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Update Cycle Notes",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cycleNotes\": \"This cycle was particularly challenging due to stress at work. Flow was heavier than usual and lasted longer.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/period-cycles/{{cycle_id}}/notes",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "{{cycle_id}}", "notes"]
+        },
+        "description": "Updates general notes for a specific cycle. Requires cycle ID."
+      },
+      "response": []
+    },
+    {
+      "name": "10. Delete Cycle",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/period-cycles/{{cycle_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["period-cycles", "{{cycle_id}}"]
+        },
+        "description": "Deletes a specific cycle (use with caution). Requires cycle ID."
+      },
+      "response": []
+    },
+    {
+      "name": "Test Flow - Complete Cycle Lifecycle",
+      "item": [
+        {
+          "name": "Step 1: Start New Cycle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/period-cycles/start",
+              "host": ["{{base_url}}"],
+              "path": ["period-cycles", "start"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Extract cycle ID from response and set it as a variable",
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.cycle && response.data.cycle._id) {",
+                  "        pm.collectionVariables.set('cycle_id', response.data.cycle._id);",
+                  "        console.log('Cycle ID set:', response.data.cycle._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Step 2: Get Current Cycle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/period-cycles/current",
+              "host": ["{{base_url}}"],
+              "path": ["period-cycles", "current"]
+            }
+          }
+        },
+        {
+          "name": "Step 3: Add Daily Log",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2025-08-19\",\n  \"flowIntensity\": 4,\n  \"crampingIntensity\": \"Strong\",\n  \"painLevel\": 7,\n  \"symptoms\": [\"heavy flow\", \"cramps\", \"fatigue\"],\n  \"notes\": \"Heavy period day 1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/period-cycles/{{cycle_id}}/daily-log",
+              "host": ["{{base_url}}"],
+              "path": ["period-cycles", "{{cycle_id}}", "daily-log"]
+            }
+          }
+        },
+        {
+          "name": "Step 4: Get Predictions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/period-cycles/predictions",
+              "host": ["{{base_url}}"],
+              "path": ["period-cycles", "predictions"]
+            }
+          }
+        },
+        {
+          "name": "Step 5: Complete Cycle",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/period-cycles/{{cycle_id}}/complete",
+              "host": ["{{base_url}}"],
+              "path": ["period-cycles", "{{cycle_id}}", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Step 6: Get Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/period-cycles/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["period-cycles", "analytics"]
+            }
+          }
+        }
+      ],
+      "description": "Complete test flow to verify the entire cycle lifecycle works correctly."
+    },
+    {
+      "name": "Sample Request Bodies",
+      "item": [
+        {
+          "name": "Daily Log - Minimal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2025-08-19\",\n  \"flowIntensity\": 2,\n  \"symptoms\": [\"light flow\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/period-cycles/{{cycle_id}}/daily-log",
+              "host": ["{{base_url}}"],
+              "path": ["period-cycles", "{{cycle_id}}", "daily-log"]
+            }
+          },
+          "description": "Minimal daily log with only required fields."
+        },
+        {
+          "name": "Daily Log - Comprehensive",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2025-08-19\",\n  \"flowIntensity\": 3,\n  \"crampingIntensity\": \"Moderate\",\n  \"painLevel\": 5,\n  \"energyPattern\": \"Low-Mid\",\n  \"restNeeded\": true,\n  \"symptoms\": [\"bloating\", \"fatigue\", \"mood swings\", \"breast tenderness\"],\n  \"cravings\": [\"chocolate\", \"salty foods\", \"carbs\"],\n  \"medicationTaken\": true,\n  \"supplementTaken\": true,\n  \"exercise\": {\n    \"type\": \"yoga\",\n    \"minutes\": 45,\n    \"intensity\": \"gentle\"\n  },\n  \"discharge\": {\n    \"type\": \"normal\",\n    \"color\": \"clear-white\",\n    \"consistency\": \"creamy\",\n    \"amount\": \"moderate\",\n    \"notableChanges\": [\"slight increase\"]\n  },\n  \"sexualActivity\": {\n    \"hadSex\": false,\n    \"protected\": null\n  },\n  \"pregnancyTest\": {\n    \"taken\": false,\n    \"result\": null\n  },\n  \"notes\": \"Feeling better today. Flow is moderate and cramps are manageable with medication.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/period-cycles/{{cycle_id}}/daily-log",
+              "host": ["{{base_url}}"],
+              "path": ["period-cycles", "{{cycle_id}}", "daily-log"]
+            }
+          },
+          "description": "Comprehensive daily log with all available fields."
+        }
+      ],
+      "description": "Sample request bodies for different use cases."
+    }
+  ]
+}

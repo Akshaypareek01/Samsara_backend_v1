@@ -74,9 +74,9 @@ export {
   EventRating,
   MenopauseAssessment,
   PcosAssessment,
-  ThyroidAssessment
-  ,PeriodCycle
-  ,BirthControl
-  ,PeriodSettings
+  ThyroidAssessment,
+  PeriodCycle,
+  BirthControl,
+  PeriodSettings
 };
 

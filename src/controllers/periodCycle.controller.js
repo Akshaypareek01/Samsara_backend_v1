@@ -11,7 +11,7 @@ class PeriodCycleController {
    * POST /api/v1/period-cycles/start
    */
   startNewCycle = catchAsync(async (req, res) => {
-    const { userId } = req.user;
+    const userId = req.user.id;
     
     const newCycle = await periodCycleService.startNewCycle(userId);
     
@@ -30,7 +30,7 @@ class PeriodCycleController {
    */
   completeCycle = catchAsync(async (req, res) => {
     const { cycleId } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     
     const completedCycle = await periodCycleService.completeCycle(cycleId, userId);
     
@@ -49,7 +49,7 @@ class PeriodCycleController {
    */
   updateDailyLog = catchAsync(async (req, res) => {
     const { cycleId } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     const logData = pick(req.body, [
       'date', 'flowIntensity', 'crampingIntensity', 'painLevel', 
       'energyPattern', 'restNeeded', 'symptoms', 'cravings',
@@ -73,7 +73,7 @@ class PeriodCycleController {
    * GET /api/v1/period-cycles/current
    */
   getCurrentCycle = catchAsync(async (req, res) => {
-    const { userId } = req.user;
+    const userId = req.user.id;
     
     const currentCycle = await periodCycleService.getCurrentActiveCycle(userId);
     
@@ -100,7 +100,7 @@ class PeriodCycleController {
    * GET /api/v1/period-cycles/history
    */
   getCycleHistory = catchAsync(async (req, res) => {
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { limit = 6 } = req.query;
     
     const cycleHistory = await periodCycleService.getUserCycleHistory(userId, parseInt(limit));
@@ -119,7 +119,7 @@ class PeriodCycleController {
    * GET /api/v1/period-cycles/predictions
    */
   getPredictions = catchAsync(async (req, res) => {
-    const { userId } = req.user;
+    const userId = req.user.id;
     
     const predictions = await periodCycleService.getUpcomingCyclePredictions(userId);
     
@@ -136,7 +136,7 @@ class PeriodCycleController {
    * GET /api/v1/period-cycles/analytics
    */
   getAnalytics = catchAsync(async (req, res) => {
-    const { userId } = req.user;
+    const userId = req.user.id;
     
     const analytics = await periodCycleService.getCycleAnalytics(userId);
     
@@ -154,7 +154,7 @@ class PeriodCycleController {
    */
   getCycleById = catchAsync(async (req, res) => {
     const { cycleId } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     
     const cycle = await periodCycleService.getCycleById(cycleId, userId);
     
@@ -179,7 +179,7 @@ class PeriodCycleController {
    */
   updateCycleNotes = catchAsync(async (req, res) => {
     const { cycleId } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     const { cycleNotes } = req.body;
     
     const updatedCycle = await periodCycleService.updateCycleNotes(cycleId, userId, cycleNotes);
@@ -199,7 +199,7 @@ class PeriodCycleController {
    */
   deleteCycle = catchAsync(async (req, res) => {
     const { cycleId } = req.params;
-    const { userId } = req.user;
+    const userId = req.user.id;
     
     await periodCycleService.deleteCycle(cycleId, userId);
     
