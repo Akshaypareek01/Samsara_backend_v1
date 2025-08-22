@@ -64,7 +64,7 @@ const PeriodCycleSchema = new mongoose.Schema({
     default: 'Active',
     index: true,
   },
-  regularity: { type: String, enum: ['Regular', 'Irregular'] },
+  regularity: { type: String, enum: ['Regular', 'Irregular'] ,default: 'Regular'},
   currentPhase: {
     type: String,
     enum: ['Menstruation', 'Follicular', 'Ovulation', 'Luteal'],
