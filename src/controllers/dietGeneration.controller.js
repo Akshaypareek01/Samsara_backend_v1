@@ -201,46 +201,13 @@ const generateDiet = catchAsync(async (req, res) => {
     console.log(JSON.stringify(completeUserData, null, 2));
     console.log('=== END COMPLETE STRUCTURED OBJECT ===');
 
-    // Prepare user data for AI model (flattened structure for compatibility)
+    // Prepare data for AI model with email separate and all data in metadata
     const userData = {
-        // Basic user information
-        name: user.name,
+        // Email as separate field
         email: user.email,
-        age: user.age,
-        gender: user.gender,
-        height: user.height,
-        weight: user.weight,
-        targetWeight: user.targetWeight,
-        bodyShape: user.bodyshape,
-        focusAreas: user.focusarea,
-        goals: user.goal,
-        healthIssues: user.health_issues,
-        // Address and location data
-        address: user.Address,
-        city: user.city,
-        pincode: user.pincode,
-        country: user.country,
         
-        // All comprehensive health and lifestyle data
-        doshaAssessments: doshaData,
-        bodyStatus: bodyStatusData,
-        bmiTracking: bmiTrackerData,
-        birthControl: birthControlData,
-        medications: medicationData,
-        pcosAssessments: pcosAssessmentData,
-        periodCycles: periodCycleData,
-        sleepTracking: sleepTrackerData,
-        thyroidAssessments: thyroidAssessmentData,
-        waterTracking: waterTrackerData,
-        workoutTracking: workoutTrackerData,
-        weightTracking: weightTrackerData,
-        menopauseAssessments: menopauseAssessmentData,
-        
-        // Complete structured data object
-        completeUserData: completeUserData,
-        
-        // Additional request preferences
-        ...req.body
+        // All data in metadata object
+        metadata: completeUserData
     };
 
     const result = await dietGenerationService.processDietGeneration(userId, userData);

@@ -20,7 +20,8 @@ const checkDietGenerationEligibility = async (userId) => {
  */
 const generateDietFromAI = async (userData) => {
     try {
-        const response = await axios.post(`${config.dietModelUrl}/generate`, userData, {
+        const dietUrl = config.dietModelUrl || 'http://localhost:3002/';
+        const response = await axios.post(`${dietUrl}/generate-diet-from-node-data`, userData, {
             timeout: 300000, // 5 minutes timeout
             headers: {
                 'Content-Type': 'application/json'
@@ -30,7 +31,7 @@ const generateDietFromAI = async (userData) => {
         if (response.status !== 200) {
             throw new ApiError(500, 'Failed to generate diet from AI model');
         }
-
+         console.log("response.data from ai model =====> ",response.data);
         return response.data;
     } catch (error) {
         if (error.response) {
@@ -95,12 +96,12 @@ const getLatestDietGeneration = async (userId) => {
  * @returns {Promise<Object>} - Generation result
  */
 const processDietGeneration = async (userId, userData) => {
-    // Check eligibility
-    const eligibility = await checkDietGenerationEligibility(userId);
+    // Check eligibility - COMMENTED OUT FOR TESTING
+    // const eligibility = await checkDietGenerationEligibility(userId);
     
-    if (!eligibility.canGenerate) {
-        throw new ApiError(429, `Diet generation not allowed yet. Please wait ${eligibility.remainingDays} more days.`);
-    }
+    // if (!eligibility.canGenerate) {
+    //     throw new ApiError(429, `Diet generation not allowed yet. Please wait ${eligibility.remainingDays} more days.`);
+    // }
 
     // Create generation record
     const generationRecord = await createDietGenerationRecord(userId);
@@ -112,7 +113,7 @@ const processDietGeneration = async (userId, userData) => {
         // Update record with success
         const updatedRecord = await updateDietGeneration(generationRecord._id, {
             status: 'generated',
-            dietData: aiResponse.dietData || aiResponse,
+            dietData: aiResponse.plan || aiResponse.dietData || aiResponse,
             pdfUrl: aiResponse.pdfUrl || aiResponse.downloadUrl,
             generationAttempts: generationRecord.generationAttempts + 1
         });
