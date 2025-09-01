@@ -145,4 +145,4 @@ export {
   searchMeditations,
   getRecommendedMeditations,
   getSimilarMeditations,
-}; 
+};

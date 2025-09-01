@@ -46,14 +46,18 @@ const CommunityPostSchema = new mongoose.Schema(
       enum: ['post', 'challenge', 'question'],
       default: 'post',
     },
-    tags: [{
-      type: String,
-      trim: true,
-    }],
-    likes: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    }],
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     comments: [CommentSchema],
     isActive: {
       type: Boolean,

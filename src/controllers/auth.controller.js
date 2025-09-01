@@ -1,22 +1,21 @@
 import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
 import { createUser, getUserByEmail } from '../services/user.service.js';
-import { generateAuthTokens,generateResetPasswordToken,generateVerifyEmailToken } from '../services/token.service.js';
-import { 
+import { generateAuthTokens, generateResetPasswordToken, generateVerifyEmailToken } from '../services/token.service.js';
+import {
   loginUserWithEmailAndPassword,
   sendLoginOTPForUser,
   loginUserWithOTP,
   logout as logout2,
   refreshAuth,
   resetPassword as resetPassword2,
-  verifyEmail as verifyEmail2 
+  verifyEmail as verifyEmail2,
 } from '../services/auth.service.js';
-import { sendResetPasswordEmail,sendVerificationEmail as sendVerificationEmail2 } from '../services/email.service.js';
+import { sendResetPasswordEmail, sendVerificationEmail as sendVerificationEmail2 } from '../services/email.service.js';
 import { sendRegistrationOTP, verifyRegistrationOTP } from '../services/otp.service.js';
 import ApiError from '../utils/ApiError.js';
 // import { authService, userService, tokenService, emailService } from '../services/index.js';
 // import { authService, userService, tokenService, emailService } from '../services';
-
 
 const register = catchAsync(async (req, res) => {
   const user = await createUser(req.body);
@@ -34,13 +33,13 @@ const login = catchAsync(async (req, res) => {
 // OTP-based registration flow
 const sendRegistrationOTPController = catchAsync(async (req, res) => {
   const { email, name, mobile, role, userCategory, corporate_id, teacherCategory } = req.body;
-  
+
   // Check if user already exists
   const existingUser = await getUserByEmail(email);
   if (existingUser) {
     throw new ApiError(httpStatus.CONFLICT, 'User already exists with this email');
   }
-  
+
   // Validate role-specific requirements
   if (role === 'user') {
     if (!userCategory) {
@@ -54,38 +53,38 @@ const sendRegistrationOTPController = catchAsync(async (req, res) => {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Teacher category is required for teacher registration');
     }
   }
-  
+
   await sendRegistrationOTP(email);
-  res.status(httpStatus.OK).send({ 
+  res.status(httpStatus.OK).send({
     message: 'OTP sent successfully to your email',
     email,
     role,
     userCategory: role === 'user' ? userCategory : undefined,
-    teacherCategory: role === 'teacher' ? teacherCategory : undefined
+    teacherCategory: role === 'teacher' ? teacherCategory : undefined,
   });
 });
 
 const verifyRegistrationOTPController = catchAsync(async (req, res) => {
   const { email, otp, name, mobile, role, userCategory, corporate_id, teacherCategory } = req.body;
-  
+
   const isValidOTP = await verifyRegistrationOTP(email, otp);
   if (!isValidOTP) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Invalid or expired OTP');
   }
-  
+
   // Create user with role-specific details
   const userData = {
     email,
     name,
     role,
-    active: true // Mark as active since email is verified
+    active: true, // Mark as active since email is verified
   };
-  
+
   // Add mobile if provided
   if (mobile) {
     userData.mobile = mobile;
   }
-  
+
   // Add role-specific fields
   if (role === 'user') {
     userData.userCategory = userCategory;
@@ -95,14 +94,14 @@ const verifyRegistrationOTPController = catchAsync(async (req, res) => {
   } else if (role === 'teacher') {
     userData.teacherCategory = teacherCategory;
   }
-  
+
   const user = await createUser(userData);
   const tokens = await generateAuthTokens(user);
-  
-  res.status(httpStatus.CREATED).send({ 
-    user, 
+
+  res.status(httpStatus.CREATED).send({
+    user,
     tokens,
-    message: 'Registration successful' 
+    message: 'Registration successful',
   });
 });
 

@@ -9,7 +9,6 @@ import { generateAuthTokens } from '../../src/services/token.service.js';
 
 import { userOneAccessToken, adminAccessToken } from '../fixtures/token.fixture';
 
-
 setupTestDB();
 
 describe('User routes', () => {

@@ -9,34 +9,23 @@ const router = express.Router();
 // Apply authentication to all routes
 router.use(auth());
 
-
 router.post('/start', periodCycleController.startNewCycle);
 
-
 router.get('/current', periodCycleController.getCurrentCycle);
-
 
 router.get('/history', periodCycleController.getCycleHistory);
 
 router.get('/predictions', periodCycleController.getPredictions);
 
-
 router.get('/analytics', periodCycleController.getAnalytics);
-
 
 router.get('/:cycleId', periodCycleController.getCycleById);
 
-router.post('/:cycleId/daily-log', 
-  validate(periodCycleValidation.updateDailyLog), 
-  periodCycleController.updateDailyLog
-);
+router.post('/:cycleId/daily-log', validate(periodCycleValidation.updateDailyLog), periodCycleController.updateDailyLog);
 
 router.put('/:cycleId/complete', periodCycleController.completeCycle);
 
-router.put('/:cycleId/notes', 
-  validate(periodCycleValidation.updateNotes), 
-  periodCycleController.updateCycleNotes
-);
+router.put('/:cycleId/notes', validate(periodCycleValidation.updateNotes), periodCycleController.updateCycleNotes);
 
 router.delete('/:cycleId', periodCycleController.deleteCycle);
 

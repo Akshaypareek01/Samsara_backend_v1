@@ -33,4 +33,4 @@ router.get('/', auth(), validate(doshaValidation.getAssessmentResults), doshaCon
 // Get assessment by ID
 router.get('/:assessmentId', auth(), validate(doshaValidation.getAssessmentById), doshaController.getAssessmentById);
 
-export default router; 
+export default router;

@@ -33,4 +33,4 @@ class R2Service {
   }
 }
 
-export default R2Service; 
+export default R2Service;

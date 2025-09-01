@@ -1,7 +1,6 @@
 import Joi from 'joi';
 import { password, objectId } from './custom.validation.js';
 
-
 const createUser = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
@@ -73,7 +72,13 @@ const updateProfile = {
       // User category (for regular users)
       userCategory: Joi.string().valid('Personal', 'Corporate'),
       // Teacher specific fields
-      teacherCategory: Joi.string().valid('Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer'),
+      teacherCategory: Joi.string().valid(
+        'Fitness Coach',
+        'Ayurveda Specialist',
+        'Mental Health Specialist',
+        'Yoga Trainer',
+        'General Trainer'
+      ),
       teachingExperience: Joi.string(),
       expertise: Joi.array().items(Joi.string()),
       qualification: Joi.array().items(Joi.object()),
@@ -101,4 +106,3 @@ const deleteUser = {
 };
 
 export { createUser, getUsers, getUser, updateUser, updateProfile, updateProfileImage, deleteUser };
-

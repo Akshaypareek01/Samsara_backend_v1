@@ -16,11 +16,11 @@ import * as pcosAssessmentValidation from './pcosAssessment.validation.js';
 import * as thyroidAssessmentValidation from './thyroidAssessment.validation.js';
 import periodCycleValidation from './periodCycle.validation.js';
 
-export { 
-  authValidation, 
-  userValidation, 
-  teacherValidation, 
-  classValidation, 
+export {
+  authValidation,
+  userValidation,
+  teacherValidation,
+  classValidation,
   eventValidation,
   trackerValidation,
   questionMasterValidation,
@@ -33,5 +33,5 @@ export {
   menopauseAssessmentValidation,
   pcosAssessmentValidation,
   thyroidAssessmentValidation,
-  periodCycleValidation
+  periodCycleValidation,
 };

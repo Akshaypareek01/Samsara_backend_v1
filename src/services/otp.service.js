@@ -1,7 +1,7 @@
+import httpStatus from 'http-status';
 import { OTP } from '../models/index.js';
 import { sendEmail } from './email.service.js';
 import ApiError from '../utils/ApiError.js';
-import httpStatus from 'http-status';
 
 /**
  * Generate a 4-digit OTP
@@ -25,17 +25,17 @@ const generateOTP = (email) => {
 const createOTP = async (email, type) => {
   // Delete any existing OTP for this email and type
   await OTP.deleteMany({ email, type });
-  
+
   const otp = generateOTP(email);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
-  
+
   const otpDoc = await OTP.create({
     email,
     otp,
     type,
-    expiresAt
+    expiresAt,
   });
-  
+
   return otpDoc;
 };
 
@@ -52,7 +52,7 @@ const sendOTPEmail = async (email, otp, type) => {
   
 This OTP will expire in 10 minutes.
 If you didn't request this, please ignore this email.`;
-  
+
   await sendEmail(email, subject, text);
 };
 
@@ -69,17 +69,17 @@ const verifyOTP = async (email, otp, type) => {
     otp,
     type,
     isUsed: false,
-    expiresAt: { $gt: new Date() }
+    expiresAt: { $gt: new Date() },
   });
-  
+
   if (!otpDoc) {
     return false;
   }
-  
+
   // Mark OTP as used
   otpDoc.isUsed = true;
   await otpDoc.save();
-  
+
   return true;
 };
 
@@ -131,5 +131,5 @@ export {
   sendRegistrationOTP,
   sendLoginOTP,
   verifyRegistrationOTP,
-  verifyLoginOTP
-}; 
+  verifyLoginOTP,
+};

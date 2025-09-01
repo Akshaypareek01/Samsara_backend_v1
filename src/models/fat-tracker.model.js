@@ -73,9 +73,9 @@ FatTrackerSchema.pre('save', function (next) {
   if (this.height && this.weight) {
     let heightInMeters = this.height.value;
     let weightInKg = this.weight.value;
-    if (this.height.unit === 'cm') heightInMeters = heightInMeters / 100;
-    else if (this.height.unit === 'ft') heightInMeters = heightInMeters * 0.3048;
-    if (this.weight.unit === 'lbs') weightInKg = weightInKg * 0.453592;
+    if (this.height.unit === 'cm') heightInMeters /= 100;
+    else if (this.height.unit === 'ft') heightInMeters *= 0.3048;
+    if (this.weight.unit === 'lbs') weightInKg *= 0.453592;
     const bmiValue = weightInKg / (heightInMeters * heightInMeters);
     this.bmi = {
       value: Math.round(bmiValue * 100) / 100,

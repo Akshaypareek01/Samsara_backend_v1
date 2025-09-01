@@ -27,9 +27,7 @@ router
   .delete(validate(medicationValidation.deleteHealthCondition), medicationController.deleteHealthCondition);
 
 // Medications Management
-router
-  .route('/medications')
-  .post(validate(medicationValidation.addMedication), medicationController.addMedication);
+router.route('/medications').post(validate(medicationValidation.addMedication), medicationController.addMedication);
 
 router
   .route('/medications/:medicationId')
@@ -64,24 +62,16 @@ router
   .get(validate(medicationValidation.getScheduleByDateRange), medicationController.getScheduleByDateRange);
 
 // Medication History and Analytics
-router
-  .route('/history')
-  .get(validate(medicationValidation.getMedicationHistory), medicationController.getMedicationHistory);
+router.route('/history').get(validate(medicationValidation.getMedicationHistory), medicationController.getMedicationHistory);
 
 router
   .route('/reminders')
   .get(validate(medicationValidation.getMedicationReminders), medicationController.getMedicationReminders);
 
-router
-  .route('/generate-schedule')
-  .get(medicationController.generateDailySchedule);
+router.route('/generate-schedule').get(medicationController.generateDailySchedule);
 
-router
-  .route('/low-stock')
-  .get(medicationController.getLowStockMedications);
+router.route('/low-stock').get(medicationController.getLowStockMedications);
 
-router
-  .route('/adherence-stats')
-  .get(medicationController.getAdherenceStats);
+router.route('/adherence-stats').get(medicationController.getAdherenceStats);
 
-export default router; 
+export default router;

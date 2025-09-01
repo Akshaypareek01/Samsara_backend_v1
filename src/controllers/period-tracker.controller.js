@@ -69,5 +69,3 @@ export const takePill = catchAsync(async (req, res) => {
   const data = await birthControlService.markPillTaken(req.user.id, date);
   res.send(data);
 });
-
-

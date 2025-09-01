@@ -6,7 +6,6 @@ import ApiError from '../../../src/utils/ApiError.js';
 import config from '../../../src/config/config.js';
 import logger from '../../../src/config/logger.js';
 
-
 describe('Error middlewares', () => {
   describe('Error converter', () => {
     test('should return the same ApiError object it was called with', () => {

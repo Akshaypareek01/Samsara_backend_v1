@@ -13,9 +13,7 @@ router
   .patch(auth(), validate(userValidation.updateProfile), userController.updateProfile);
 
 // Profile image route
-router
-  .route('/profile/image')
-  .patch(auth(), validate(userValidation.updateProfileImage), userController.updateProfileImage);
+router.route('/profile/image').patch(auth(), validate(userValidation.updateProfileImage), userController.updateProfileImage);
 
 // User management routes
 router
@@ -24,9 +22,7 @@ router
   .get(auth(), validate(userValidation.getUsers), userController.getUsers);
 
 // Get users by role
-router
-  .route('/role/:role')
-  .get(auth(), userController.getUsersByRole);
+router.route('/role/:role').get(auth(), userController.getUsersByRole);
 
 router
   .route('/:userId')
@@ -35,9 +31,7 @@ router
   .delete(auth(), validate(userValidation.deleteUser), userController.deleteUser);
 
 // User profile routes
-router
-  .route('/:userId/profile')
-  .get(userController.getUserProfile);
+router.route('/:userId/profile').get(userController.getUserProfile);
 
 // Image management routes
 router
@@ -46,55 +40,33 @@ router
   .get(auth(), userController.getUserImages)
   .delete(auth(), userController.deleteUserImageByKey);
 
-router
-  .route('/:userId/images/:imageIndex')
-  .delete(auth(), userController.deleteUserImage);
+router.route('/:userId/images/:imageIndex').delete(auth(), userController.deleteUserImage);
 
-router
-  .route('/:userId/images/delete-by-filename')
-  .delete(auth(), userController.deleteUserImageByFilename);
+router.route('/:userId/images/delete-by-filename').delete(auth(), userController.deleteUserImageByFilename);
 
 // Attendance routes
-router
-  .route('/:userId/attendance/:classId')
-  .post(auth(), userController.markAttendance);
+router.route('/:userId/attendance/:classId').post(auth(), userController.markAttendance);
 
 // Achievement routes
-router
-  .route('/:userId/achievements')
-  .post(auth(), userController.addAchievement);
+router.route('/:userId/achievements').post(auth(), userController.addAchievement);
 
 // Assessment routes
-router
-  .route('/:userId/assessments')
-  .post(auth(), userController.addAssessment);
+router.route('/:userId/assessments').post(auth(), userController.addAssessment);
 
-router
-  .route('/assessment-form')
-  .post(auth(), userController.submitAssessmentForm);
+router.route('/assessment-form').post(auth(), userController.submitAssessmentForm);
 
 // Notification token routes
-router
-  .route('/:userId/notification-token')
-  .patch(auth(), userController.updateNotificationToken);
+router.route('/:userId/notification-token').patch(auth(), userController.updateNotificationToken);
 
 // Class participation routes
-router
-  .route('/join-class')
-  .post(auth(), userController.joinClass);
+router.route('/join-class').post(auth(), userController.joinClass);
 
-router
-  .route('/leave-class')
-  .post(auth(), userController.leaveClass);
+router.route('/leave-class').post(auth(), userController.leaveClass);
 
 // Statistics routes
-router
-  .route('/stats')
-  .post(auth(), userController.getUserStats);
+router.route('/stats').post(auth(), userController.getUserStats);
 
-router
-  .route('/weekly-stats')
-  .post(auth(), userController.getWeeklyStats);
+router.route('/weekly-stats').post(auth(), userController.getWeeklyStats);
 
 export default router;
 

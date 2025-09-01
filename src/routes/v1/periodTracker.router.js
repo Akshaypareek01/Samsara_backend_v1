@@ -24,5 +24,3 @@ router.put('/birth-control', validate(v.updateBirthControl), controller.updateBi
 router.post('/birth-control/pill/take', validate(v.takePill), controller.takePill);
 
 export default router;
-
-

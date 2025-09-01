@@ -13,20 +13,16 @@ router.get('/questions', pcosAssessmentController.getAssessmentQuestions);
 router.use(auth());
 
 // Create new assessment
-router.post(
-    '/',
-    validate(pcosAssessmentValidation.createAssessment),
-    pcosAssessmentController.createAssessment
-);
+router.post('/', validate(pcosAssessmentValidation.createAssessment), pcosAssessmentController.createAssessment);
 
 // Get latest assessment for user
 router.get('/latest', pcosAssessmentController.getLatestAssessment);
 
 // Get assessment history with pagination and filtering
 router.get(
-    '/history',
-    validate(pcosAssessmentValidation.getAssessmentHistory),
-    pcosAssessmentController.getAssessmentHistory
+  '/history',
+  validate(pcosAssessmentValidation.getAssessmentHistory),
+  pcosAssessmentController.getAssessmentHistory
 );
 
 // Get assessment statistics
@@ -34,37 +30,29 @@ router.get('/stats', pcosAssessmentController.getAssessmentStats);
 
 // Calculate risk level without saving
 router.post(
-    '/calculate-risk',
-    validate(pcosAssessmentValidation.calculateRisk),
-    pcosAssessmentController.calculateRiskLevel
+  '/calculate-risk',
+  validate(pcosAssessmentValidation.calculateRisk),
+  pcosAssessmentController.calculateRiskLevel
 );
 
 // Submit reassessment (creates new assessment)
 router.post(
-    '/reassessment',
-    validate(pcosAssessmentValidation.submitReassessment),
-    pcosAssessmentController.submitReassessment
+  '/reassessment',
+  validate(pcosAssessmentValidation.submitReassessment),
+  pcosAssessmentController.submitReassessment
 );
 
 // Get specific assessment by ID
-router.get(
-    '/:assessmentId',
-    validate(pcosAssessmentValidation.getAssessment),
-    pcosAssessmentController.getAssessmentById
-);
+router.get('/:assessmentId', validate(pcosAssessmentValidation.getAssessment), pcosAssessmentController.getAssessmentById);
 
 // Update existing assessment
-router.put(
-    '/:assessmentId',
-    validate(pcosAssessmentValidation.updateAssessment),
-    pcosAssessmentController.updateAssessment
-);
+router.put('/:assessmentId', validate(pcosAssessmentValidation.updateAssessment), pcosAssessmentController.updateAssessment);
 
 // Delete assessment
 router.delete(
-    '/:assessmentId',
-    validate(pcosAssessmentValidation.deleteAssessment),
-    pcosAssessmentController.deleteAssessment
+  '/:assessmentId',
+  validate(pcosAssessmentValidation.deleteAssessment),
+  pcosAssessmentController.deleteAssessment
 );
 
 export default router;

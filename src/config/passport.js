@@ -3,7 +3,6 @@ import config from './config.js';
 import { tokenTypes } from './tokens.js';
 import { User } from '../models/user.model.js';
 
-
 const jwtOptions = {
   secretOrKey: config.jwt.secret,
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

@@ -16,15 +16,7 @@ const upload = multer({
 
 router.post('/', upload.single('file'), uploadController.uploadFile);
 
-export default router; 
-
-
-
-
-
-
-
-
+export default router;
 
 // const handleFileUpload = async () => {
 //   if (!selectedFile) {

@@ -1,48 +1,51 @@
 import mongoose from 'mongoose';
 
-const meetingSchema = new mongoose.Schema({
+const meetingSchema = new mongoose.Schema(
+  {
     meetingName: {
-        type: String,
-        required: [true, 'Meeting name is required'],
-        trim: true
+      type: String,
+      required: [true, 'Meeting name is required'],
+      trim: true,
     },
     title: {
-        type: String,
-        required: [true, 'Title is required'],
-        trim: true
+      type: String,
+      required: [true, 'Title is required'],
+      trim: true,
     },
     duration: {
-        type: Number,
-        required: [true, 'Duration is required'],
-        min: [1, 'Duration must be at least 1 minute']
+      type: Number,
+      required: [true, 'Duration is required'],
+      min: [1, 'Duration must be at least 1 minute'],
     },
     meetingId: {
-        type: String,
-        required: [true, 'Meeting ID is required'],
-        unique: true
+      type: String,
+      required: [true, 'Meeting ID is required'],
+      unique: true,
     },
     meetingPassword: {
-        type: String,
-        default: ''
+      type: String,
+      default: '',
     },
     hostName: {
-        type: String,
-        required: [true, 'Host name is required'],
-        trim: true
+      type: String,
+      required: [true, 'Host name is required'],
+      trim: true,
     },
     teacherName: {
-        type: String,
-        required: [true, 'Teacher name is required'],
-        trim: true
+      type: String,
+      required: [true, 'Teacher name is required'],
+      trim: true,
     },
     status: {
-        type: String,
-        enum: ['scheduled', 'ongoing', 'completed', 'cancelled'],
-        default: 'scheduled'
-    }
-}, {
-    timestamps: true
-});
+      type: String,
+      enum: ['scheduled', 'ongoing', 'completed', 'cancelled'],
+      default: 'scheduled',
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // Index for efficient querying
 meetingSchema.index({ meetingId: 1 });

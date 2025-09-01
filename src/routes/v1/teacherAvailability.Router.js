@@ -1,10 +1,10 @@
 import express from 'express';
 import {
-    createAvailability,
-    getTeacherAvailabilities,
-    updateAvailability,
-    deleteAvailability,
-    getAvailableSlots
+  createAvailability,
+  getTeacherAvailabilities,
+  updateAvailability,
+  deleteAvailability,
+  getAvailableSlots,
 } from '../../controllers/teacheravailability.Controller.js';
 
 const TeacherAvailabilityrouter = express.Router();
@@ -24,4 +24,4 @@ TeacherAvailabilityrouter.patch('/:id', updateAvailability);
 // Delete availability
 TeacherAvailabilityrouter.delete('/:id', deleteAvailability);
 
-export default TeacherAvailabilityrouter; 
+export default TeacherAvailabilityrouter;

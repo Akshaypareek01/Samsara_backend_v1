@@ -1,6 +1,6 @@
+import httpStatus from 'http-status';
 import { AssessmentResult, QuestionMaster } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
-import httpStatus from 'http-status';
 
 export const startAssessment = async (userId, assessmentType) => {
   const existing = await AssessmentResult.findOne({ userId, assessmentType, isCompleted: false });
@@ -10,7 +10,7 @@ export const startAssessment = async (userId, assessmentType) => {
     assessmentType,
     answers: [],
     doshaScore: { vata: 0, pitta: 0, kapha: 0 },
-    isCompleted: false
+    isCompleted: false,
   });
 };
 
@@ -21,7 +21,7 @@ export const getAssessmentQuestions = async (assessmentType) => {
 export const submitAnswer = async (assessmentId, userId, questionId, selectedOptionIndex) => {
   const assessment = await AssessmentResult.findOne({ _id: assessmentId, userId, isCompleted: false });
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found or already completed');
-  const idx = assessment.answers.findIndex(a => a.questionId.toString() === questionId);
+  const idx = assessment.answers.findIndex((a) => a.questionId.toString() === questionId);
   if (idx !== -1) {
     assessment.answers[idx].selectedOptionIndex = selectedOptionIndex;
   } else {
@@ -32,7 +32,9 @@ export const submitAnswer = async (assessmentId, userId, questionId, selectedOpt
 };
 
 export const calculateDoshaScore = async (assessmentId, userId) => {
-  const assessment = await AssessmentResult.findOne({ _id: assessmentId, userId, isCompleted: false }).populate('answers.questionId');
+  const assessment = await AssessmentResult.findOne({ _id: assessmentId, userId, isCompleted: false }).populate(
+    'answers.questionId'
+  );
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found or already completed');
   const doshaScore = { vata: 0, pitta: 0, kapha: 0 };
   for (const answer of assessment.answers) {
@@ -59,4 +61,4 @@ export const getAssessmentById = async (assessmentId, userId) => {
   const assessment = await AssessmentResult.findOne({ _id: assessmentId, userId }).populate('answers.questionId');
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found');
   return assessment;
-}; 
+};

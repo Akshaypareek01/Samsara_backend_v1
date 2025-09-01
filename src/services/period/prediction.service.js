@@ -13,9 +13,7 @@ export const diffDays = (a, b) => Math.round((toDateOnly(a) - toDateOnly(b)) / M
 
 export const averageCycleLength = (cycles, fallback = 28) => {
   if (!Array.isArray(cycles) || cycles.length === 0) return fallback;
-  const lens = cycles
-    .map((c) => c.cycleLengthDays)
-    .filter((n) => typeof n === 'number' && !Number.isNaN(n));
+  const lens = cycles.map((c) => c.cycleLengthDays).filter((n) => typeof n === 'number' && !Number.isNaN(n));
   if (lens.length === 0) return fallback;
   // Trim simple outliers (top/bottom 10%) for stability
   const sorted = lens.sort((a, b) => a - b);
@@ -55,12 +53,16 @@ export const buildMonthMap = (year, monthIndex, periodRanges = [], fertileRange 
   const last = new Date(Date.UTC(year, monthIndex + 1, 0));
   const days = [];
   for (let d = first; d <= last; d = addDays(d, 1)) {
-    const isPeriod = periodRanges.some(({ start, end }) => toDateOnly(d) >= toDateOnly(start) && toDateOnly(d) <= toDateOnly(end));
-    const isFertile = fertileRange.start && fertileRange.end && toDateOnly(d) >= toDateOnly(fertileRange.start) && toDateOnly(d) <= toDateOnly(fertileRange.end);
+    const isPeriod = periodRanges.some(
+      ({ start, end }) => toDateOnly(d) >= toDateOnly(start) && toDateOnly(d) <= toDateOnly(end)
+    );
+    const isFertile =
+      fertileRange.start &&
+      fertileRange.end &&
+      toDateOnly(d) >= toDateOnly(fertileRange.start) &&
+      toDateOnly(d) <= toDateOnly(fertileRange.end);
     const isOvulation = ovulationDate && diffDays(d, ovulationDate) === 0;
     days.push({ date: d, isPeriod, isFertile, isOvulation });
   }
   return days;
 };
-
-

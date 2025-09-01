@@ -1,7 +1,14 @@
 // routes/classRoutes.js
 import express from 'express';
 
-import { createRecordedClass, deleteRecordedClass, getAllRecordedClass, getRecordedClassById, updateClassStatus, updateRecordedClass } from '../../controllers/recordedclasses.Controller.js';
+import {
+  createRecordedClass,
+  deleteRecordedClass,
+  getAllRecordedClass,
+  getRecordedClassById,
+  updateClassStatus,
+  updateRecordedClass,
+} from '../../controllers/recordedclasses.Controller.js';
 
 const RecordedClassRouter = express.Router();
 

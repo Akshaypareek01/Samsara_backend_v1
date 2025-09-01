@@ -62,4 +62,4 @@ export {
   getActiveMasterCategories,
   searchMasterCategories,
   updateCategoryOrder,
-}; 
+};

@@ -18,10 +18,12 @@ const MasterCategorySchema = new mongoose.Schema(
     soundUrl: {
       type: String,
     },
-    tags: [{
-      type: String,
-      trim: true,
-    }],
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     order: {
       type: Number,
       default: 0,

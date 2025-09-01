@@ -31,26 +31,32 @@ const MeditationSchema = new mongoose.Schema(
       ref: 'MasterCategory',
       required: true,
     },
-    tags: [{
-      type: String,
-      trim: true,
-    }],
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     benefits: {
       type: String,
     },
-    howToPractice: [{
-      type: String,
-    }],
+    howToPractice: [
+      {
+        type: String,
+      },
+    ],
     focus: {
       type: Number, // percentage (0-100)
     },
     mood: {
       type: String, // e.g., Ecstatic, Calm, Relaxed, Neutral, Restless, Sleepy
     },
-    recommended: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Meditation',
-    }],
+    recommended: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Meditation',
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

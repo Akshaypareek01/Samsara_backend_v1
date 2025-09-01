@@ -84,7 +84,11 @@ router.put('/water/target', validate(trackerValidation.updateWaterTarget), track
  * @desc    Delete water intake entry
  * @access  Private
  */
-router.delete('/water/intake/:trackerId', validate(trackerValidation.deleteWaterIntake), trackerController.deleteWaterIntake);
+router.delete(
+  '/water/intake/:trackerId',
+  validate(trackerValidation.deleteWaterIntake),
+  trackerController.deleteWaterIntake
+);
 
 /**
  * @route   GET /v1/trackers/mood/history
@@ -300,4 +304,4 @@ router.put('/calories-target', validate(trackerValidation.updateCaloriesTarget),
  */
 router.get('/calories-target', trackerController.getCaloriesTarget);
 
-export default router; 
+export default router;

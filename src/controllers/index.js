@@ -19,6 +19,7 @@ import * as ratingController from './rating.controller.js';
 import * as userAnalyticsController from './userAnalytics.controller.js';
 import uploadController from './upload.controller.js';
 import * as doshaController from './dosha.controller.js';
+import * as dietGenerationController from './dietGeneration.controller.js';
 
 
 export { 
@@ -42,6 +43,7 @@ export {
   ratingController,
   userAnalyticsController,
   uploadController,
-  doshaController
+  doshaController,
+  dietGenerationController
 };
 

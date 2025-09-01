@@ -9,13 +9,20 @@ const createClass = {
     duration: Joi.number().integer().min(15).max(480).required(),
     maxCapacity: Joi.number().integer().min(1).max(100).required(),
     level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced').optional(),
-    schedule: Joi.array().items(
-      Joi.object().keys({
-        day: Joi.string().required().valid('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
-        startTime: Joi.string().required().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
-        endTime: Joi.string().required().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
-      })
-    ).min(1).required(),
+    schedule: Joi.array()
+      .items(
+        Joi.object().keys({
+          day: Joi.string().required().valid('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
+          startTime: Joi.string()
+            .required()
+            .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
+          endTime: Joi.string()
+            .required()
+            .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
+        })
+      )
+      .min(1)
+      .required(),
     classDetails: Joi.string().required().min(10).max(2000),
     perfectFor: Joi.string().required().min(10).max(500),
     skipIf: Joi.string().required().min(10).max(500),
@@ -246,4 +253,4 @@ export {
   getClassStudents,
   getClassRatings,
   getClassAttendance,
-}; 
+};

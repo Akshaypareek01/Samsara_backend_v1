@@ -98,8 +98,8 @@ const searchMasterCategories = async (searchTerm, options) => {
     $or: [
       { name: { $regex: searchTerm, $options: 'i' } },
       { description: { $regex: searchTerm, $options: 'i' } },
-      { tags: { $in: [new RegExp(searchTerm, 'i')] } }
-    ]
+      { tags: { $in: [new RegExp(searchTerm, 'i')] } },
+    ],
   };
   const categories = await MasterCategory.paginate(filter, options);
   return categories;
@@ -111,9 +111,7 @@ const searchMasterCategories = async (searchTerm, options) => {
  * @returns {Promise<Array>}
  */
 const updateCategoryOrder = async (orderData) => {
-  const updatePromises = orderData.map(({ id, order }) =>
-    MasterCategory.findByIdAndUpdate(id, { order }, { new: true })
-  );
+  const updatePromises = orderData.map(({ id, order }) => MasterCategory.findByIdAndUpdate(id, { order }, { new: true }));
   const updatedCategories = await Promise.all(updatePromises);
   return updatedCategories;
 };
@@ -128,4 +126,4 @@ export {
   getActiveMasterCategories,
   searchMasterCategories,
   updateCategoryOrder,
-}; 
+};

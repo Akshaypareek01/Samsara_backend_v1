@@ -30,7 +30,7 @@ export const markPillTaken = async (userId, date = new Date()) => {
   // pack status approximation
   if (bc.pillPackStartDate && bc.pillPackLength) {
     const diff = Math.floor((day - new Date(bc.pillPackStartDate)) / (24 * 60 * 60 * 1000));
-    const inBreak = diff >= (bc.pillPackLength - bc.pillFreeDays);
+    const inBreak = diff >= bc.pillPackLength - bc.pillFreeDays;
     bc.pillPackStatus = inBreak ? 'Break' : 'Active';
   } else {
     bc.pillPackStatus = 'Unknown';
@@ -38,5 +38,3 @@ export const markPillTaken = async (userId, date = new Date()) => {
   await bc.save();
   return bc;
 };
-
-

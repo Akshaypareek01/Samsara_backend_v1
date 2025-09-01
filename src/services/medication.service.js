@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-import { MedicationTracker, DailySchedule ,User } from '../models/index.js';
+import { MedicationTracker, DailySchedule, User } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -13,7 +13,7 @@ const createMedicationTracker = async (userId, trackerData) => {
 
   const tracker = new MedicationTracker({
     userId,
-    ...trackerData
+    ...trackerData,
   });
 
   await tracker.save();
@@ -24,14 +24,14 @@ const createMedicationTracker = async (userId, trackerData) => {
  * Get medication tracker for user
  */
 const getMedicationTracker = async (userId, category) => {
-  const tracker = await MedicationTracker.findOne({ userId })
-  
+  const tracker = await MedicationTracker.findOne({ userId });
+
   if (!tracker) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Medication tracker not found');
   }
 
   if (category) {
-    tracker.medications = tracker.medications.filter(med => med.category === category);
+    tracker.medications = tracker.medications.filter((med) => med.category === category);
   }
 
   return tracker;
@@ -46,7 +46,7 @@ const addHealthCondition = async (userId, conditionData) => {
     tracker = new MedicationTracker({ userId, healthConditions: [], medications: [] });
     await tracker.save();
   }
-  
+
   // Create the health condition with all required fields
   const newCondition = {
     name: conditionData.name,
@@ -54,9 +54,9 @@ const addHealthCondition = async (userId, conditionData) => {
     analysis: conditionData.analysis,
     level: conditionData.level || 'Moderate', // Use provided level or default
     isActive: conditionData.isActive !== undefined ? conditionData.isActive : true,
-    createdAt: new Date()
+    createdAt: new Date(),
   };
-  
+
   tracker.healthConditions.push(newCondition);
   await tracker.save();
   return tracker.healthConditions[tracker.healthConditions.length - 1];
@@ -78,7 +78,7 @@ const updateHealthCondition = async (userId, conditionId, updateData) => {
 
   Object.assign(condition, updateData);
   await tracker.save();
-  
+
   return condition;
 };
 
@@ -98,7 +98,7 @@ const deleteHealthCondition = async (userId, conditionId) => {
 
   condition.remove();
   await tracker.save();
-  
+
   return { message: 'Health condition deleted successfully' };
 };
 
@@ -132,7 +132,7 @@ const updateMedication = async (userId, medicationId, updateData) => {
 
   Object.assign(medication, updateData);
   await tracker.save();
-  
+
   return medication;
 };
 
@@ -152,7 +152,7 @@ const deleteMedication = async (userId, medicationId) => {
 
   medication.remove();
   await tracker.save();
-  
+
   return { message: 'Medication deleted successfully' };
 };
 
@@ -172,7 +172,7 @@ const refillMedication = async (userId, medicationId, refillData) => {
 
   medication.quantityLeft += refillData.quantityAdded;
   await tracker.save();
-  
+
   return medication;
 };
 
@@ -182,7 +182,7 @@ const refillMedication = async (userId, medicationId, refillData) => {
 const createDailySchedule = async (userId, scheduleData) => {
   const existingSchedule = await DailySchedule.findOne({
     userId,
-    date: scheduleData.date
+    date: scheduleData.date,
   });
 
   if (existingSchedule) {
@@ -191,7 +191,7 @@ const createDailySchedule = async (userId, scheduleData) => {
 
   const schedule = new DailySchedule({
     userId,
-    ...scheduleData
+    ...scheduleData,
   });
 
   await schedule.save();
@@ -209,7 +209,7 @@ const updateDailySchedule = async (userId, scheduleId, updateData) => {
 
   Object.assign(schedule, updateData);
   await schedule.save();
-  
+
   return schedule;
 };
 
@@ -222,7 +222,7 @@ const markMedicationTaken = async (userId, scheduleId, timeSlot) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Schedule not found');
   }
 
-  const timeSlotEntry = schedule.schedule.find(slot => slot.time === timeSlot);
+  const timeSlotEntry = schedule.schedule.find((slot) => slot.time === timeSlot);
   if (!timeSlotEntry) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Time slot not found');
   }
@@ -230,7 +230,7 @@ const markMedicationTaken = async (userId, scheduleId, timeSlot) => {
   timeSlotEntry.isCompleted = true;
   timeSlotEntry.completedAt = new Date();
   await schedule.save();
-  
+
   return timeSlotEntry;
 };
 
@@ -239,13 +239,13 @@ const markMedicationTaken = async (userId, scheduleId, timeSlot) => {
  */
 const getMedicationHistory = async (userId, options = {}) => {
   const { days = 30, medicationId, type } = options;
-  
+
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
   const query = {
     userId,
-    createdAt: { $gte: startDate }
+    createdAt: { $gte: startDate },
   };
 
   if (medicationId) {
@@ -256,9 +256,7 @@ const getMedicationHistory = async (userId, options = {}) => {
     query['medications.type'] = type;
   }
 
-  const history = await DailySchedule.find(query)
-    .sort({ date: -1 })
-    .populate('userId', 'name email');
+  const history = await DailySchedule.find(query).sort({ date: -1 }).populate('userId', 'name email');
 
   return history;
 };
@@ -267,9 +265,8 @@ const getMedicationHistory = async (userId, options = {}) => {
  * Get schedule by date
  */
 const getScheduleByDate = async (userId, date) => {
-  const schedule = await DailySchedule.findOne({ userId, date })
-    .populate('userId', 'name email');
-  
+  const schedule = await DailySchedule.findOne({ userId, date }).populate('userId', 'name email');
+
   return schedule;
 };
 
@@ -279,7 +276,7 @@ const getScheduleByDate = async (userId, date) => {
 const getScheduleByDateRange = async (userId, startDate, endDate) => {
   const schedules = await DailySchedule.find({
     userId,
-    date: { $gte: startDate, $lte: endDate }
+    date: { $gte: startDate, $lte: endDate },
   })
     .sort({ date: 1 })
     .populate('userId', 'name email');
@@ -292,20 +289,20 @@ const getScheduleByDateRange = async (userId, startDate, endDate) => {
  */
 const getMedicationReminders = async (userId, date, includeCompleted = false) => {
   const schedule = await DailySchedule.findOne({ userId, date });
-  
+
   if (!schedule) {
     return { date, schedule: [] };
   }
 
   let reminders = schedule.schedule;
-  
+
   if (!includeCompleted) {
-    reminders = reminders.filter(slot => !slot.isCompleted);
+    reminders = reminders.filter((slot) => !slot.isCompleted);
   }
 
   return {
     date,
-    schedule: reminders
+    schedule: reminders,
   };
 };
 
@@ -318,17 +315,17 @@ const generateDailySchedule = async (userId, date) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Medication tracker not found');
   }
 
-  const activeMedications = tracker.medications.filter(med => med.isActive);
+  const activeMedications = tracker.medications.filter((med) => med.isActive);
   const schedule = [];
 
-  activeMedications.forEach(medication => {
+  activeMedications.forEach((medication) => {
     if (medication.times && medication.times.length > 0) {
-      medication.times.forEach(time => {
+      medication.times.forEach((time) => {
         schedule.push({
           time,
           period: getPeriodFromTime(time),
           medications: [medication.name],
-          isCompleted: false
+          isCompleted: false,
         });
       });
     }
@@ -336,7 +333,7 @@ const generateDailySchedule = async (userId, date) => {
 
   // Remove duplicates and merge medications for same time
   const mergedSchedule = schedule.reduce((acc, slot) => {
-    const existingSlot = acc.find(s => s.time === slot.time);
+    const existingSlot = acc.find((s) => s.time === slot.time);
     if (existingSlot) {
       existingSlot.medications.push(...slot.medications);
     } else {
@@ -375,9 +372,7 @@ const getLowStockMedications = async (userId, threshold = 7) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Medication tracker not found');
   }
 
-  const lowStockMedications = tracker.medications.filter(
-    med => med.isActive && med.quantityLeft <= threshold
-  );
+  const lowStockMedications = tracker.medications.filter((med) => med.isActive && med.quantityLeft <= threshold);
 
   return lowStockMedications;
 };
@@ -391,14 +386,14 @@ const getAdherenceStats = async (userId, days = 30) => {
 
   const schedules = await DailySchedule.find({
     userId,
-    date: { $gte: startDate }
+    date: { $gte: startDate },
   });
 
   let totalSlots = 0;
   let completedSlots = 0;
 
-  schedules.forEach(schedule => {
-    schedule.schedule.forEach(slot => {
+  schedules.forEach((schedule) => {
+    schedule.schedule.forEach((slot) => {
       totalSlots++;
       if (slot.isCompleted) {
         completedSlots++;
@@ -412,7 +407,7 @@ const getAdherenceStats = async (userId, days = 30) => {
     totalSlots,
     completedSlots,
     missedSlots: totalSlots - completedSlots,
-    adherenceRate: Math.round(adherenceRate * 100) / 100
+    adherenceRate: Math.round(adherenceRate * 100) / 100,
   };
 };
 
@@ -435,5 +430,5 @@ export {
   getMedicationReminders,
   generateDailySchedule,
   getLowStockMedications,
-  getAdherenceStats
-}; 
+  getAdherenceStats,
+};

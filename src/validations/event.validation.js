@@ -25,27 +25,35 @@ const createEvent = {
     level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced').optional(),
     maxSeats: Joi.number().integer().min(1).max(1000).required(),
     eventDate: Joi.date().min('now').required(),
-    eventTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
+    eventTime: Joi.string()
+      .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+      .required(),
     duration: Joi.number().integer().min(15).max(480).required(),
     moderator: Joi.string().custom(objectId).required(),
     offlineRequirements: Joi.when('eventMode', {
       is: 'offline',
-      then: Joi.array().items(
-        Joi.object().keys({
-          point: Joi.string().required().min(5).max(200),
-          order: Joi.number().integer().min(1).max(5).required(),
-        })
-      ).min(1).max(5),
+      then: Joi.array()
+        .items(
+          Joi.object().keys({
+            point: Joi.string().required().min(5).max(200),
+            order: Joi.number().integer().min(1).max(5).required(),
+          })
+        )
+        .min(1)
+        .max(5),
       otherwise: Joi.array().optional(),
     }),
     onlineRequirements: Joi.when('eventMode', {
       is: 'online',
-      then: Joi.array().items(
-        Joi.object().keys({
-          point: Joi.string().required().min(5).max(200),
-          order: Joi.number().integer().min(1).max(5).required(),
-        })
-      ).min(1).max(5),
+      then: Joi.array()
+        .items(
+          Joi.object().keys({
+            point: Joi.string().required().min(5).max(200),
+            order: Joi.number().integer().min(1).max(5).required(),
+          })
+        )
+        .min(1)
+        .max(5),
       otherwise: Joi.array().optional(),
     }),
     isPaid: Joi.boolean().default(false),
@@ -126,18 +134,22 @@ const updateEvent = {
       eventTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
       duration: Joi.number().integer().min(15).max(480),
       moderator: Joi.string().custom(objectId),
-      offlineRequirements: Joi.array().items(
-        Joi.object().keys({
-          point: Joi.string().min(5).max(200),
-          order: Joi.number().integer().min(1).max(5),
-        })
-      ).max(5),
-      onlineRequirements: Joi.array().items(
-        Joi.object().keys({
-          point: Joi.string().min(5).max(200),
-          order: Joi.number().integer().min(1).max(5),
-        })
-      ).max(5),
+      offlineRequirements: Joi.array()
+        .items(
+          Joi.object().keys({
+            point: Joi.string().min(5).max(200),
+            order: Joi.number().integer().min(1).max(5),
+          })
+        )
+        .max(5),
+      onlineRequirements: Joi.array()
+        .items(
+          Joi.object().keys({
+            point: Joi.string().min(5).max(200),
+            order: Joi.number().integer().min(1).max(5),
+          })
+        )
+        .max(5),
       isPaid: Joi.boolean(),
       price: Joi.number().min(0),
       currency: Joi.string().valid('INR', 'USD', 'EUR'),
@@ -285,4 +297,4 @@ export {
   getUpcomingEvents,
   getOngoingEvents,
   getCompletedEvents,
-}; 
+};

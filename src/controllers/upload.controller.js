@@ -23,4 +23,4 @@ const uploadFile = async (req, res, next) => {
 
 export default {
   uploadFile,
-}; 
+};

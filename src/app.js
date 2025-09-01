@@ -1,6 +1,6 @@
 import express from 'express';
 import helmet from 'helmet';
-import xss  from 'xss-clean';
+import xss from 'xss-clean';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
 import cors from 'cors';
@@ -65,4 +65,3 @@ app.use(errorConverter);
 app.use(errorHandler);
 
 export default app;
-

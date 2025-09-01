@@ -9,27 +9,27 @@ const router = express.Router();
 // Master category management routes
 router
   .route('/')
-  .post( validate(masterCategoryValidation.createMasterCategory), masterCategoryController.createMasterCategory)
+  .post(validate(masterCategoryValidation.createMasterCategory), masterCategoryController.createMasterCategory)
   .get(validate(masterCategoryValidation.getMasterCategories), masterCategoryController.getMasterCategories);
 
 // Special routes (must come before parameterized routes)
 router
   .route('/active')
-  .get( validate(masterCategoryValidation.getActiveMasterCategories), masterCategoryController.getActiveMasterCategories);
+  .get(validate(masterCategoryValidation.getActiveMasterCategories), masterCategoryController.getActiveMasterCategories);
 
 router
   .route('/search')
-  .get( validate(masterCategoryValidation.searchMasterCategories), masterCategoryController.searchMasterCategories);
+  .get(validate(masterCategoryValidation.searchMasterCategories), masterCategoryController.searchMasterCategories);
 
 router
   .route('/order')
-  .patch( validate(masterCategoryValidation.updateCategoryOrder), masterCategoryController.updateCategoryOrder);
+  .patch(validate(masterCategoryValidation.updateCategoryOrder), masterCategoryController.updateCategoryOrder);
 
 router
   .route('/:categoryId')
-  .get( validate(masterCategoryValidation.getMasterCategory), masterCategoryController.getMasterCategory)
+  .get(validate(masterCategoryValidation.getMasterCategory), masterCategoryController.getMasterCategory)
   .patch(validate(masterCategoryValidation.updateMasterCategory), masterCategoryController.updateMasterCategory)
-  .delete( validate(masterCategoryValidation.deleteMasterCategory), masterCategoryController.deleteMasterCategory);
+  .delete(validate(masterCategoryValidation.deleteMasterCategory), masterCategoryController.deleteMasterCategory);
 
 export default router;
 
@@ -155,4 +155,4 @@ export default router;
  *         $ref: '#/components/responses/Unauthorized'
  *       "403":
  *         $ref: '#/components/responses/Forbidden'
- */ 
+ */

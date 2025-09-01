@@ -1,7 +1,13 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { createEventApplication, deleteEventApplication, getAllEventApplications, getEventApplicationById, getEventsByUserId, updateEventApplication } from '../../controllers/eventsapplication.Controller.js';
-
+import {
+  createEventApplication,
+  deleteEventApplication,
+  getAllEventApplications,
+  getEventApplicationById,
+  getEventsByUserId,
+  updateEventApplication,
+} from '../../controllers/eventsapplication.Controller.js';
 
 const EventApplicationRouter = express.Router();
 

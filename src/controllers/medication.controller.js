@@ -15,7 +15,7 @@ const createMedicationTracker = catchAsync(async (req, res) => {
  */
 const getMedicationTracker = catchAsync(async (req, res) => {
   // Allow filtering by category (Medication or Supplement)
-  const category = req.query.category;
+  const { category } = req.query;
   const tracker = await medicationService.getMedicationTracker(req.user.id, category);
   res.send(tracker);
 });
@@ -32,11 +32,7 @@ const addHealthCondition = catchAsync(async (req, res) => {
  * Update health condition
  */
 const updateHealthCondition = catchAsync(async (req, res) => {
-  const condition = await medicationService.updateHealthCondition(
-    req.user.id,
-    req.params.conditionId,
-    req.body
-  );
+  const condition = await medicationService.updateHealthCondition(req.user.id, req.params.conditionId, req.body);
   res.send(condition);
 });
 
@@ -44,10 +40,7 @@ const updateHealthCondition = catchAsync(async (req, res) => {
  * Delete health condition
  */
 const deleteHealthCondition = catchAsync(async (req, res) => {
-  const result = await medicationService.deleteHealthCondition(
-    req.user.id,
-    req.params.conditionId
-  );
+  const result = await medicationService.deleteHealthCondition(req.user.id, req.params.conditionId);
   res.send(result);
 });
 
@@ -63,11 +56,7 @@ const addMedication = catchAsync(async (req, res) => {
  * Update medication
  */
 const updateMedication = catchAsync(async (req, res) => {
-  const medication = await medicationService.updateMedication(
-    req.user.id,
-    req.params.medicationId,
-    req.body
-  );
+  const medication = await medicationService.updateMedication(req.user.id, req.params.medicationId, req.body);
   res.send(medication);
 });
 
@@ -75,10 +64,7 @@ const updateMedication = catchAsync(async (req, res) => {
  * Delete medication
  */
 const deleteMedication = catchAsync(async (req, res) => {
-  const result = await medicationService.deleteMedication(
-    req.user.id,
-    req.params.medicationId
-  );
+  const result = await medicationService.deleteMedication(req.user.id, req.params.medicationId);
   res.send(result);
 });
 
@@ -86,11 +72,7 @@ const deleteMedication = catchAsync(async (req, res) => {
  * Refill medication
  */
 const refillMedication = catchAsync(async (req, res) => {
-  const medication = await medicationService.refillMedication(
-    req.user.id,
-    req.params.medicationId,
-    req.body
-  );
+  const medication = await medicationService.refillMedication(req.user.id, req.params.medicationId, req.body);
   res.send(medication);
 });
 
@@ -106,11 +88,7 @@ const createDailySchedule = catchAsync(async (req, res) => {
  * Update daily schedule
  */
 const updateDailySchedule = catchAsync(async (req, res) => {
-  const schedule = await medicationService.updateDailySchedule(
-    req.user.id,
-    req.params.scheduleId,
-    req.body
-  );
+  const schedule = await medicationService.updateDailySchedule(req.user.id, req.params.scheduleId, req.body);
   res.send(schedule);
 });
 
@@ -118,11 +96,7 @@ const updateDailySchedule = catchAsync(async (req, res) => {
  * Mark medication as taken
  */
 const markMedicationTaken = catchAsync(async (req, res) => {
-  const result = await medicationService.markMedicationTaken(
-    req.user.id,
-    req.params.scheduleId,
-    req.params.timeSlot
-  );
+  const result = await medicationService.markMedicationTaken(req.user.id, req.params.scheduleId, req.params.timeSlot);
   res.send(result);
 });
 
@@ -133,7 +107,7 @@ const getMedicationHistory = catchAsync(async (req, res) => {
   const history = await medicationService.getMedicationHistory(req.user.id, {
     days: parseInt(req.query.days) || 30,
     medicationId: req.query.medicationId,
-    type: req.query.type
+    type: req.query.type,
   });
   res.send(history);
 });
@@ -142,10 +116,7 @@ const getMedicationHistory = catchAsync(async (req, res) => {
  * Get schedule by date
  */
 const getScheduleByDate = catchAsync(async (req, res) => {
-  const schedule = await medicationService.getScheduleByDate(
-    req.user.id,
-    new Date(req.query.date)
-  );
+  const schedule = await medicationService.getScheduleByDate(req.user.id, new Date(req.query.date));
   res.send(schedule);
 });
 
@@ -177,10 +148,7 @@ const getMedicationReminders = catchAsync(async (req, res) => {
  * Generate daily schedule
  */
 const generateDailySchedule = catchAsync(async (req, res) => {
-  const schedule = await medicationService.generateDailySchedule(
-    req.user.id,
-    new Date(req.query.date || new Date())
-  );
+  const schedule = await medicationService.generateDailySchedule(req.user.id, new Date(req.query.date || new Date()));
   res.send(schedule);
 });
 
@@ -241,5 +209,5 @@ export {
   getLowStockMedications,
   getAdherenceStats,
   getHealthConditionById,
-  getMedicationById
-}; 
+  getMedicationById,
+};

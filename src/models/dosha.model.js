@@ -3,10 +3,10 @@ import { toJSON, paginate } from './plugins/index.js';
 
 const AssessmentResultSchema = new mongoose.Schema(
   {
-    userId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User', 
-      required: true 
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
     assessmentType: {
       type: String,
@@ -15,51 +15,51 @@ const AssessmentResultSchema = new mongoose.Schema(
     },
     answers: [
       {
-        questionId: { 
-          type: mongoose.Schema.Types.ObjectId, 
-          ref: 'QuestionMaster' 
+        questionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'QuestionMaster',
         },
-        selectedOptionIndex: { 
-          type: Number 
+        selectedOptionIndex: {
+          type: Number,
         }, // 0, 1, or 2
-      }
+      },
     ],
     doshaScore: {
-      vata: { 
+      vata: {
         type: Number,
-        default: 0
+        default: 0,
       },
-      pitta: { 
+      pitta: {
         type: Number,
-        default: 0
+        default: 0,
       },
-      kapha: { 
+      kapha: {
         type: Number,
-        default: 0
-      }
+        default: 0,
+      },
     },
     doshaPercentages: {
-      vata: { 
+      vata: {
         type: Number,
-        default: 0
+        default: 0,
       },
-      pitta: { 
+      pitta: {
         type: Number,
-        default: 0
+        default: 0,
       },
-      kapha: { 
+      kapha: {
         type: Number,
-        default: 0
-      }
+        default: 0,
+      },
     },
-    submittedAt: { 
-      type: Date, 
-      default: Date.now 
+    submittedAt: {
+      type: Date,
+      default: Date.now,
     },
     isCompleted: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   {
     timestamps: true,

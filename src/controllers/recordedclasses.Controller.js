@@ -1,5 +1,4 @@
-import { RecordedClass } from "../models/index.js";
-
+import { RecordedClass } from '../models/index.js';
 
 // Get all classes
 export const getAllRecordedClass = async (req, res) => {
@@ -9,13 +8,13 @@ export const getAllRecordedClass = async (req, res) => {
       status: 'success',
       results: classes.length,
       data: {
-        classes
-      }
+        classes,
+      },
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       status: 'error',
-      message: error.message 
+      message: error.message,
     });
   }
 };
@@ -24,32 +23,32 @@ export const getAllRecordedClass = async (req, res) => {
 export const getRecordedClassById = async (req, res) => {
   try {
     const classId = req.params.id;
-    
+
     if (!classId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         status: 'fail',
-        message: 'Class ID is required' 
+        message: 'Class ID is required',
       });
     }
 
     const singleClass = await RecordedClass.findById(classId).populate('teacher');
     if (!singleClass) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         status: 'fail',
-        message: 'Class not found' 
+        message: 'Class not found',
       });
     }
-    
+
     res.status(200).json({
       status: 'success',
       data: {
-        class: singleClass
-      }
+        class: singleClass,
+      },
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       status: 'error',
-      message: error.message 
+      message: error.message,
     });
   }
 };
@@ -63,7 +62,7 @@ export const createRecordedClass = async (req, res) => {
     if (!title || !description || !classRecordingLink || !teacher) {
       return res.status(400).json({
         status: 'fail',
-        message: 'Title, description, class recording link, and teacher are required'
+        message: 'Title, description, class recording link, and teacher are required',
       });
     }
 
@@ -71,13 +70,13 @@ export const createRecordedClass = async (req, res) => {
     res.status(201).json({
       status: 'success',
       data: {
-        class: newClass
-      }
+        class: newClass,
+      },
     });
   } catch (error) {
-    res.status(400).json({ 
+    res.status(400).json({
       status: 'fail',
-      message: error.message 
+      message: error.message,
     });
   }
 };
@@ -86,37 +85,33 @@ export const createRecordedClass = async (req, res) => {
 export const updateRecordedClass = async (req, res) => {
   try {
     const classId = req.params.id;
-    
+
     if (!classId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         status: 'fail',
-        message: 'Class ID is required' 
+        message: 'Class ID is required',
       });
     }
 
-    const updatedClass = await RecordedClass.findByIdAndUpdate(
-      classId,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    
+    const updatedClass = await RecordedClass.findByIdAndUpdate(classId, req.body, { new: true, runValidators: true });
+
     if (!updatedClass) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         status: 'fail',
-        message: 'Class not found' 
+        message: 'Class not found',
       });
     }
-    
+
     res.status(200).json({
       status: 'success',
       data: {
-        class: updatedClass
-      }
+        class: updatedClass,
+      },
     });
   } catch (error) {
-    res.status(400).json({ 
+    res.status(400).json({
       status: 'fail',
-      message: error.message 
+      message: error.message,
     });
   }
 };
@@ -125,77 +120,73 @@ export const updateRecordedClass = async (req, res) => {
 export const deleteRecordedClass = async (req, res) => {
   try {
     const classId = req.params.id;
-    
+
     if (!classId) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         status: 'fail',
-        message: 'Class ID is required' 
+        message: 'Class ID is required',
       });
     }
 
     const deletedClass = await RecordedClass.findByIdAndDelete(classId);
     if (!deletedClass) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         status: 'fail',
-        message: 'Class not found' 
+        message: 'Class not found',
       });
     }
-    
+
     res.status(200).json({
       status: 'success',
-      data: null
+      data: null,
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       status: 'error',
-      message: error.message 
+      message: error.message,
     });
   }
 };
 
 export const updateClassStatus = async (req, res) => {
-    try {
-      const classId = req.params.id;
-      const { status } = req.body;
-  
-      if (!classId) {
-        return res.status(400).json({ 
-          status: 'fail',
-          message: 'Class ID is required' 
-        });
-      }
+  try {
+    const classId = req.params.id;
+    const { status } = req.body;
 
-      // Validate status
-      if (typeof status !== 'boolean') {
-        return res.status(400).json({ 
-          status: 'fail',
-          message: 'Invalid status value' 
-        });
-      }
-  
-      const updatedClass = await RecordedClass.findByIdAndUpdate(
-        classId,
-        { status },
-        { new: true }
-      );
-  
-      if (!updatedClass) {
-        return res.status(404).json({ 
-          status: 'fail',
-          message: 'Class not found' 
-        });
-      }
-  
-      res.status(200).json({
-        status: 'success',
-        data: {
-          class: updatedClass
-        }
-      });
-    } catch (error) {
-      res.status(400).json({ 
+    if (!classId) {
+      return res.status(400).json({
         status: 'fail',
-        message: error.message 
+        message: 'Class ID is required',
       });
     }
-  };
+
+    // Validate status
+    if (typeof status !== 'boolean') {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid status value',
+      });
+    }
+
+    const updatedClass = await RecordedClass.findByIdAndUpdate(classId, { status }, { new: true });
+
+    if (!updatedClass) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Class not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        class: updatedClass,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: error.message,
+    });
+  }
+};

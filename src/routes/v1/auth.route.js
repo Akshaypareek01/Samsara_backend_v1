@@ -4,7 +4,6 @@ import * as authValidation from '../../validations/auth.validation.js';
 import * as authController from '../../controllers/auth.controller.js';
 import auth from '../../middlewares/auth.js';
 
-
 const router = express.Router();
 
 // Traditional password-based auth
@@ -12,8 +11,16 @@ router.post('/register', validate(authValidation.register), authController.regis
 router.post('/login', validate(authValidation.login), authController.login);
 
 // OTP-based registration flow
-router.post('/send-registration-otp', validate(authValidation.sendRegistrationOTP), authController.sendRegistrationOTPController);
-router.post('/verify-registration-otp', validate(authValidation.verifyRegistrationOTP), authController.verifyRegistrationOTPController);
+router.post(
+  '/send-registration-otp',
+  validate(authValidation.sendRegistrationOTP),
+  authController.sendRegistrationOTPController
+);
+router.post(
+  '/verify-registration-otp',
+  validate(authValidation.verifyRegistrationOTP),
+  authController.verifyRegistrationOTPController
+);
 
 // OTP-based login flow
 router.post('/send-login-otp', validate(authValidation.sendLoginOTP), authController.sendLoginOTPController);
@@ -28,7 +35,6 @@ router.post('/send-verification-email', auth(), authController.sendVerificationE
 router.post('/verify-email', validate(authValidation.verifyEmail), authController.verifyEmail);
 
 export default router;
-
 
 /**
  * @swagger

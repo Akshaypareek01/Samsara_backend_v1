@@ -36,6 +36,7 @@ import { ThyroidAssessment } from './thyroid-assessment.model.js';
 import { PeriodCycle } from './period-cycle.model.js';
 import { BirthControl } from './birth-control.model.js';
 import { PeriodSettings } from './period-settings.model.js';
+import { DietGeneration } from './diet-generation.model.js';
 
 export {
   Token,
@@ -77,6 +78,7 @@ export {
   ThyroidAssessment,
   PeriodCycle,
   BirthControl,
-  PeriodSettings
+  PeriodSettings,
+  DietGeneration
 };
 

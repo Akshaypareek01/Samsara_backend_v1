@@ -1,11 +1,22 @@
-
-
 // routes/eventRoutes.js
 import express from 'express';
-import { EndEventMeeting, addPredefinedEvents, createEvent, deleteEvent, getAllEvents, getAllEventsUpcoming, getEventById, getEventsByTeacher, getStudentsForEvent, getUserRegisteredEvents, getUserRegisteredEventsUpcoming, registerUserToEvent, updateEvent } from '../../controllers/events.controller.js';
-import { startEventMeeting } from '../../controllers/events.controller.js';
-import { isUserEnrolledInEvent } from '../../controllers/events.controller.js';
-
+import {
+  EndEventMeeting,
+  addPredefinedEvents,
+  createEvent,
+  deleteEvent,
+  getAllEvents,
+  getAllEventsUpcoming,
+  getEventById,
+  getEventsByTeacher,
+  getStudentsForEvent,
+  getUserRegisteredEvents,
+  getUserRegisteredEventsUpcoming,
+  registerUserToEvent,
+  updateEvent,
+  startEventMeeting,
+  isUserEnrolledInEvent,
+} from '../../controllers/events.controller.js';
 
 const eventsRouter = express.Router();
 

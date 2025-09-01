@@ -149,14 +149,14 @@ BodyStatusSchema.pre('save', function (next) {
 
     // Convert height to meters if in cm
     if (this.height.unit === 'cm') {
-      heightInMeters = heightInMeters / 100;
+      heightInMeters /= 100;
     } else if (this.height.unit === 'ft') {
-      heightInMeters = heightInMeters * 0.3048;
+      heightInMeters *= 0.3048;
     }
 
     // Convert weight to kg if in lbs
     if (this.weight.unit === 'lbs') {
-      weightInKg = weightInKg * 0.453592;
+      weightInKg *= 0.453592;
     }
 
     // Calculate BMI
@@ -184,9 +184,7 @@ BodyStatusSchema.statics.getLatestByUserId = function (userId) {
 
 // Method to get body status history for a user
 BodyStatusSchema.statics.getHistoryByUserId = function (userId, limit = 10) {
-  return this.find({ userId })
-    .sort({ measurementDate: -1 })
-    .limit(limit);
+  return this.find({ userId }).sort({ measurementDate: -1 }).limit(limit);
 };
 
 export const BodyStatus = mongoose.model('BodyStatus', BodyStatusSchema);

@@ -67,9 +67,9 @@ WeightTrackerSchema.pre('save', function (next) {
   if (this.currentWeight && this.height) {
     let heightInMeters = this.height.value;
     let weightInKg = this.currentWeight.value;
-    if (this.height.unit === 'cm') heightInMeters = heightInMeters / 100;
-    else if (this.height.unit === 'ft') heightInMeters = heightInMeters * 0.3048;
-    if (this.currentWeight.unit === 'lbs') weightInKg = weightInKg * 0.453592;
+    if (this.height.unit === 'cm') heightInMeters /= 100;
+    else if (this.height.unit === 'ft') heightInMeters *= 0.3048;
+    if (this.currentWeight.unit === 'lbs') weightInKg *= 0.453592;
     const bmiValue = weightInKg / (heightInMeters * heightInMeters);
     this.bmi = {
       value: Math.round(bmiValue * 100) / 100,
@@ -81,9 +81,9 @@ WeightTrackerSchema.pre('save', function (next) {
     let start = this.startingWeight.value;
     let curr = this.currentWeight.value;
     if (this.currentWeight.unit === 'lbs' && this.startingWeight.unit === 'kg') {
-      start = start * 2.20462;
+      start *= 2.20462;
     } else if (this.currentWeight.unit === 'kg' && this.startingWeight.unit === 'lbs') {
-      curr = curr * 2.20462;
+      curr *= 2.20462;
     }
     this.totalLoss = Math.round((start - curr) * 10) / 10;
   }

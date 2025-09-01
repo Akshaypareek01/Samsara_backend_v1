@@ -48,7 +48,7 @@ export const stopPeriod = async (userId, date) => {
 
 export const upsertDailyLog = async (userId, date, data) => {
   const day = toDateOnly(date);
-  let cycle = await PeriodCycle.findOne({ userId, cycleStartDate: { $lte: day } }).sort({ cycleStartDate: -1 });
+  const cycle = await PeriodCycle.findOne({ userId, cycleStartDate: { $lte: day } }).sort({ cycleStartDate: -1 });
   if (!cycle) throw new ApiError(httpStatus.NOT_FOUND, 'No cycle found for date');
   const idx = cycle.dailyLogs.findIndex((l) => toDateOnly(l.date).getTime() === day.getTime());
   if (idx >= 0) {
@@ -64,7 +64,9 @@ export const getCurrent = async (userId) => {
   const settings = await getSettings(userId);
   const latest = await PeriodCycle.findOne({ userId }).sort({ cycleStartDate: -1 });
   if (!latest) return { settings };
-  const completeCycles = await PeriodCycle.find({ userId, cycleEndDate: { $exists: true } }).sort({ cycleStartDate: -1 }).limit(6);
+  const completeCycles = await PeriodCycle.find({ userId, cycleEndDate: { $exists: true } })
+    .sort({ cycleStartDate: -1 })
+    .limit(6);
   const avg = averageCycleLength(completeCycles, settings.defaultCycleLengthDays);
   const { predictedNextPeriodDate, predictedOvulationDate, predictedFertileWindowStart, predictedFertileWindowEnd } =
     predictFromLast(latest.cycleStartDate, avg, settings.lutealPhaseDays);
@@ -109,9 +111,10 @@ export const getCalendar = async (userId, month) => {
     month: m + 1,
     days: [], // frontend builds markers by using below fields
     periodRanges,
-    fertileWindow: preds.predictedFertileWindowStart && preds.predictedFertileWindowEnd
-      ? { start: preds.predictedFertileWindowStart, end: preds.predictedFertileWindowEnd }
-      : undefined,
+    fertileWindow:
+      preds.predictedFertileWindowStart && preds.predictedFertileWindowEnd
+        ? { start: preds.predictedFertileWindowStart, end: preds.predictedFertileWindowEnd }
+        : undefined,
     ovulationDate: preds.predictedOvulationDate,
     nextPeriodDate: preds.predictedNextPeriodDate,
   };
@@ -143,5 +146,3 @@ export const getDay = async (userId, date) => {
   const log = (cycle.dailyLogs || []).find((l) => toDateOnly(l.date).getTime() === day.getTime());
   return { cycleId: cycle.id, log, cycle };
 };
-
-

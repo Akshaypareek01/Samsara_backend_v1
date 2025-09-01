@@ -1,6 +1,6 @@
+import httpStatus from 'http-status';
 import { QuestionMaster, AssessmentResult } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
-import httpStatus from 'http-status';
 
 /**
  * Create a new question
@@ -75,7 +75,7 @@ export const startAssessment = async (userId, assessmentType) => {
   const existingAssessment = await AssessmentResult.findOne({
     userId,
     assessmentType,
-    isCompleted: false
+    isCompleted: false,
   });
 
   if (existingAssessment) {
@@ -87,7 +87,7 @@ export const startAssessment = async (userId, assessmentType) => {
     assessmentType,
     answers: [],
     doshaScore: { vata: 0, pitta: 0, kapha: 0 },
-    isCompleted: false
+    isCompleted: false,
   });
 };
 
@@ -103,7 +103,7 @@ export const submitAnswer = async (assessmentId, userId, questionId, selectedOpt
   const assessment = await AssessmentResult.findOne({
     _id: assessmentId,
     userId,
-    isCompleted: false
+    isCompleted: false,
   });
 
   if (!assessment) {
@@ -112,7 +112,7 @@ export const submitAnswer = async (assessmentId, userId, questionId, selectedOpt
 
   // Check if answer already exists for this question
   const existingAnswerIndex = assessment.answers.findIndex(
-    answer => answer.questionId.toString() === questionId.toString()
+    (answer) => answer.questionId.toString() === questionId.toString()
   );
 
   if (existingAnswerIndex !== -1) {
@@ -122,7 +122,7 @@ export const submitAnswer = async (assessmentId, userId, questionId, selectedOpt
     // Add new answer
     assessment.answers.push({
       questionId,
-      selectedOptionIndex
+      selectedOptionIndex,
     });
   }
 
@@ -140,7 +140,7 @@ export const calculateDoshaScore = async (assessmentId, userId) => {
   const assessment = await AssessmentResult.findOne({
     _id: assessmentId,
     userId,
-    isCompleted: false
+    isCompleted: false,
   }).populate('answers.questionId');
 
   if (!assessment) {
@@ -182,7 +182,7 @@ export const getAssessmentResults = async (userId, filter, options) => {
   const results = await AssessmentResult.paginate(assessmentFilter, {
     ...options,
     populate: 'answers.questionId',
-    sortBy: 'submittedAt:desc'
+    sortBy: 'submittedAt:desc',
   });
   return results;
 };
@@ -196,7 +196,7 @@ export const getAssessmentResults = async (userId, filter, options) => {
 export const getAssessmentById = async (assessmentId, userId) => {
   const assessment = await AssessmentResult.findOne({
     _id: assessmentId,
-    userId
+    userId,
   }).populate('answers.questionId');
 
   if (!assessment) {
@@ -214,7 +214,7 @@ export const getAssessmentById = async (assessmentId, userId) => {
 export const getAssessmentQuestions = async (assessmentType) => {
   return QuestionMaster.find({
     assessmentType,
-    isActive: true
+    isActive: true,
   }).sort({ order: 1 });
 };
 
@@ -231,11 +231,11 @@ export const getAssessmentStats = async (userId) => {
         _id: '$assessmentType',
         count: { $sum: 1 },
         completedCount: {
-          $sum: { $cond: ['$isCompleted', 1, 0] }
+          $sum: { $cond: ['$isCompleted', 1, 0] },
         },
-        latestAssessment: { $max: '$submittedAt' }
-      }
-    }
+        latestAssessment: { $max: '$submittedAt' },
+      },
+    },
   ]);
 
   return stats;
@@ -254,4 +254,4 @@ export const getDominantDosha = (doshaScore) => {
     .map(([dosha]) => dosha.charAt(0).toUpperCase() + dosha.slice(1));
 
   return dominantDoshas.length === 1 ? dominantDoshas[0] : dominantDoshas.join('-');
-}; 
+};

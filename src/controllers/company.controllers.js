@@ -1,5 +1,4 @@
-import { Company } from "../models/index.js";
-
+import { Company } from '../models/index.js';
 
 const generateUniqueId = () => {
   return Math.random().toString(36).substr(2, 8).toUpperCase();
@@ -26,22 +25,21 @@ export const createCompany = async (req, res) => {
 
 export const checkCompanyExists = async (req, res) => {
   try {
-      const { companyId } = req.params;
+    const { companyId } = req.params;
 
-      // Check if the company exists
-      const companyExists = await Company.exists({ companyId });
+    // Check if the company exists
+    const companyExists = await Company.exists({ companyId });
 
-      res.status(200).json({
-          exists: companyExists ? true : false
-      });
-
+    res.status(200).json({
+      exists: !!companyExists,
+    });
   } catch (error) {
-      console.error("Error checking company existence:", error);
-      res.status(500).json({
-          status: 'fail',
-          message: 'Internal Server Error',
-          error: error.message
-      });
+    console.error('Error checking company existence:', error);
+    res.status(500).json({
+      status: 'fail',
+      message: 'Internal Server Error',
+      error: error.message,
+    });
   }
 };
 

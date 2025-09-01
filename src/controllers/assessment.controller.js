@@ -1,5 +1,4 @@
-import { Assessment } from "../models/index.js";
-
+import { Assessment } from '../models/index.js';
 
 export const createAssessment = async (req, res) => {
   try {

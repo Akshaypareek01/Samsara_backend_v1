@@ -23,7 +23,7 @@ if (missingEnvVars.length > 0 && config.env === 'production') {
 if (missingEnvVars.length > 0 && config.env === 'development') {
   console.warn('\x1b[33m%s\x1b[0m', '⚠️  R2 Storage is not configured. File uploads will not work.');
   console.warn('\x1b[33m%s\x1b[0m', 'Please set the following environment variables:');
-  missingEnvVars.forEach(varName => {
+  missingEnvVars.forEach((varName) => {
     console.warn('\x1b[33m%s\x1b[0m', `   - ${varName}`);
   });
 }
@@ -63,7 +63,7 @@ export const testR2Connection = async () => {
     return true;
   } catch (error) {
     let errorMessage = 'Cloudflare R2 connection failed';
-    
+
     if (error.message.includes('credentials')) {
       errorMessage += ': Invalid or missing credentials';
     } else if (error.message.includes('endpoint')) {
@@ -73,8 +73,8 @@ export const testR2Connection = async () => {
     } else {
       errorMessage += `: ${error.message}`;
     }
-    
+
     console.error(`❌ ${errorMessage}`);
     return false;
   }
-}; 
+};

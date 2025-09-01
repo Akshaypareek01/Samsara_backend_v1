@@ -71,12 +71,14 @@ const searchMasterCategories = {
 
 const updateCategoryOrder = {
   body: Joi.object().keys({
-    orderData: Joi.array().items(
-      Joi.object().keys({
-        id: Joi.string().custom(objectId).required(),
-        order: Joi.number().integer().min(0).required(),
-      })
-    ).required(),
+    orderData: Joi.array()
+      .items(
+        Joi.object().keys({
+          id: Joi.string().custom(objectId).required(),
+          order: Joi.number().integer().min(0).required(),
+        })
+      )
+      .required(),
   }),
 };
 
@@ -89,4 +91,4 @@ export {
   getActiveMasterCategories,
   searchMasterCategories,
   updateCategoryOrder,
-}; 
+};

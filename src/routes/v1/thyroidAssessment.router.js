@@ -13,20 +13,16 @@ router.get('/questions', thyroidAssessmentController.getAssessmentQuestions);
 router.use(auth());
 
 // Create new assessment
-router.post(
-    '/',
-    validate(thyroidAssessmentValidation.createAssessment),
-    thyroidAssessmentController.createAssessment
-);
+router.post('/', validate(thyroidAssessmentValidation.createAssessment), thyroidAssessmentController.createAssessment);
 
 // Get latest assessment for user
 router.get('/latest', thyroidAssessmentController.getLatestAssessment);
 
 // Get assessment history with pagination and filtering
 router.get(
-    '/history',
-    validate(thyroidAssessmentValidation.getAssessmentHistory),
-    thyroidAssessmentController.getAssessmentHistory
+  '/history',
+  validate(thyroidAssessmentValidation.getAssessmentHistory),
+  thyroidAssessmentController.getAssessmentHistory
 );
 
 // Get assessment statistics
@@ -34,37 +30,37 @@ router.get('/stats', thyroidAssessmentController.getAssessmentStats);
 
 // Calculate risk level without saving
 router.post(
-    '/calculate-risk',
-    validate(thyroidAssessmentValidation.calculateRisk),
-    thyroidAssessmentController.calculateRiskLevel
+  '/calculate-risk',
+  validate(thyroidAssessmentValidation.calculateRisk),
+  thyroidAssessmentController.calculateRiskLevel
 );
 
 // Submit reassessment (creates new assessment)
 router.post(
-    '/reassessment',
-    validate(thyroidAssessmentValidation.submitReassessment),
-    thyroidAssessmentController.submitReassessment
+  '/reassessment',
+  validate(thyroidAssessmentValidation.submitReassessment),
+  thyroidAssessmentController.submitReassessment
 );
 
 // Get specific assessment by ID
 router.get(
-    '/:assessmentId',
-    validate(thyroidAssessmentValidation.getAssessment),
-    thyroidAssessmentController.getAssessmentById
+  '/:assessmentId',
+  validate(thyroidAssessmentValidation.getAssessment),
+  thyroidAssessmentController.getAssessmentById
 );
 
 // Update existing assessment
 router.put(
-    '/:assessmentId',
-    validate(thyroidAssessmentValidation.updateAssessment),
-    thyroidAssessmentController.updateAssessment
+  '/:assessmentId',
+  validate(thyroidAssessmentValidation.updateAssessment),
+  thyroidAssessmentController.updateAssessment
 );
 
 // Delete assessment
 router.delete(
-    '/:assessmentId',
-    validate(thyroidAssessmentValidation.deleteAssessment),
-    thyroidAssessmentController.deleteAssessment
+  '/:assessmentId',
+  validate(thyroidAssessmentValidation.deleteAssessment),
+  thyroidAssessmentController.deleteAssessment
 );
 
 export default router;

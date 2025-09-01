@@ -17,26 +17,32 @@ const createTeacher = {
         alt: Joi.string(),
       })
     ),
-    address: Joi.object().keys({
-      street: Joi.string().required(),
-      city: Joi.string().required(),
-      state: Joi.string().required(),
-      pincode: Joi.string().required().pattern(/^[1-9][0-9]{5}$/),
-      country: Joi.string().required().default('India'),
-    }).required(),
-    expertise: Joi.array().items(Joi.string()).min(1),
-    qualification: Joi.array().items(
-      Joi.object().keys({
-        degree: Joi.string().required(),
-        institution: Joi.string().required(),
-        year: Joi.number().integer().min(1900).max(new Date().getFullYear()).required(),
-        grade: Joi.string(),
-        certificate: Joi.object().keys({
-          filename: Joi.string(),
-          path: Joi.string(),
-        }),
+    address: Joi.object()
+      .keys({
+        street: Joi.string().required(),
+        city: Joi.string().required(),
+        state: Joi.string().required(),
+        pincode: Joi.string()
+          .required()
+          .pattern(/^[1-9][0-9]{5}$/),
+        country: Joi.string().required().default('India'),
       })
-    ).min(1),
+      .required(),
+    expertise: Joi.array().items(Joi.string()).min(1),
+    qualification: Joi.array()
+      .items(
+        Joi.object().keys({
+          degree: Joi.string().required(),
+          institution: Joi.string().required(),
+          year: Joi.number().integer().min(1900).max(new Date().getFullYear()).required(),
+          grade: Joi.string(),
+          certificate: Joi.object().keys({
+            filename: Joi.string(),
+            path: Joi.string(),
+          }),
+        })
+      )
+      .min(1),
     additionalCourses: Joi.array().items(
       Joi.object().keys({
         courseName: Joi.string().required(),
@@ -199,4 +205,4 @@ export {
   forgotPassword,
   resetPasswordToken,
   verifyEmail,
-}; 
+};

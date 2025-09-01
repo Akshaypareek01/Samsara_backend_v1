@@ -4,7 +4,6 @@ import { User } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
 
-
 /**
  * Create a user
  * @param {Object} userBody
@@ -14,9 +13,9 @@ const createUser = async (userBody) => {
   if (await User.isEmailTaken(userBody.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
-  
+
   const user = await User.create(userBody);
-  
+
   // Create initial trackers for the new user
   try {
     await createInitialTrackers(user._id);
@@ -25,7 +24,7 @@ const createUser = async (userBody) => {
     console.error(`Failed to create initial trackers for user ${user._id}:`, error);
     // Don't throw error here to avoid failing user creation if tracker creation fails
   }
-  
+
   return user;
 };
 
@@ -77,7 +76,7 @@ const updateUserById = async (userId, updateBody) => {
   }
   Object.assign(user, updateBody);
   await user.save();
-  
+
   // Update tracker fields if relevant profile data was updated
   try {
     await updateTrackersFromProfile(userId, updateBody);
@@ -85,7 +84,7 @@ const updateUserById = async (userId, updateBody) => {
     console.error(`Failed to update trackers for user ${userId}:`, error);
     // Don't throw error here to avoid failing user update if tracker update fails
   }
-  
+
   return user;
 };
 
@@ -118,13 +117,4 @@ const getUsersByRole = async (role, options = {}) => {
   return users;
 };
 
-export {
-  createUser,
-  queryUsers,
-  getUserById,
-  getUserByEmail,
-  updateUserById,
-  deleteUserById,
-  getUsersByRole,
-};
-
+export { createUser, queryUsers, getUserById, getUserByEmail, updateUserById, deleteUserById, getUsersByRole };

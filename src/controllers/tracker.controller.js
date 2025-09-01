@@ -1,15 +1,15 @@
 import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
 import * as trackerService from '../services/tracker.service.js';
-import { 
-  WeightTracker, 
-  BmiTracker, 
-  FatTracker, 
-  BodyStatus, 
-  WaterTracker, 
-  SleepTracker, 
-  StepTracker, 
-  TemperatureTracker 
+import {
+  WeightTracker,
+  BmiTracker,
+  FatTracker,
+  BodyStatus,
+  WaterTracker,
+  SleepTracker,
+  StepTracker,
+  TemperatureTracker,
 } from '../models/index.js';
 
 /**
@@ -25,7 +25,7 @@ const getDashboardData = catchAsync(async (req, res) => {
  */
 const getTrackerStatus = catchAsync(async (req, res) => {
   const userId = req.user.id;
-  
+
   const trackers = await Promise.all([
     WeightTracker.findOne({ userId }),
     BmiTracker.findOne({ userId }),
@@ -34,9 +34,9 @@ const getTrackerStatus = catchAsync(async (req, res) => {
     WaterTracker.findOne({ userId }),
     SleepTracker.findOne({ userId }),
     StepTracker.findOne({ userId }),
-    TemperatureTracker.findOne({ userId })
+    TemperatureTracker.findOne({ userId }),
   ]);
-  
+
   const status = {
     weightTracker: trackers[0],
     bmiTracker: trackers[1],
@@ -45,9 +45,9 @@ const getTrackerStatus = catchAsync(async (req, res) => {
     waterTracker: trackers[4],
     sleepTracker: trackers[5],
     stepTracker: trackers[6],
-    temperatureTracker: trackers[7]
+    temperatureTracker: trackers[7],
   };
-  
+
   res.send(status);
 });
 
@@ -419,5 +419,5 @@ export {
   getHydrationStatus,
   createCaloriesTarget,
   updateCaloriesTarget,
-  getCaloriesTarget
+  getCaloriesTarget,
 };

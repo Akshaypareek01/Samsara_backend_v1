@@ -15,34 +15,34 @@ const updateDailyLog = {
     exercise: Joi.object({
       type: Joi.string(),
       minutes: Joi.number().min(0),
-      intensity: Joi.string()
+      intensity: Joi.string(),
     }),
     discharge: Joi.object({
       type: Joi.string(),
       color: Joi.string(),
       consistency: Joi.string(),
       amount: Joi.string(),
-      notableChanges: Joi.array().items(Joi.string())
+      notableChanges: Joi.array().items(Joi.string()),
     }),
     sexualActivity: Joi.object({
       hadSex: Joi.boolean(),
-      protected: Joi.boolean()
+      protected: Joi.boolean(),
     }),
     pregnancyTest: Joi.object({
       taken: Joi.boolean(),
-      result: Joi.string().valid('Positive', 'Negative', 'Unknown')
+      result: Joi.string().valid('Positive', 'Negative', 'Unknown'),
     }),
-    notes: Joi.string().max(1000)
-  })
+    notes: Joi.string().max(1000),
+  }),
 };
 
 const updateNotes = {
   body: Joi.object().keys({
-    cycleNotes: Joi.string().max(2000).required()
-  })
+    cycleNotes: Joi.string().max(2000).required(),
+  }),
 };
 
 export const periodCycleValidation = {
   updateDailyLog,
-  updateNotes
+  updateNotes,
 };

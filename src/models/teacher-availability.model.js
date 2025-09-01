@@ -1,55 +1,58 @@
 import mongoose from 'mongoose';
 
-const teacherAvailabilitySchema = new mongoose.Schema({
+const teacherAvailabilitySchema = new mongoose.Schema(
+  {
     teacherId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Users',
-        required: [true, 'Teacher ID is required'],
-        // Validate that the referenced user has role 'teacher'
-        validate: {
-            validator: async function(teacherId) {
-                const User = mongoose.model('Users');
-                const teacher = await User.findById(teacherId);
-                return teacher && teacher.role === 'teacher';
-            },
-            message: 'Teacher must be a user with role "teacher"'
-        }
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Users',
+      required: [true, 'Teacher ID is required'],
+      // Validate that the referenced user has role 'teacher'
+      validate: {
+        async validator(teacherId) {
+          const User = mongoose.model('Users');
+          const teacher = await User.findById(teacherId);
+          return teacher && teacher.role === 'teacher';
+        },
+        message: 'Teacher must be a user with role "teacher"',
+      },
     },
     session: {
-        type: String,
-        required: [true, 'Session is required']
+      type: String,
+      required: [true, 'Session is required'],
     },
     date: {
-        type: Date,
-        required: [true, 'Date is required']
+      type: Date,
+      required: [true, 'Date is required'],
     },
     startTime: {
-        type: Date,
-        required: [true, 'Start time is required']
+      type: Date,
+      required: [true, 'Start time is required'],
     },
     endTime: {
-        type: Date,
-        required: [true, 'End time is required']
+      type: Date,
+      required: [true, 'End time is required'],
     },
     availabilityFor: {
-        type: String,
-        enum: ['One on One', 'Group'],
-        required: [true, 'Availability type is required']
+      type: String,
+      enum: ['One on One', 'Group'],
+      required: [true, 'Availability type is required'],
     },
     status: {
-        type: String,
-        enum: ['available', 'booked', 'cancelled'],
-        default: 'available'
+      type: String,
+      enum: ['available', 'booked', 'cancelled'],
+      default: 'available',
     },
     isActive: {
-        type: Boolean,
-        default: true
-    }
-}, {
-    timestamps: true
-});
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // Index for efficient querying
 teacherAvailabilitySchema.index({ teacherId: 1, date: 1, startTime: 1, endTime: 1 });
 
-export const TeacherAvailability = mongoose.model('TeacherAvailability', teacherAvailabilitySchema); 
+export const TeacherAvailability = mongoose.model('TeacherAvailability', teacherAvailabilitySchema);

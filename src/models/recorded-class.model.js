@@ -21,19 +21,19 @@ const classSchema = new Schema({
     type: String,
     required: true,
   },
-  teacher: { 
+  teacher: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Users',
     required: true,
     // Validate that the referenced user has role 'teacher'
     validate: {
-      validator: async function(teacherId) {
+      async validator(teacherId) {
         const User = mongoose.model('Users');
         const teacher = await User.findById(teacherId);
         return teacher && teacher.role === 'teacher';
       },
-      message: 'Teacher must be a user with role "teacher"'
-    }
+      message: 'Teacher must be a user with role "teacher"',
+    },
   },
   // You can add more fields as needed, such as date, duration, etc.
 

@@ -1,7 +1,6 @@
 import Joi from 'joi';
 import { password } from './custom.validation.js';
 
-
 const register = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
@@ -28,19 +27,21 @@ const sendRegistrationOTP = {
     userCategory: Joi.when('role', {
       is: 'user',
       then: Joi.string().valid('Personal', 'Corporate').required(),
-      otherwise: Joi.forbidden()
+      otherwise: Joi.forbidden(),
     }),
     // For corporate users: corporate_id is required
     corporate_id: Joi.when('userCategory', {
       is: 'Corporate',
       then: Joi.string().required(),
-      otherwise: Joi.forbidden()
+      otherwise: Joi.forbidden(),
     }),
     // For teachers: teacher category is required
     teacherCategory: Joi.when('role', {
       is: 'teacher',
-      then: Joi.string().valid('Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer').required(),
-      otherwise: Joi.forbidden()
+      then: Joi.string()
+        .valid('Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer')
+        .required(),
+      otherwise: Joi.forbidden(),
     }),
   }),
 };
@@ -48,7 +49,10 @@ const sendRegistrationOTP = {
 const verifyRegistrationOTP = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
-    otp: Joi.string().required().length(4).pattern(/^\d{4}$/),
+    otp: Joi.string()
+      .required()
+      .length(4)
+      .pattern(/^\d{4}$/),
     name: Joi.string().required().max(20),
     mobile: Joi.string().optional().min(10),
     role: Joi.string().valid('user', 'teacher').required(),
@@ -56,19 +60,21 @@ const verifyRegistrationOTP = {
     userCategory: Joi.when('role', {
       is: 'user',
       then: Joi.string().valid('Personal', 'Corporate').required(),
-      otherwise: Joi.forbidden()
+      otherwise: Joi.forbidden(),
     }),
     // For corporate users: corporate_id is required
     corporate_id: Joi.when('userCategory', {
       is: 'Corporate',
       then: Joi.string().required(),
-      otherwise: Joi.forbidden()
+      otherwise: Joi.forbidden(),
     }),
     // For teachers: teacher category is required
     teacherCategory: Joi.when('role', {
       is: 'teacher',
-      then: Joi.string().valid('Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer').required(),
-      otherwise: Joi.forbidden()
+      then: Joi.string()
+        .valid('Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer')
+        .required(),
+      otherwise: Joi.forbidden(),
     }),
   }),
 };
@@ -83,7 +89,10 @@ const sendLoginOTP = {
 const verifyLoginOTP = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
-    otp: Joi.string().required().length(4).pattern(/^\d{4}$/),
+    otp: Joi.string()
+      .required()
+      .length(4)
+      .pattern(/^\d{4}$/),
   }),
 };
 
@@ -120,17 +129,16 @@ const verifyEmail = {
   }),
 };
 
-export { 
-  register, 
-  login, 
+export {
+  register,
+  login,
   sendRegistrationOTP,
   verifyRegistrationOTP,
   sendLoginOTP,
   verifyLoginOTP,
-  logout, 
-  refreshTokens, 
-  forgotPassword, 
-  resetPassword, 
-  verifyEmail 
+  logout,
+  refreshTokens,
+  forgotPassword,
+  resetPassword,
+  verifyEmail,
 };
-

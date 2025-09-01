@@ -23,13 +23,13 @@ const customSessionSchema = new mongoose.Schema({
     required: true,
     // Validate that the referenced user has role 'teacher'
     validate: {
-      validator: async function(teacherId) {
+      async validator(teacherId) {
         const User = mongoose.model('Users');
         const teacher = await User.findById(teacherId);
         return teacher && teacher.role === 'teacher';
       },
-      message: 'Teacher must be a user with role "teacher"'
-    }
+      message: 'Teacher must be a user with role "teacher"',
+    },
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -41,13 +41,13 @@ const customSessionSchema = new mongoose.Schema({
     ref: 'TimeSlot',
     required: true,
   },
-  password: { type: String},
-  meeting_number:{ type: String},
+  password: { type: String },
+  meeting_number: { type: String },
   message: {
     type: String,
     required: true,
   },
-  date:{
+  date: {
     type: String,
     required: true,
   },

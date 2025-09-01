@@ -16,7 +16,6 @@ import { tokenTypes } from '../../src/config/tokens';
 import { userOne, admin, insertUsers } from '../fixtures/user.fixture';
 import { userOneAccessToken, adminAccessToken } from '../fixtures/token.fixture';
 
-
 setupTestDB();
 
 describe('Auth routes', () => {

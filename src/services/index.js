@@ -53,3 +53,6 @@ export * as birthControlService from './period/birthControl.service.js';
 // Export period cycle service
 export * as periodCycleService from './periodCycle.service.js';
 
+// Export diet generation service
+export * as dietGenerationService from './dietGeneration.service.js';
+
