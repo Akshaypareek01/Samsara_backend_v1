@@ -20,7 +20,7 @@ const checkDietGenerationEligibility = async (userId) => {
  */
 const generateDietFromAI = async (userData) => {
     try {
-        const dietUrl = config.dietModelUrl || 'http://localhost:3002/';
+        const dietUrl = config.dietModelUrl || 'https://diet.apis-samsarawellness.in/';
         const response = await axios.post(`${dietUrl}/generate-diet-from-node-data`, userData, {
             timeout: 300000, // 5 minutes timeout
             headers: {
