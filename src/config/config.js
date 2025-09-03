@@ -24,6 +24,8 @@ const envVarsSchema = Joi.object()
     SMTP_PASSWORD: Joi.string().description('password for email server'),
     EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app'),
     DIET_MODEL_URL: Joi.string().description('URL for the AI diet model API'),
+    RAZORPAY_KEY_ID: Joi.string().description('Razorpay Key ID'),
+    RAZORPAY_SECRET: Joi.string().description('Razorpay Secret Key'),
   })
   .unknown();
 
@@ -63,6 +65,10 @@ const config = {
     from: envVars.EMAIL_FROM,
   },
   dietModelUrl: envVars.DIET_MODEL_URL,
+  razorpay: {
+    keyId: envVars.RAZORPAY_KEY_ID,
+    secretKey: envVars.RAZORPAY_SECRET,
+  },
 };
 
 export default config;

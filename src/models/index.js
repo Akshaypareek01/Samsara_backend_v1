@@ -5,6 +5,9 @@ import Event from './event.model.js';
 import OTP from './otp.model.js';
 import { Mood } from './user-mood.model.js';
 import Membership from './membership.model.js';
+import MembershipPlan from './membership-plan.model.js';
+import CouponCode from './coupon-code.model.js';
+import Transaction from './transaction.model.js';
 import EventApplication from "./event-application.model.js";
 import { CustomSession, TimeSlot } from './custom-session.model.js';
 import Admin from './admin.model.js';
@@ -46,6 +49,9 @@ export {
   OTP,
   Mood,
   Membership,
+  MembershipPlan,
+  CouponCode,
+  Transaction,
   EventApplication,
   CustomSession,
   TimeSlot,

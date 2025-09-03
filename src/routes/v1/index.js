@@ -28,6 +28,9 @@ import thyroidAssessmentRoute from './thyroidAssessment.router.js';
 import periodTrackerRoute from './periodTracker.router.js';
 import periodCycleRoute from './periodCycle.router.js';
 import dietGenerationRoute from './dietGeneration.router.js';
+import membershipPlanRoute from './membership-plan.route.js';
+import couponRoute from './coupon.route.js';
+import paymentRoute from './payment.route.js';
 
 const router = express.Router();
 
@@ -139,6 +142,18 @@ const defaultRoutes = [
   {
     path: '/user-analytics',
     route: userAnalyticsRoute,
+  },
+  {
+    path: '/membership-plans',
+    route: membershipPlanRoute,
+  },
+  {
+    path: '/coupons',
+    route: couponRoute,
+  },
+  {
+    path: '/payments',
+    route: paymentRoute,
   },
 ];
 
