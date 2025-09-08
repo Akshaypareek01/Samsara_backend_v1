@@ -3,6 +3,7 @@ import pick from '../utils/pick.js';
 import { User } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
+import { assignTrialPlan } from './membership.service.js';
 
 /**
  * Create a user
@@ -23,6 +24,17 @@ const createUser = async (userBody) => {
   } catch (error) {
     console.error(`Failed to create initial trackers for user ${user._id}:`, error);
     // Don't throw error here to avoid failing user creation if tracker creation fails
+  }
+
+  // Assign trial plan to new users (only for regular users, not teachers)
+  if (user.role === 'user') {
+    try {
+      await assignTrialPlan(user._id);
+      console.log(`Assigned trial plan to user: ${user._id}`);
+    } catch (error) {
+      console.error(`Failed to assign trial plan to user ${user._id}:`, error);
+      // Don't throw error here to avoid failing user creation if trial plan assignment fails
+    }
   }
 
   return user;

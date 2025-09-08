@@ -29,6 +29,7 @@ import periodTrackerRoute from './periodTracker.router.js';
 import periodCycleRoute from './periodCycle.router.js';
 import dietGenerationRoute from './dietGeneration.router.js';
 import membershipPlanRoute from './membership-plan.route.js';
+import membershipRoute from './membership.route.js';
 import couponRoute from './coupon.route.js';
 import paymentRoute from './payment.route.js';
 
@@ -146,6 +147,10 @@ const defaultRoutes = [
   {
     path: '/membership-plans',
     route: membershipPlanRoute,
+  },
+  {
+    path: '/memberships',
+    route: membershipRoute,
   },
   {
     path: '/coupons',

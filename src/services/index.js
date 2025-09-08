@@ -56,3 +56,6 @@ export * as periodCycleService from './periodCycle.service.js';
 // Export diet generation service
 export * as dietGenerationService from './dietGeneration.service.js';
 
+// Export membership service
+export * as membershipService from './membership.service.js';
+

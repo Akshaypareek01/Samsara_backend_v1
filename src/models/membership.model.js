@@ -201,8 +201,16 @@ membershipSchema.pre('save', function(next) {
     this.endDate = new Date(this.startDate.getTime() + this.validityDays * 24 * 60 * 60 * 1000);
   }
   
-  // Update status based on dates
-  this.updateStatus();
+  // Update status based on dates (without saving)
+  const now = new Date();
+  
+  if (this.status !== 'cancelled') {
+    if (now > this.endDate) {
+      this.status = 'expired';
+    } else if (now >= this.startDate && now <= this.endDate) {
+      this.status = 'active';
+    }
+  }
   
   next();
 });

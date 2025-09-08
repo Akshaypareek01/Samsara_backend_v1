@@ -199,6 +199,12 @@ const userSchema = new mongoose.Schema(
     favoriteClasses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Class' }],
     favoriteEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
     favoriteTeachers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
+    
+    // Membership tracking
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
   {
     timestamps: {},
