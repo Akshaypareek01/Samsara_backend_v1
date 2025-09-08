@@ -18,145 +18,7 @@ async function seedMembershipData() {
 
     // Create sample membership plans
     const membershipPlans = [
-      {
-        name: 'Basic Monthly',
-        description: 'Basic membership plan for 1 month with essential features',
-        basePrice: 499,
-        currency: 'INR',
-        validityDays: 30,
-        features: [
-          'Access to basic classes',
-          'Community support',
-          'Basic tracking features'
-        ],
-        planType: 'basic',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: {
-          gst: {
-            rate: 18,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 50,
-          maxDiscountAmount: 200
-        }
-      },
-      {
-        name: 'Premium Monthly',
-        description: 'Premium membership plan for 1 month with advanced features',
-        basePrice: 999,
-        currency: 'INR',
-        validityDays: 30,
-        features: [
-          'Unlimited classes',
-          'Personal trainer access',
-          'Nutrition guidance',
-          'Advanced tracking',
-          'Priority support'
-        ],
-        planType: 'premium',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: {
-          gst: {
-            rate: 18,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 30,
-          maxDiscountAmount: 500
-        }
-      },
-      {
-        name: 'Enterprise Monthly',
-        description: 'Enterprise membership plan for 1 month with all features',
-        basePrice: 1999,
-        currency: 'INR',
-        validityDays: 30,
-        features: [
-          'All premium features',
-          'Custom meal plans',
-          '1-on-1 coaching sessions',
-          'Advanced analytics',
-          'Dedicated support',
-          'Corporate wellness programs'
-        ],
-        planType: 'enterprise',
-        maxUsers: 5,
-        isActive: true,
-        taxConfig: {
-          gst: {
-            rate: 18,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 20,
-          maxDiscountAmount: 1000
-        }
-      },
-      {
-        name: 'Basic Yearly',
-        description: 'Basic membership plan for 1 year with essential features',
-        basePrice: 4999,
-        currency: 'INR',
-        validityDays: 365,
-        features: [
-          'Access to basic classes',
-          'Community support',
-          'Basic tracking features',
-          'Yearly discount'
-        ],
-        planType: 'basic',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: {
-          gst: {
-            rate: 18,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 40,
-          maxDiscountAmount: 1500
-        }
-      },
-      {
-        name: 'Premium Yearly',
-        description: 'Premium membership plan for 1 year with advanced features',
-        basePrice: 9999,
-        currency: 'INR',
-        validityDays: 365,
-        features: [
-          'Unlimited classes',
-          'Personal trainer access',
-          'Nutrition guidance',
-          'Advanced tracking',
-          'Priority support',
-          'Yearly discount'
-        ],
-        planType: 'premium',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: {
-          gst: {
-            rate: 18,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 25,
-          maxDiscountAmount: 3000
-        }
-      },
+    
       {
         name: 'Trial Plan',
         description: '7-day trial plan to experience the platform',
@@ -184,104 +46,11 @@ async function seedMembershipData() {
         }
       },
       {
-        name: 'New Year Special',
-        description: 'Limited time New Year offer - Premium features at basic price',
-        basePrice: 499,
-        currency: 'INR',
-        validityDays: 90,
-        features: [
-          'All premium features',
-          'Personal trainer access',
-          'Nutrition guidance',
-          'Advanced tracking',
-          'Priority support',
-          'New Year bonus content'
-        ],
-        planType: 'limited-time',
-        maxUsers: 1,
-        isActive: true,
-        availableFrom: new Date('2024-01-01'),
-        availableUntil: new Date('2024-01-31'), // Available only in January 2024
-        taxConfig: {
-          gst: {
-            rate: 18,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 30,
-          maxDiscountAmount: 200
-        }
-      },
-      {
-        name: 'Summer Fitness Challenge',
-        description: '3-month summer fitness program with special features',
-        basePrice: 1299,
-        currency: 'INR',
-        validityDays: 90,
-        features: [
-          'Summer-specific workout plans',
-          'Hydration tracking',
-          'Outdoor activity guides',
-          'Group challenges',
-          'Progress photo tracking',
-          'Summer nutrition plans'
-        ],
-        planType: 'limited-time',
-        maxUsers: 1,
-        isActive: true,
-        availableFrom: new Date('2024-05-01'),
-        availableUntil: new Date('2024-07-31'), // Available May-July 2024
-        taxConfig: {
-          gst: {
-            rate: 18,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 25,
-          maxDiscountAmount: 500
-        }
-      },
-      {
-        name: 'Corporate Wellness Program',
-        description: 'Special corporate wellness program for companies',
-        basePrice: 2999,
-        currency: 'INR',
-        validityDays: 180,
-        features: [
-          'Team wellness challenges',
-          'Corporate dashboard',
-          'Bulk user management',
-          'Custom branding',
-          'Wellness reports',
-          'Employee engagement tools'
-        ],
-        planType: 'enterprise',
-        maxUsers: 50,
-        isActive: true,
-        availableFrom: new Date('2024-01-01'),
-        availableUntil: new Date('2024-12-31'), // Available all year 2024
-        taxConfig: {
-          gst: {
-            rate: 18,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 15,
-          maxDiscountAmount: 1000
-        }
-      },
-      {
         name: '2025 Year-End Special',
         description: 'Special year-end membership - Purchase by Sep 31, 2025, Valid until Dec 30, 2025',
-        basePrice: 1999,
+        basePrice: 3000,
         currency: 'INR',
-        validityDays: 0, // Special case - will be calculated based on end date
+        validityDays: 90, // Special case - will be calculated based on end date
         features: [
           'All premium features',
           'Year-end bonus content',
@@ -293,7 +62,7 @@ async function seedMembershipData() {
         planType: 'limited-time',
         maxUsers: 1,
         isActive: true,
-        availableFrom: new Date('2024-01-01'),
+        availableFrom: new Date('2025-09-01'),
         availableUntil: new Date('2025-09-30T23:59:59.000Z'), // Can purchase until Sep 31, 2025
         taxConfig: {
           gst: {
@@ -319,6 +88,40 @@ async function seedMembershipData() {
     // Create sample coupon codes
     const couponCodes = [
       {
+        code: 'TRIAL100',
+        name: 'Free Trial',
+        description: '100% off on Trial Plan - Completely Free',
+        discountType: 'percentage',
+        discountValue: 100,
+        maxDiscountAmount: 99,
+        minOrderAmount: 0,
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2025-12-31'),
+        usageLimit: 10000,
+        usageLimitPerUser: 1,
+        applicablePlans: [createdPlans[0]._id], // Trial Plan
+        applicableUserCategories: ['Personal'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
+      },
+      {
+        code: 'YEAREND100',
+        name: 'Free Year-End Special',
+        description: '100% off on 2025 Year-End Special Plan - Completely Free',
+        discountType: 'percentage',
+        discountValue: 100,
+        maxDiscountAmount: 3000,
+        minOrderAmount: 0,
+        startDate: new Date('2025-09-01'),
+        endDate: new Date('2025-09-30T23:59:59.000Z'),
+        usageLimit: 5000,
+        usageLimitPerUser: 1,
+        applicablePlans: [createdPlans[1]._id], // 2025 Year-End Special Plan
+        applicableUserCategories: ['Personal'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
+      },
+      {
         code: 'WELCOME20',
         name: 'Welcome Discount',
         description: '20% off for new users',
@@ -330,7 +133,7 @@ async function seedMembershipData() {
         endDate: new Date('2024-12-31'),
         usageLimit: 1000,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[1]._id, createdPlans[2]._id], // Premium and Enterprise
+        applicablePlans: [createdPlans[1]._id], // Year-End Special Plan
         applicableUserCategories: ['Personal'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
@@ -363,7 +166,7 @@ async function seedMembershipData() {
         endDate: new Date('2024-12-31'),
         usageLimit: 200,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[3]._id, createdPlans[4]._id], // Yearly plans
+        applicablePlans: [createdPlans[1]._id], // Year-End Special Plan
         applicableUserCategories: ['Personal', 'Corporate'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
@@ -379,7 +182,7 @@ async function seedMembershipData() {
         endDate: new Date('2024-12-31'),
         usageLimit: 1000,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[5]._id], // Trial plan
+        applicablePlans: [createdPlans[0]._id], // Trial plan
         applicableUserCategories: ['Personal'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
