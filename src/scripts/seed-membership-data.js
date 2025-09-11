@@ -16,6 +16,12 @@ async function seedMembershipData() {
     await CouponCode.deleteMany({});
     console.log('Cleared existing data');
 
+    // Get current date for dynamic date calculations
+    const today = new Date();
+    const nextYear = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
+
     // Create sample membership plans
     const membershipPlans = [
     
@@ -46,7 +52,7 @@ async function seedMembershipData() {
         }
       },
       {
-        name: '2025 Year-End Special',
+        name: 'Beta Launch Plan',
         description: 'Special year-end membership - Purchase by Sep 31, 2025, Valid until Dec 30, 2025',
         basePrice: 3000,
         currency: 'INR',
@@ -89,7 +95,7 @@ async function seedMembershipData() {
     const createdPlans = await MembershipPlan.insertMany(membershipPlans);
     console.log(`Created ${createdPlans.length} membership plans`);
 
-    // Create sample coupon codes
+    // Create sample coupon codes with current dates
     const couponCodes = [
       {
         code: 'TRIAL100',
@@ -99,48 +105,48 @@ async function seedMembershipData() {
         discountValue: 100,
         maxDiscountAmount: 99,
         minOrderAmount: 0,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2025-12-31'),
+        startDate: today,
+        endDate: nextYear,
         usageLimit: 10000,
         usageLimitPerUser: 1,
         applicablePlans: [createdPlans[0]._id], // Trial Plan
         applicableUserCategories: ['Personal'],
         isActive: true,
-        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
+        createdBy: new mongoose.Types.ObjectId(),
       },
       {
-        code: 'YEAREND100',
-        name: 'Free Year-End Special',
-        description: '100% off on 2025 Year-End Special Plan - Completely Free',
-        discountType: 'percentage',
-        discountValue: 100,
-        maxDiscountAmount: 3000,
-        minOrderAmount: 0,
-        startDate: new Date('2025-09-01'),
-        endDate: new Date('2025-09-30T23:59:59.000Z'),
-        usageLimit: 5000,
-        usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[1]._id], // 2025 Year-End Special Plan
-        applicableUserCategories: ['Personal'],
-        isActive: true,
-        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
-      },
-      {
-        code: 'WELCOME20',
-        name: 'Welcome Discount',
-        description: '20% off for new users',
+        code: 'MONTHLY20',
+        name: 'Monthly Plan Discount',
+        description: '20% off on monthly plan',
         discountType: 'percentage',
         discountValue: 20,
-        maxDiscountAmount: 500,
+        maxDiscountAmount: 300,
         minOrderAmount: 1000,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-12-31'),
-        usageLimit: 1000,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 5000,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[1]._id], // Year-End Special Plan
+        applicablePlans: [createdPlans[1]._id], // Beta Launch Plan
         applicableUserCategories: ['Personal'],
         isActive: true,
-        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
+        createdBy: new mongoose.Types.ObjectId(),
+      },
+      {
+        code: 'YEARLY30',
+        name: 'Yearly Plan Discount',
+        description: '30% off on yearly plan',
+        discountType: 'percentage',
+        discountValue: 30,
+        maxDiscountAmount: 3600,
+        minOrderAmount: 5000,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 2000,
+        usageLimitPerUser: 1,
+        applicablePlans: [createdPlans[1]._id], // Beta Launch Plan
+        applicableUserCategories: ['Personal', 'Corporate'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(),
       },
       {
         code: 'SAVE500',
@@ -149,64 +155,64 @@ async function seedMembershipData() {
         discountType: 'fixed',
         discountValue: 500,
         minOrderAmount: 1000,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-12-31'),
-        usageLimit: 500,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 1000,
         usageLimitPerUser: 1,
         applicablePlans: [], // Applicable to all plans
         applicableUserCategories: ['Personal', 'Corporate'],
         isActive: true,
-        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
+        createdBy: new mongoose.Types.ObjectId(),
       },
       {
-        code: 'YEARLY30',
-        name: 'Yearly Discount',
-        description: '30% off on yearly plans',
-        discountType: 'percentage',
-        discountValue: 30,
-        maxDiscountAmount: 2000,
-        minOrderAmount: 4000,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-12-31'),
-        usageLimit: 200,
-        usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[1]._id], // Year-End Special Plan
-        applicableUserCategories: ['Personal', 'Corporate'],
-        isActive: true,
-        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
-      },
-      {
-        code: 'TRIAL50',
-        name: 'Trial Discount',
-        description: '50% off on trial plan',
-        discountType: 'percentage',
-        discountValue: 50,
-        minOrderAmount: 50,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-12-31'),
-        usageLimit: 1000,
-        usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[0]._id], // Trial plan
-        applicableUserCategories: ['Personal'],
-        isActive: true,
-        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
-      },
-      {
-        code: 'CORPORATE15',
-        name: 'Corporate Discount',
-        description: '15% off for corporate users',
+        code: 'WELCOME15',
+        name: 'Welcome Discount',
+        description: '15% off for new users',
         discountType: 'percentage',
         discountValue: 15,
         maxDiscountAmount: 1000,
+        minOrderAmount: 500,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 5000,
+        usageLimitPerUser: 1,
+        applicablePlans: [], // Applicable to all plans
+        applicableUserCategories: ['Personal'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(),
+      },
+      {
+        code: 'CORPORATE20',
+        name: 'Corporate Discount',
+        description: '20% off for corporate users',
+        discountType: 'percentage',
+        discountValue: 20,
+        maxDiscountAmount: 2000,
         minOrderAmount: 2000,
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2024-12-31'),
+        startDate: today,
+        endDate: nextYear,
         usageLimit: null, // Unlimited
-        usageLimitPerUser: 5,
+        usageLimitPerUser: 10,
         applicablePlans: [], // Applicable to all plans
         applicableUserCategories: ['Corporate'],
         isActive: true,
-        createdBy: new mongoose.Types.ObjectId(), // You'll need to replace with actual admin ID
+        createdBy: new mongoose.Types.ObjectId(),
+      },
+      {
+        code: 'TRIAL50',
+        name: 'Trial Discount - All Plans',
+        description: '50% off on any plan',
+        discountType: 'percentage',
+        discountValue: 50,
+        minOrderAmount: 50,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 10000,
+        usageLimitPerUser: 1,
+        applicablePlans: [], // Applicable to all plans including the specific plan ID
+        applicableUserCategories: ['Personal'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(),
       }
     ];
 
