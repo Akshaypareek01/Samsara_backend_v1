@@ -30,7 +30,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/active', getActiveCouponCodes);
-router.get('/validate', validate(validateCouponCodeValidation), validateCouponCode);
+router.post('/validate', validate(validateCouponCodeValidation), validateCouponCode);
 router.get('/plan/:planId', validate(getCouponCodesForPlanValidation), getCouponCodesForPlan);
 
 // Protected routes (require authentication)

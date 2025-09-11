@@ -53,11 +53,15 @@ async function seedMembershipData() {
         validityDays: 90, // Special case - will be calculated based on end date
         features: [
           'All premium features',
-          'Year-end bonus content',
-          'Special 2025 challenges',
-          'Exclusive year-end events',
-          'Priority support',
-          '2025 achievement badges'
+          'Yoga Classes',
+          'Group Classes',
+          'Dosha Analysis',
+          'Meditation Classes',
+          'Period Classes',
+          'Menopause Tracker',
+          'Body Tracker',
+          'Thyroid Tracker',
+          'Mood Tracler'
         ],
         planType: 'limited-time',
         maxUsers: 1,
@@ -72,8 +76,8 @@ async function seedMembershipData() {
           otherTaxes: []
         },
         discountConfig: {
-          maxDiscountPercentage: 20,
-          maxDiscountAmount: 800
+          maxDiscountPercentage: 100,
+          maxDiscountAmount: 3000
         },
         metadata: {
           specialValidityEndDate: new Date('2025-12-30T23:59:59.000Z'), // All memberships expire on Dec 30, 2025
