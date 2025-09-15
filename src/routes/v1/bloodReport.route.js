@@ -1,8 +1,8 @@
-const express = require('express');
-const auth = require('../../middlewares/auth');
-const validate = require('../../middlewares/validate');
-const bloodReportValidation = require('../../validations/bloodReport.validation');
-const bloodReportController = require('../../controllers/bloodReport.controller');
+import express from 'express';
+import auth from '../../middlewares/auth.js';
+import validate from '../../middlewares/validate.js';
+import bloodReportValidation from '../../validations/bloodReport.validation.js';
+import bloodReportController from '../../controllers/bloodReport.controller.js';
 
 const router = express.Router();
 
@@ -902,4 +902,4 @@ router.get(
   bloodReportController.getBloodReportsByUserId
 );
 
-module.exports = router;
+export default router;

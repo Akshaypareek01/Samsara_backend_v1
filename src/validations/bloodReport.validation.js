@@ -1,4 +1,4 @@
-const Joi = require('joi');
+import Joi from 'joi';
 
 // Common validation schema for test values
 const testValueSchema = Joi.object({
@@ -283,7 +283,7 @@ const getBloodReportsValidation = Joi.object({
   endDate: Joi.date().min(Joi.ref('startDate')).optional()
 });
 
-module.exports = {
+export default {
   createBloodReportValidation,
   updateBloodReportValidation,
   getBloodReportsValidation,

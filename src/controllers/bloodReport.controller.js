@@ -1,8 +1,8 @@
-const httpStatus = require('http-status');
-const pick = require('../utils/pick');
-const ApiError = require('../utils/ApiError');
-const catchAsync = require('../utils/catchAsync');
-const bloodReportService = require('../services/bloodReport.service');
+import httpStatus from 'http-status';
+import pick from '../utils/pick.js';
+import ApiError from '../utils/ApiError.js';
+import catchAsync from '../utils/catchAsync.js';
+import bloodReportService from '../services/bloodReport.service.js';
 
 /**
  * Create a blood report
@@ -244,7 +244,7 @@ const convertToCSV = (bloodReports) => {
   return [headers, ...rows].map(row => row.join(',')).join('\n');
 };
 
-module.exports = {
+export default {
   createBloodReport,
   getBloodReports,
   getBloodReport,

@@ -1,7 +1,7 @@
-const httpStatus = require('http-status');
-const BloodReport = require('../models/bloodReport.model');
-const ApiError = require('../utils/ApiError');
-const { pick } = require('../utils/pick');
+import httpStatus from 'http-status';
+import BloodReport from '../models/bloodReport.model.js';
+import ApiError from '../utils/ApiError.js';
+import pick from '../utils/pick.js';
 
 /**
  * Create a blood report
@@ -292,7 +292,7 @@ const getAbnormalTestResults = async (userId, options = {}) => {
   return abnormalResults;
 };
 
-module.exports = {
+export default {
   createBloodReport,
   queryBloodReports,
   getBloodReportById,

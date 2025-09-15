@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // Complete Blood Count (CBC) Schema
 const cbcSchema = new mongoose.Schema({
@@ -658,4 +658,4 @@ bloodReportSchema.virtual('formattedReportDate').get(function() {
 // Ensure virtual fields are serialized
 bloodReportSchema.set('toJSON', { virtuals: true });
 
-module.exports = mongoose.model('BloodReport', bloodReportSchema);
+export default mongoose.model('BloodReport', bloodReportSchema);
