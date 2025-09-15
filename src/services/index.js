@@ -59,3 +59,6 @@ export * as dietGenerationService from './dietGeneration.service.js';
 // Export membership service
 export * as membershipService from './membership.service.js';
 
+// Export blood report service
+export * as bloodReportService from './bloodReport.service.js';
+
