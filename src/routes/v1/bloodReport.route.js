@@ -843,12 +843,12 @@ router.delete(
   bloodReportController.deleteBloodReport
 );
 
-// Admin only routes
+// Teacher only routes
 /**
  * @swagger
  * /api/v1/blood-reports/user/{userId}:
  *   get:
- *     summary: Get blood reports by user ID (Admin only)
+ *     summary: Get blood reports by user ID (Teacher only)
  *     tags: [Blood Reports]
  *     security:
  *       - bearerAuth: []
