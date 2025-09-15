@@ -24,6 +24,11 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found or inactive');
   }
 
+  // Prevent users from purchasing internal plans (Trial Plan and Lifetime Plan)
+  if (membershipPlan.name === 'Trial Plan' || membershipPlan.name === 'Lifetime Plan') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'This plan cannot be purchased directly');
+  }
+
   // Check if plan is currently available for purchase
   if (!membershipPlan.isAvailable()) {
     if (membershipPlan.isExpired) {

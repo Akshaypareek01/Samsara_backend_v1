@@ -6,6 +6,7 @@ import {
   getMembershipHistory,
   checkTrialPlanUsage,
   assignTrialPlanController,
+  assignLifetimePlanController,
   createMembershipController,
   updateMembershipController,
   cancelMembershipController
@@ -35,5 +36,8 @@ router.patch('/:membershipId/cancel', auth(), validate(membershipValidation.canc
 // Admin routes
 // Manually assign trial plan (admin only)
 router.post('/assign-trial/:userId', auth(), assignTrialPlanController);
+
+// Manually assign lifetime plan to teacher (admin only)
+router.post('/assign-lifetime/:userId', auth(), assignLifetimePlanController);
 
 export default router;

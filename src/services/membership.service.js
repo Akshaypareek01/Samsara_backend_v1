@@ -82,6 +82,86 @@ const assignTrialPlan = async (userId) => {
 };
 
 /**
+ * Assign lifetime plan to a teacher
+ * @param {ObjectId} userId - The user ID
+ * @returns {Promise<Membership>}
+ */
+const assignLifetimePlan = async (userId) => {
+  try {
+    // Check if user already has a lifetime plan
+    const existingLifetimeMembership = await Membership.findOne({
+      userId,
+      planName: 'Lifetime Plan',
+      status: { $in: ['active', 'expired', 'cancelled'] }
+    });
+
+    if (existingLifetimeMembership) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'User already has a lifetime plan');
+    }
+
+    // Find the lifetime plan
+    const lifetimePlan = await MembershipPlan.findOne({ 
+      name: 'Lifetime Plan',
+      isActive: true 
+    });
+
+    if (!lifetimePlan) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Lifetime plan not found');
+    }
+
+    // Check if lifetime plan is available for assignment
+    if (!lifetimePlan.isAvailable()) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Lifetime plan is not currently available');
+    }
+
+    // Calculate end date (100 years from now - effectively lifetime)
+    const startDate = new Date();
+    const endDate = new Date(startDate.getTime() + lifetimePlan.validityDays * 24 * 60 * 60 * 1000);
+
+    // Create membership record
+    const membership = new Membership({
+      userId,
+      planId: lifetimePlan._id,
+      planName: lifetimePlan.name,
+      validityDays: lifetimePlan.validityDays,
+      status: 'active',
+      startDate,
+      endDate,
+      amountPaid: 0, // Free lifetime access
+      originalAmount: lifetimePlan.basePrice,
+      discountAmount: lifetimePlan.basePrice, // Full discount for lifetime
+      currency: lifetimePlan.currency,
+      couponCode: null,
+      couponCodeString: 'LIFETIME_FREE',
+      autoRenewal: false,
+      metadata: {
+        isLifetimePlan: true,
+        isTeacherPlan: true,
+        assignedAt: new Date(),
+        source: 'registration'
+      }
+    });
+
+    await membership.save();
+
+    // Update user to track lifetime plan usage
+    await User.findByIdAndUpdate(userId, {
+      $set: { 
+        'metadata.lifetimePlanUsed': true,
+        'metadata.lifetimePlanAssignedAt': new Date()
+      }
+    });
+
+    console.log(`Lifetime plan assigned to teacher: ${userId}`);
+    return membership;
+
+  } catch (error) {
+    console.error(`Failed to assign lifetime plan to teacher ${userId}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Check if user has used trial plan
  * @param {ObjectId} userId - The user ID
  * @returns {Promise<boolean>}
@@ -177,6 +257,7 @@ const cancelMembership = async (membershipId, reason = null) => {
 
 export {
   assignTrialPlan,
+  assignLifetimePlan,
   hasUsedTrialPlan,
   getActiveMembership,
   getUserMemberships,

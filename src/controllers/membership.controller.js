@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
 import { 
   assignTrialPlan, 
+  assignLifetimePlan,
   hasUsedTrialPlan, 
   getActiveMembership, 
   getUserMemberships,
@@ -71,6 +72,21 @@ const assignTrialPlanController = catchAsync(async (req, res) => {
 });
 
 /**
+ * Manually assign lifetime plan to teacher (admin only)
+ */
+const assignLifetimePlanController = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  
+  const membership = await assignLifetimePlan(userId);
+  
+  res.status(httpStatus.CREATED).send({
+    success: true,
+    message: 'Lifetime plan assigned successfully',
+    data: membership
+  });
+});
+
+/**
  * Create a new membership
  */
 const createMembershipController = catchAsync(async (req, res) => {
@@ -124,6 +140,7 @@ export {
   getMembershipHistory,
   checkTrialPlanUsage,
   assignTrialPlanController,
+  assignLifetimePlanController,
   createMembershipController,
   updateMembershipController,
   cancelMembershipController

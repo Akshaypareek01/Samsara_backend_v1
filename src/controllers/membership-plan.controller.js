@@ -34,6 +34,9 @@ const getMembershipPlans = catchAsync(async (req, res) => {
       { availableUntil: null },
       { availableUntil: { $gte: now } }
     ];
+    
+    // Exclude internal plans (Trial Plan and Lifetime Plan) from user-facing APIs
+    filter.name = { $nin: ['Trial Plan', 'Lifetime Plan'] };
   }
 
   const result = await MembershipPlan.paginate(filter, options);
@@ -52,6 +55,11 @@ const getMembershipPlan = catchAsync(async (req, res) => {
   // Don't show unavailable plans to non-admin users
   if (req.user.role !== 'admin') {
     if (!membershipPlan.isActive || !membershipPlan.isAvailable()) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
+    }
+    
+    // Don't show internal plans (Trial Plan and Lifetime Plan) to non-admin users
+    if (membershipPlan.name === 'Trial Plan' || membershipPlan.name === 'Lifetime Plan') {
       throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
     }
   }
@@ -104,7 +112,9 @@ const getActiveMembershipPlans = catchAsync(async (req, res) => {
     $or: [
       { availableUntil: null },
       { availableUntil: { $gte: now } }
-    ]
+    ],
+    // Exclude internal plans (Trial Plan and Lifetime Plan) from public APIs
+    name: { $nin: ['Trial Plan', 'Lifetime Plan'] }
   };
 
   const result = await MembershipPlan.paginate(filter, options);
@@ -127,7 +137,9 @@ const getMembershipPlansByType = catchAsync(async (req, res) => {
     $or: [
       { availableUntil: null },
       { availableUntil: { $gte: now } }
-    ]
+    ],
+    // Exclude internal plans (Trial Plan and Lifetime Plan) from user-facing APIs
+    name: { $nin: ['Trial Plan', 'Lifetime Plan'] }
   };
 
   const result = await MembershipPlan.paginate(filter, options);
@@ -197,6 +209,11 @@ const getPlanPricingBreakdown = catchAsync(async (req, res) => {
   // Don't show unavailable plans to non-admin users
   if (req.user.role !== 'admin') {
     if (!membershipPlan.isActive || !membershipPlan.isAvailable()) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
+    }
+    
+    // Don't show internal plans (Trial Plan and Lifetime Plan) to non-admin users
+    if (membershipPlan.name === 'Trial Plan' || membershipPlan.name === 'Lifetime Plan') {
       throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
     }
   }

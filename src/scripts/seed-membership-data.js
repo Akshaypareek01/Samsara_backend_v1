@@ -52,6 +52,48 @@ async function seedMembershipData() {
         }
       },
       {
+        name: 'Lifetime Plan',
+        description: 'Lifetime access for teachers - Free forever access to all platform features',
+        basePrice: 0,
+        currency: 'INR',
+        validityDays: 36500, // 100 years (effectively lifetime)
+        features: [
+          'All premium features',
+          'Yoga Classes',
+          'Group Classes',
+          'Dosha Analysis',
+          'Meditation Classes',
+          'Period Classes',
+          'Menopause Tracker',
+          'Body Tracker',
+          'Thyroid Tracker',
+          'Mood Tracker',
+          'Teacher Dashboard',
+          'Class Management',
+          'Student Management',
+          'Analytics Dashboard'
+        ],
+        planType: 'trial',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: {
+          gst: {
+            rate: 0,
+            type: 'percentage'
+          },
+          otherTaxes: []
+        },
+        discountConfig: {
+          maxDiscountPercentage: 100,
+          maxDiscountAmount: 0
+        },
+        metadata: {
+          isLifetimePlan: true,
+          isTeacherPlan: true,
+          description: 'Lifetime free access for teachers'
+        }
+      },
+      {
         name: 'Beta Launch Plan',
         description: 'Special year-end membership - Purchase by Sep 31, 2025, Valid until Dec 30, 2025',
         basePrice: 3000,

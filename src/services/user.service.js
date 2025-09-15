@@ -3,7 +3,7 @@ import pick from '../utils/pick.js';
 import { User } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
-import { assignTrialPlan } from './membership.service.js';
+import { assignTrialPlan, assignLifetimePlan } from './membership.service.js';
 
 /**
  * Create a user
@@ -26,14 +26,24 @@ const createUser = async (userBody) => {
     // Don't throw error here to avoid failing user creation if tracker creation fails
   }
 
-  // Assign trial plan to new users (only for regular users, not teachers)
+  // Assign appropriate plan based on user role
   if (user.role === 'user') {
+    // Assign trial plan to regular users
     try {
       await assignTrialPlan(user._id);
       console.log(`Assigned trial plan to user: ${user._id}`);
     } catch (error) {
       console.error(`Failed to assign trial plan to user ${user._id}:`, error);
       // Don't throw error here to avoid failing user creation if trial plan assignment fails
+    }
+  } else if (user.role === 'teacher') {
+    // Assign lifetime plan to teachers
+    try {
+      await assignLifetimePlan(user._id);
+      console.log(`Assigned lifetime plan to teacher: ${user._id}`);
+    } catch (error) {
+      console.error(`Failed to assign lifetime plan to teacher ${user._id}:`, error);
+      // Don't throw error here to avoid failing user creation if lifetime plan assignment fails
     }
   }
 
