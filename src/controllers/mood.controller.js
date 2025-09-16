@@ -11,6 +11,7 @@ import {
   getMoodAnalytics,
   getMoodKPIs,
   getMoodTrends,
+  getMoodByDate,
 } from '../services/mood.service.js';
 
 /**
@@ -239,6 +240,24 @@ const getMoodSummary = catchAsync(async (req, res) => {
   });
 });
 
+/**
+ * Get mood data for a specific date
+ * @param {Object} req
+ * @param {Object} res
+ * @param {Function} next
+ */
+const getMoodDataByDate = catchAsync(async (req, res) => {
+  const { date } = req.query;
+  
+  const moodData = await getMoodByDate(req.user.id, date);
+  
+  res.send({
+    success: true,
+    message: 'Mood data for specific date retrieved successfully',
+    data: moodData,
+  });
+});
+
 export {
   createMoodEntry,
   getMoodEntries,
@@ -250,4 +269,5 @@ export {
   getMoodTrendsData,
   getMoodDashboard,
   getMoodSummary,
+  getMoodDataByDate,
 };

@@ -9,6 +9,7 @@ import {
   deleteMood,
   getMoodAnalytics,
   getMoodKPIs,
+  getMoodByDate,
 } from '../../validations/mood.validation.js';
 import {
   createMoodEntry,
@@ -21,6 +22,7 @@ import {
   getMoodTrendsData,
   getMoodDashboard,
   getMoodSummary,
+  getMoodDataByDate,
 } from '../../controllers/mood.controller.js';
 
 const router = express.Router();
@@ -54,6 +56,10 @@ router
 router
   .route('/summary')
   .get(validate(getMoodAnalytics), getMoodSummary);
+
+router
+  .route('/by-date')
+  .get(validate(getMoodByDate), getMoodDataByDate);
 
 // Individual mood operations
 router

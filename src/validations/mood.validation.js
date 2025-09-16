@@ -62,6 +62,12 @@ const getMoodKPIs = {
   }),
 };
 
+const getMoodByDate = {
+  query: Joi.object().keys({
+    date: Joi.date().iso().required(),
+  }),
+};
+
 export {
   createMood,
   getMoods,
@@ -70,4 +76,5 @@ export {
   deleteMood,
   getMoodAnalytics,
   getMoodKPIs,
+  getMoodByDate,
 };

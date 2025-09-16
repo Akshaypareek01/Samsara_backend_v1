@@ -348,6 +348,104 @@ const getMoodTrends = async (userId, period, startDate, endDate) => {
   };
 };
 
+/**
+ * Get mood data for a specific date
+ * @param {ObjectId} userId
+ * @param {Date} date - Specific date to get mood data for
+ * @returns {Promise<Object>}
+ */
+const getMoodByDate = async (userId, date) => {
+  const targetDate = new Date(date);
+  const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+  const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + 1);
+  
+  const dateFilter = {
+    userId: new mongoose.Types.ObjectId(userId),
+    createdAt: {
+      $gte: startOfDay,
+      $lt: endOfDay
+    }
+  };
+
+  // Get all mood entries for the specific date
+  const moodEntries = await Mood.find(dateFilter).sort({ createdAt: 1 });
+
+  // Get analytics for the specific date
+  const pipeline = [
+    {
+      $match: dateFilter
+    },
+    {
+      $group: {
+        _id: '$mood',
+        count: { $sum: 1 },
+        moodId: { $first: '$moodId' },
+        entries: {
+          $push: {
+            _id: '$_id',
+            mood: '$mood',
+            moodId: '$moodId',
+            createdAt: '$createdAt'
+          }
+        }
+      }
+    },
+    {
+      $sort: { count: -1 }
+    }
+  ];
+
+  const analytics = await Mood.aggregate(pipeline);
+  
+  // Calculate total count
+  const totalCount = moodEntries.length;
+  
+  // Add percentage for each mood
+  const analyticsWithPercentage = analytics.map(item => ({
+    ...item,
+    percentage: totalCount > 0 ? ((item.count / totalCount) * 100).toFixed(2) : 0
+  }));
+
+  // Get hourly breakdown
+  const hourlyBreakdown = await Mood.aggregate([
+    {
+      $match: dateFilter
+    },
+    {
+      $group: {
+        _id: {
+          hour: { $hour: '$createdAt' },
+          mood: '$mood'
+        },
+        count: { $sum: 1 },
+        entries: {
+          $push: {
+            _id: '$_id',
+            mood: '$mood',
+            moodId: '$moodId',
+            createdAt: '$createdAt'
+          }
+        }
+      }
+    },
+    {
+      $sort: { '_id.hour': 1 }
+    }
+  ]);
+
+  return {
+    date: targetDate.toISOString().split('T')[0], // YYYY-MM-DD format
+    totalSubmissions: totalCount,
+    moodEntries: moodEntries,
+    analytics: analyticsWithPercentage,
+    hourlyBreakdown: hourlyBreakdown,
+    dateRange: {
+      start: startOfDay,
+      end: endOfDay
+    }
+  };
+};
+
 export {
   createMood,
   queryMoods,
@@ -357,5 +455,6 @@ export {
   getMoodAnalytics,
   getMoodKPIs,
   getMoodTrends,
+  getMoodByDate,
   getDateFilter,
 };
