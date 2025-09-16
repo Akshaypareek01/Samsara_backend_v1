@@ -4,6 +4,83 @@ import httpStatus from 'http-status';
 import mongoose from 'mongoose';
 
 /**
+ * Get date filter for different periods
+ * @param {string} period - daily, weekly, monthly, 6months, yearly
+ * @param {Date} startDate - Custom start date
+ * @param {Date} endDate - Custom end date
+ * @returns {Object} MongoDB date filter
+ */
+const getDateFilter = (period, startDate, endDate) => {
+  if (startDate && endDate) {
+    return {
+      createdAt: {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      }
+    };
+  }
+
+  const now = new Date();
+  switch (period) {
+    case 'daily':
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      return { 
+        createdAt: { 
+          $gte: startOfDay,
+          $lt: endOfDay
+        } 
+      };
+    case 'weekly':
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - 7);
+      const endOfWeek = new Date(now);
+      endOfWeek.setDate(now.getDate() + 1);
+      return { 
+        createdAt: { 
+          $gte: startOfWeek,
+          $lt: endOfWeek
+        } 
+      };
+    case 'monthly':
+      const startOfMonth = new Date(now);
+      startOfMonth.setMonth(now.getMonth() - 1);
+      const endOfMonth = new Date(now);
+      endOfMonth.setMonth(now.getMonth() + 1);
+      return { 
+        createdAt: { 
+          $gte: startOfMonth,
+          $lt: endOfMonth
+        } 
+      };
+    case '6months':
+      const startOf6Months = new Date(now);
+      startOf6Months.setMonth(now.getMonth() - 6);
+      const endOf6Months = new Date(now);
+      endOf6Months.setMonth(now.getMonth() + 1);
+      return { 
+        createdAt: { 
+          $gte: startOf6Months,
+          $lt: endOf6Months
+        } 
+      };
+    case 'yearly':
+      const startOfYear = new Date(now);
+      startOfYear.setFullYear(now.getFullYear() - 1);
+      const endOfYear = new Date(now);
+      endOfYear.setFullYear(now.getFullYear() + 1);
+      return { 
+        createdAt: { 
+          $gte: startOfYear,
+          $lt: endOfYear
+        } 
+      };
+    default:
+      return {};
+  }
+};
+
+/**
  * Create a mood entry
  * @param {Object} moodBody
  * @returns {Promise<Mood>}
@@ -74,44 +151,7 @@ const deleteMoodById = async (moodId) => {
  * @returns {Promise<Object>}
  */
 const getMoodAnalytics = async (userId, period, startDate, endDate) => {
-  let dateFilter = {};
-  
-  if (startDate && endDate) {
-    dateFilter = {
-      createdAt: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      }
-    };
-  } else {
-    const now = new Date();
-    switch (period) {
-      case 'daily':
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        dateFilter = { createdAt: { $gte: startOfDay } };
-        break;
-      case 'weekly':
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - 7);
-        dateFilter = { createdAt: { $gte: startOfWeek } };
-        break;
-      case 'monthly':
-        const startOfMonth = new Date(now);
-        startOfMonth.setMonth(now.getMonth() - 1);
-        dateFilter = { createdAt: { $gte: startOfMonth } };
-        break;
-      case '6months':
-        const startOf6Months = new Date(now);
-        startOf6Months.setMonth(now.getMonth() - 6);
-        dateFilter = { createdAt: { $gte: startOf6Months } };
-        break;
-      case 'yearly':
-        const startOfYear = new Date(now);
-        startOfYear.setFullYear(now.getFullYear() - 1);
-        dateFilter = { createdAt: { $gte: startOfYear } };
-        break;
-    }
-  }
+  const dateFilter = getDateFilter(period, startDate, endDate);
 
   const pipeline = [
     {
@@ -163,44 +203,7 @@ const getMoodAnalytics = async (userId, period, startDate, endDate) => {
  * @returns {Promise<Object>}
  */
 const getMoodKPIs = async (userId, period, startDate, endDate) => {
-  let dateFilter = {};
-  
-  if (startDate && endDate) {
-    dateFilter = {
-      createdAt: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      }
-    };
-  } else {
-    const now = new Date();
-    switch (period) {
-      case 'daily':
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        dateFilter = { createdAt: { $gte: startOfDay } };
-        break;
-      case 'weekly':
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - 7);
-        dateFilter = { createdAt: { $gte: startOfWeek } };
-        break;
-      case 'monthly':
-        const startOfMonth = new Date(now);
-        startOfMonth.setMonth(now.getMonth() - 1);
-        dateFilter = { createdAt: { $gte: startOfMonth } };
-        break;
-      case '6months':
-        const startOf6Months = new Date(now);
-        startOf6Months.setMonth(now.getMonth() - 6);
-        dateFilter = { createdAt: { $gte: startOf6Months } };
-        break;
-      case 'yearly':
-        const startOfYear = new Date(now);
-        startOfYear.setFullYear(now.getFullYear() - 1);
-        dateFilter = { createdAt: { $gte: startOfYear } };
-        break;
-    }
-  }
+  const dateFilter = getDateFilter(period, startDate, endDate);
 
   const pipeline = [
     {
@@ -290,49 +293,26 @@ const getMoodKPIs = async (userId, period, startDate, endDate) => {
  * @returns {Promise<Object>}
  */
 const getMoodTrends = async (userId, period, startDate, endDate) => {
-  let dateFilter = {};
+  const dateFilter = getDateFilter(period, startDate, endDate);
   let groupFormat = '';
   
-  if (startDate && endDate) {
-    dateFilter = {
-      createdAt: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate)
-      }
-    };
-  } else {
-    const now = new Date();
-    switch (period) {
-      case 'daily':
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        dateFilter = { createdAt: { $gte: startOfDay } };
-        groupFormat = '%Y-%m-%d %H';
-        break;
-      case 'weekly':
-        const startOfWeek = new Date(now);
-        startOfWeek.setDate(now.getDate() - 7);
-        dateFilter = { createdAt: { $gte: startOfWeek } };
-        groupFormat = '%Y-%m-%d';
-        break;
-      case 'monthly':
-        const startOfMonth = new Date(now);
-        startOfMonth.setMonth(now.getMonth() - 1);
-        dateFilter = { createdAt: { $gte: startOfMonth } };
-        groupFormat = '%Y-%m-%d';
-        break;
-      case '6months':
-        const startOf6Months = new Date(now);
-        startOf6Months.setMonth(now.getMonth() - 6);
-        dateFilter = { createdAt: { $gte: startOf6Months } };
-        groupFormat = '%Y-%m';
-        break;
-      case 'yearly':
-        const startOfYear = new Date(now);
-        startOfYear.setFullYear(now.getFullYear() - 1);
-        dateFilter = { createdAt: { $gte: startOfYear } };
-        groupFormat = '%Y-%m';
-        break;
-    }
+  // Set group format based on period
+  switch (period) {
+    case 'daily':
+      groupFormat = '%Y-%m-%d %H';
+      break;
+    case 'weekly':
+      groupFormat = '%Y-%m-%d';
+      break;
+    case 'monthly':
+      groupFormat = '%Y-%m-%d';
+      break;
+    case '6months':
+      groupFormat = '%Y-%m';
+      break;
+    case 'yearly':
+      groupFormat = '%Y-%m';
+      break;
   }
 
   const pipeline = [
@@ -377,4 +357,5 @@ export {
   getMoodAnalytics,
   getMoodKPIs,
   getMoodTrends,
+  getDateFilter,
 };
