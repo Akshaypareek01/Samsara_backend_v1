@@ -33,6 +33,7 @@ import membershipRoute from './membership.route.js';
 import couponRoute from './coupon.route.js';
 import paymentRoute from './payment.route.js';
 import bloodReportRoute from './bloodReport.route.js';
+import moodRoute from './mood.route.js';
 
 const router = express.Router();
 
@@ -164,6 +165,10 @@ const defaultRoutes = [
   {
     path: '/blood-reports',
     route: bloodReportRoute,
+  },
+  {
+    path: '/moods',
+    route: moodRoute,
   },
 ];
 

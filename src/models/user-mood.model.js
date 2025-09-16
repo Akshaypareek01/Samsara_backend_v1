@@ -10,11 +10,12 @@ const moodSchema = new mongoose.Schema(
     mood: {
       type: String,
       required: true,
-      enum: ['Happy', 'Sad', 'Angry', 'Anxious', 'Excited', 'Calm', 'Stressed', 'Energetic', 'Tired', 'Neutral'],
+      enum: ['Normal', 'Angry', 'Happy', 'Sad', 'Exhausted', 'Anxious', 'Depressed', 'In Love', 'Bored', 'Confident', 'Excited', 'Relaxed'],
     },
-    note: {
-      type: String,
-      default: '', // Optional note for the mood
+    moodId: {
+      type: Number,
+      required: true,
+      enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], // Corresponding IDs for each mood
     },
   },
   {
