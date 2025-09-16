@@ -591,7 +591,7 @@ const weightGainLossSchema = new mongoose.Schema({
 const bloodReportSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Users',
     required: true
   },
   referringDoctor: {

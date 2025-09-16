@@ -40,6 +40,7 @@ import { PeriodCycle } from './period-cycle.model.js';
 import { BirthControl } from './birth-control.model.js';
 import { PeriodSettings } from './period-settings.model.js';
 import { DietGeneration } from './diet-generation.model.js';
+import BloodReport from './bloodReport.model.js';
 
 export {
   Token,
@@ -85,6 +86,7 @@ export {
   PeriodCycle,
   BirthControl,
   PeriodSettings,
-  DietGeneration
+  DietGeneration,
+  BloodReport
 };
 

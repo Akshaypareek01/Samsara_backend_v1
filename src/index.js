@@ -3,6 +3,8 @@ import app from './app.js';
 import config from './config/config.js';
 import logger from './config/logger.js';
 import { testR2Connection } from './config/r2.config.js';
+// Import all models to ensure they are registered
+import './models/index.js';
 
 let server;
 
