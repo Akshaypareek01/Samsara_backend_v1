@@ -61,7 +61,7 @@ const deleteMoodById = async (moodId) => {
   if (!mood) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Mood not found');
   }
-  await mood.remove();
+  await Mood.deleteOne({ _id: moodId });
   return mood;
 };
 

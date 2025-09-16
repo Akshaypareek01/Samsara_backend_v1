@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import paginate from './plugins/paginate.plugin.js';
 
 const moodSchema = new mongoose.Schema(
   {
@@ -25,5 +26,8 @@ const moodSchema = new mongoose.Schema(
 
 // Create index for efficient queries
 moodSchema.index({ userId: 1, createdAt: -1 });
+
+// Add pagination plugin
+moodSchema.plugin(paginate);
 
 export const Mood = mongoose.model('Mood', moodSchema);
