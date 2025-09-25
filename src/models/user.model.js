@@ -184,7 +184,7 @@ const userSchema = new mongoose.Schema(
     ],
     profileImage: {
       type: String,
-      default: 'https://pub-4471af5ad08f4d59887c139e8f2cd164.r2.dev/d06d8c7c-ca07-4bab-a53b-8564f9bf0bb5.jpg',
+      default: 'https://pub-4471af5ad08f4d59887c139e8f2cd164.r2.dev/c774f4eb-1c3c-400b-85b8-2f09b83d89a1.jpg',
     },
     AboutMe: {
       type: String,
