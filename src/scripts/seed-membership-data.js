@@ -96,7 +96,7 @@ async function seedMembershipData() {
       {
         name: 'Beta Launch Plan',
         description: 'Special year-end membership - Purchase by Sep 31, 2025, Valid until Dec 30, 2025',
-        basePrice: 3000,
+        basePrice: 12000,
         currency: 'INR',
         validityDays: 90, // Special case - will be calculated based on end date
         features: [
@@ -118,14 +118,14 @@ async function seedMembershipData() {
         availableUntil: new Date('2025-09-30T23:59:59.000Z'), // Can purchase until Sep 31, 2025
         taxConfig: {
           gst: {
-            rate: 18,
+            rate: 5,
             type: 'percentage'
           },
           otherTaxes: []
         },
         discountConfig: {
           maxDiscountPercentage: 100,
-          maxDiscountAmount: 3000
+          maxDiscountAmount: 12000
         },
         metadata: {
           specialValidityEndDate: new Date('2025-12-30T23:59:59.000Z'), // All memberships expire on Dec 30, 2025
@@ -253,6 +253,38 @@ async function seedMembershipData() {
         usageLimitPerUser: 1,
         applicablePlans: [], // Applicable to all plans including the specific plan ID
         applicableUserCategories: ['Personal'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(),
+      },
+      {
+        code: 'SAMSARA70',
+        name: 'Samsara Special Discount',
+        description: '70% off on any plan',
+        discountType: 'percentage',
+        discountValue: 70,
+        minOrderAmount: 0,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 5000,
+        usageLimitPerUser: 1,
+        applicablePlans: [], // Applicable to all plans
+        applicableUserCategories: ['Personal', 'Corporate'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(),
+      },
+      {
+        code: 'FAMILY90',
+        name: 'Family Special Discount',
+        description: '100% off on any plan',
+        discountType: 'percentage',
+        discountValue: 100,
+        minOrderAmount: 0,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 1000,
+        usageLimitPerUser: 1,
+        applicablePlans: [], // Applicable to all plans
+        applicableUserCategories: ['Personal', 'Corporate'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(),
       }
