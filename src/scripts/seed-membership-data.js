@@ -41,7 +41,7 @@ async function seedMembershipData() {
         isActive: true,
         taxConfig: {
           gst: {
-            rate: 18,
+            rate: 5,
             type: 'percentage'
           },
           otherTaxes: []
