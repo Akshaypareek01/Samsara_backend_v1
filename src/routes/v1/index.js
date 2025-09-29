@@ -34,6 +34,8 @@ import couponRoute from './coupon.route.js';
 import paymentRoute from './payment.route.js';
 import bloodReportRoute from './bloodReport.route.js';
 import moodRoute from './mood.route.js';
+import notificationRoute from './notification.route.js';
+import dataNotificationRoute from './dataNotification.route.js';
 
 const router = express.Router();
 
@@ -169,6 +171,14 @@ const defaultRoutes = [
   {
     path: '/moods',
     route: moodRoute,
+  },
+  {
+    path: '/notifications',
+    route: notificationRoute,
+  },
+  {
+    path: '/data-notifications',
+    route: dataNotificationRoute,
   },
 ];
 

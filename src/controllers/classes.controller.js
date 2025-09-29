@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Class, User } from "../models/index.js";
 import { createZoomMeeting as createZoomMeetingBackend } from './zoom.controller.js';
+import { createUserNotification } from '../utils/notificationUtils.js';
 
 // Helper function to get teacher data with first image
 const getTeacherData = (teacher) => {
@@ -88,6 +89,37 @@ export const createClass = async (req, res) => {
       
     const classData = populatedClass.toObject();
     classData.teacher = getTeacherData(classData.teacher);
+    
+    // Send notification to teacher about successful class creation
+    if (newClass.teacher) {
+      try {
+        await createUserNotification(
+          newClass.teacher.toString(),
+          'Class Created Successfully! 🎉',
+          `Your class "${newClass.title}" has been created successfully and is scheduled for ${new Date(newClass.schedule).toLocaleDateString()}`,
+          {
+            type: 'class_update',
+            priority: 'medium',
+            metadata: {
+              classId: newClass._id,
+              className: newClass.title,
+              scheduledDate: newClass.schedule,
+              duration: newClass.duration,
+              maxCapacity: newClass.maxCapacity,
+              classType: newClass.classType,
+              classCategory: newClass.classCategory
+            },
+            actionUrl: `/classes/${newClass._id}`,
+            actionText: 'View Class',
+            tags: ['class', 'created', 'teacher']
+          }
+        );
+        console.log(`Notification sent to teacher ${newClass.teacher} for class creation`);
+      } catch (notificationError) {
+        console.error('Error sending notification to teacher:', notificationError);
+        // Don't fail the class creation if notification fails
+      }
+    }
     
     res.json({ success: true, data: classData });
   } catch (error) {
@@ -219,6 +251,64 @@ export const updateClass = async (req, res) => {
     const classData = updatedClass.toObject();
     classData.teacher = getTeacherData(classData.teacher);
     
+    // Send notification to teacher about class update
+    if (updatedClass.teacher) {
+      try {
+        await createUserNotification(
+          updatedClass.teacher.toString(),
+          'Class Updated! 📝',
+          `Your class "${updatedClass.title}" has been updated successfully`,
+          {
+            type: 'class_update',
+            priority: 'medium',
+            metadata: {
+              classId: updatedClass._id,
+              className: updatedClass.title,
+              updatedFields: Object.keys(updatedData),
+              scheduledDate: updatedClass.schedule,
+              duration: updatedClass.duration
+            },
+            actionUrl: `/classes/${updatedClass._id}`,
+            actionText: 'View Updated Class',
+            tags: ['class', 'updated', 'teacher']
+          }
+        );
+        console.log(`Notification sent to teacher ${updatedClass.teacher} about class update`);
+      } catch (notificationError) {
+        console.error('Error sending notification to teacher:', notificationError);
+      }
+    }
+    
+    // Send notification to all enrolled students about class update
+    if (updatedClass.students && updatedClass.students.length > 0) {
+      try {
+        for (const student of updatedClass.students) {
+          await createUserNotification(
+            student._id.toString(),
+            'Class Update Notification 📢',
+            `The class "${updatedClass.title}" you're enrolled in has been updated`,
+            {
+              type: 'class_update',
+              priority: 'medium',
+              metadata: {
+                classId: updatedClass._id,
+                className: updatedClass.title,
+                updatedFields: Object.keys(updatedData),
+                scheduledDate: updatedClass.schedule,
+                teacherName: classData.teacher?.name
+              },
+              actionUrl: `/classes/${updatedClass._id}`,
+              actionText: 'View Updated Class',
+              tags: ['class', 'updated', 'student']
+            }
+          );
+        }
+        console.log(`Notifications sent to ${updatedClass.students.length} students about class update`);
+      } catch (notificationError) {
+        console.error('Error sending notifications to students:', notificationError);
+      }
+    }
+    
     res.json({ success: true, data: classData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -290,6 +380,63 @@ export const addStudentToClass = async (req, res) => {
 
     const classData = updatedClass.toObject();
     classData.teacher = getTeacherData(classData.teacher);
+
+    // Send notification to teacher about new student enrollment
+    if (foundClass.teacher) {
+      try {
+        const student = await User.findById(studentId).select('name email');
+        await createUserNotification(
+          foundClass.teacher.toString(),
+          'New Student Enrolled! 👥',
+          `${student.name} has enrolled in your class "${foundClass.title}"`,
+          {
+            type: 'class_update',
+            priority: 'medium',
+            metadata: {
+              classId: foundClass._id,
+              className: foundClass.title,
+              studentId: studentId,
+              studentName: student.name,
+              studentEmail: student.email,
+              totalStudents: foundClass.students.length
+            },
+            actionUrl: `/classes/${foundClass._id}`,
+            actionText: 'View Class',
+            tags: ['class', 'enrollment', 'teacher']
+          }
+        );
+        console.log(`Notification sent to teacher ${foundClass.teacher} about new student enrollment`);
+      } catch (notificationError) {
+        console.error('Error sending notification to teacher:', notificationError);
+      }
+    }
+
+    // Send notification to student about successful enrollment
+    try {
+      await createUserNotification(
+        studentId,
+        'Class Enrollment Successful! ✅',
+        `You have successfully enrolled in "${foundClass.title}" scheduled for ${new Date(foundClass.schedule).toLocaleDateString()}`,
+        {
+          type: 'upcoming_class',
+          priority: 'medium',
+          metadata: {
+            classId: foundClass._id,
+            className: foundClass.title,
+            scheduledDate: foundClass.schedule,
+            duration: foundClass.duration,
+            teacherName: classData.teacher?.name,
+            classType: foundClass.classType
+          },
+          actionUrl: `/classes/${foundClass._id}`,
+          actionText: 'View Class',
+          tags: ['class', 'enrollment', 'student']
+        }
+      );
+      console.log(`Notification sent to student ${studentId} about successful enrollment`);
+    } catch (notificationError) {
+      console.error('Error sending notification to student:', notificationError);
+    }
 
     res.json({ 
       success: true, 
@@ -446,6 +593,61 @@ export const removeStudentFromClass = async (req, res) => {
       
       const classData = updatedClass.toObject();
       classData.teacher = getTeacherData(classData.teacher);
+      
+      // Send notification to teacher about student removal
+      if (updatedClass.teacher) {
+        try {
+          const student = await User.findById(studentId).select('name email');
+          await createUserNotification(
+            updatedClass.teacher.toString(),
+            'Student Removed from Class 👋',
+            `${student.name} has been removed from your class "${updatedClass.title}"`,
+            {
+              type: 'class_update',
+              priority: 'medium',
+              metadata: {
+                classId: updatedClass._id,
+                className: updatedClass.title,
+                studentId: studentId,
+                studentName: student.name,
+                studentEmail: student.email,
+                totalStudents: updatedClass.students.length
+              },
+              actionUrl: `/classes/${updatedClass._id}`,
+              actionText: 'View Class',
+              tags: ['class', 'removal', 'teacher']
+            }
+          );
+          console.log(`Notification sent to teacher ${updatedClass.teacher} about student removal`);
+        } catch (notificationError) {
+          console.error('Error sending notification to teacher:', notificationError);
+        }
+      }
+      
+      // Send notification to student about removal
+      try {
+        await createUserNotification(
+          studentId,
+          'Removed from Class 📤',
+          `You have been removed from the class "${updatedClass.title}"`,
+          {
+            type: 'class_update',
+            priority: 'medium',
+            metadata: {
+              classId: updatedClass._id,
+              className: updatedClass.title,
+              teacherName: classData.teacher?.name,
+              scheduledDate: updatedClass.schedule
+            },
+            actionUrl: `/classes`,
+            actionText: 'Browse Classes',
+            tags: ['class', 'removal', 'student']
+          }
+        );
+        console.log(`Notification sent to student ${studentId} about removal from class`);
+      } catch (notificationError) {
+        console.error('Error sending notification to student:', notificationError);
+      }
       
       res.json({ success: true, data: classData });
     } catch (error) {
