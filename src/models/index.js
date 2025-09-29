@@ -41,6 +41,7 @@ import { BirthControl } from './birth-control.model.js';
 import { PeriodSettings } from './period-settings.model.js';
 import { DietGeneration } from './diet-generation.model.js';
 import BloodReport from './bloodReport.model.js';
+import NotificationPreferences from './notificationPreferences.model.js';
 
 export {
   Token,
@@ -87,6 +88,7 @@ export {
   BirthControl,
   PeriodSettings,
   DietGeneration,
-  BloodReport
+  BloodReport,
+  NotificationPreferences
 };
 

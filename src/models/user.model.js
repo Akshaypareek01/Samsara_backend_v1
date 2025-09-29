@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import validator from 'validator';
 import { toJSON, paginate } from './plugins/index.js';
+import NotificationPreferences from './notificationPreferences.model.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -205,6 +206,13 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    
+    // Notification preferences reference
+    notificationPreferences: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'NotificationPreferences',
+      default: null,
+    },
   },
   {
     timestamps: {},
@@ -231,6 +239,21 @@ userSchema.pre('save', function (next) {
 
   this.passwordChangedAt = Date.now() - 1000;
   next();
+});
+
+// Create notification preferences when user is created
+userSchema.post('save', async function (doc, next) {
+  try {
+    // Only create preferences if this is a new user and preferences don't exist
+    if (this.isNew && !this.notificationPreferences) {
+      const preferences = await NotificationPreferences.createDefaultPreferences(this._id);
+      this.notificationPreferences = preferences._id;
+      await this.save();
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -269,6 +292,32 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
 userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
   const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
   return !!user;
+};
+
+/**
+ * Get user's notification preferences
+ * @returns {Promise<Object>} User's notification preferences
+ */
+userSchema.methods.getNotificationPreferences = async function () {
+  if (!this.notificationPreferences) {
+    // Create preferences if they don't exist
+    const preferences = await NotificationPreferences.createDefaultPreferences(this._id);
+    this.notificationPreferences = preferences._id;
+    await this.save();
+    return preferences;
+  }
+  
+  return await NotificationPreferences.findById(this.notificationPreferences);
+};
+
+/**
+ * Check if user can receive a specific type of notification
+ * @param {string} notificationType - The type of notification
+ * @returns {Promise<boolean>} Whether user can receive the notification
+ */
+userSchema.methods.canReceiveNotification = async function (notificationType) {
+  const preferences = await this.getNotificationPreferences();
+  return preferences.canReceiveNotification(notificationType);
 };
 
 export const User = mongoose.model('Users', userSchema);
