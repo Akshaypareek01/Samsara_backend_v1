@@ -3,6 +3,9 @@ import Notification from '../models/notification.model.js';
 import ApiError from '../utils/ApiError.js';
 import { User } from '../models/index.js';
 
+// Ensure User model is registered
+User;
+
 /**
  * Create a notification
  * @param {Object} notificationBody
@@ -56,7 +59,6 @@ const getUserNotifications = async (userId, options = {}) => {
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .populate('createdBy', 'name email')
     .lean();
   
   // Add read status for each notification
@@ -94,8 +96,6 @@ const getAllNotifications = async (filter, options) => {
     .sort(sort)
     .skip(skip)
     .limit(limit)
-    .populate('userId', 'name email')
-    .populate('createdBy', 'name email')
     .lean();
   
   return notifications;
@@ -107,9 +107,7 @@ const getAllNotifications = async (filter, options) => {
  * @returns {Promise<Notification>}
  */
 const getNotificationById = async (id) => {
-  const notification = await Notification.findById(id)
-    .populate('userId', 'name email')
-    .populate('createdBy', 'name email');
+  const notification = await Notification.findById(id);
   
   if (!notification) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Notification not found');
@@ -129,9 +127,7 @@ const updateNotificationById = async (notificationId, updateBody) => {
     notificationId,
     updateBody,
     { new: true, runValidators: true }
-  )
-    .populate('userId', 'name email')
-    .populate('createdBy', 'name email');
+  );
   
   if (!notification) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Notification not found');
