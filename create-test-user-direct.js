@@ -1,11 +1,15 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URL + '/samsara_dev');
+    await mongoose.connect(process.env.MONGODB_URL, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log('✅ Connected to MongoDB');
   } catch (error) {
     console.error('❌ MongoDB connection error:', error);
@@ -22,13 +26,15 @@ const createTestUser = async () => {
       email: String,
       password: String,
       role: { type: String, default: 'user' },
-      notificationToken: { type: String, default: '' }
+      userCategory: String,
+      notificationToken: { type: String, default: '' },
+      active: { type: Boolean, default: true }
     });
     
     const User = mongoose.model('Users', userSchema);
     
     // Check if user already exists
-    const existingUser = await User.findById('686225adf7366b36a48fa65e');
+    const existingUser = await User.findOne({ email: 'testuser@example.com' });
     
     if (existingUser) {
       console.log('✅ User already exists:', {
@@ -37,15 +43,18 @@ const createTestUser = async () => {
         email: existingUser.email,
         notificationToken: existingUser.notificationToken
       });
+      return existingUser;
     } else {
       // Create test user
+      const hashedPassword = await bcrypt.hash('password123', 12);
       const testUser = new User({
-        _id: '686225adf7366b36a48fa65e',
         name: 'Test User',
-        email: 'test@example.com',
-        password: 'hashedpassword',
+        email: 'testuser@example.com',
+        password: hashedPassword,
         role: 'user',
-        notificationToken: ''
+        userCategory: 'Personal',
+        notificationToken: '',
+        active: true
       });
       
       await testUser.save();
@@ -54,11 +63,12 @@ const createTestUser = async () => {
         name: testUser.name,
         email: testUser.email
       });
+      return testUser;
     }
     
-    await mongoose.disconnect();
   } catch (error) {
     console.error('❌ Error:', error);
+  } finally {
     await mongoose.disconnect();
   }
 };

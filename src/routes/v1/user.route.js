@@ -15,6 +15,9 @@ router
 // Profile image route
 router.route('/profile/image').patch(auth(), validate(userValidation.updateProfileImage), userController.updateProfileImage);
 
+// Notification token routes (must be before /:userId routes)
+router.route('/notification-token').patch(auth(), validate(userValidation.updateNotificationToken), userController.updateNotificationToken);
+
 // User management routes
 router
   .route('/')
@@ -54,9 +57,6 @@ router.route('/:userId/achievements').post(auth(), userController.addAchievement
 router.route('/:userId/assessments').post(auth(), userController.addAssessment);
 
 router.route('/assessment-form').post(auth(), userController.submitAssessmentForm);
-
-// Notification token routes
-router.route('/notification-token').patch(auth(), validate(userValidation.updateNotificationToken), userController.updateNotificationToken);
 
 // Class participation routes
 router.route('/join-class').post(auth(), userController.joinClass);
