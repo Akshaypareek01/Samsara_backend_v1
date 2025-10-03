@@ -56,7 +56,7 @@ router.route('/:userId/assessments').post(auth(), userController.addAssessment);
 router.route('/assessment-form').post(auth(), userController.submitAssessmentForm);
 
 // Notification token routes
-router.route('/:userId/notification-token').patch(auth(), userController.updateNotificationToken);
+router.route('/notification-token').patch(auth(), validate(userValidation.updateNotificationToken), userController.updateNotificationToken);
 
 // Class participation routes
 router.route('/join-class').post(auth(), userController.joinClass);

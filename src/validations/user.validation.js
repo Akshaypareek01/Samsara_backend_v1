@@ -105,4 +105,10 @@ const deleteUser = {
   }),
 };
 
-export { createUser, getUsers, getUser, updateUser, updateProfile, updateProfileImage, deleteUser };
+const updateNotificationToken = {
+  body: Joi.object().keys({
+    notificationToken: Joi.string().required().min(1).max(500),
+  }),
+};
+
+export { createUser, getUsers, getUser, updateUser, updateProfile, updateProfileImage, deleteUser, updateNotificationToken };

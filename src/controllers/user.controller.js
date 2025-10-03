@@ -155,20 +155,19 @@ const submitAssessmentForm = catchAsync(async (req, res) => {
 });
 
 const updateNotificationToken = catchAsync(async (req, res) => {
-  const { userId } = req.params;
   const { notificationToken } = req.body;
+  const userId = req.user.id; // Get user ID from JWT token
 
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-  }
-
-  user.notificationToken = notificationToken;
-  await user.save();
+  // Update the notification token using userService
+  const user = await userService.updateUserById(userId, { notificationToken });
 
   res.status(httpStatus.OK).json({
-    status: true,
+    status: 'success',
     message: 'Notification token updated successfully',
+    data: {
+      userId: user._id,
+      notificationToken: user.notificationToken,
+    },
   });
 });
 
