@@ -23,23 +23,31 @@ const getUserNotifications = async (userId, options = {}) => {
   const { type, unreadOnly, limit = 50, page = 1 } = options;
   
   const query = {
-    $or: [
-      { userId: userId },
-      { userId: null } // Global notifications
-    ],
-    status: { $in: ['sent', 'delivered'] },
-    $or: [
-      { expiresAt: null },
-      { expiresAt: { $gt: new Date() } }
+    $and: [
+      {
+        $or: [
+          { userId: userId },
+          { userId: null } // Global notifications
+        ]
+      },
+      {
+        status: { $in: ['sent', 'delivered'] }
+      },
+      {
+        $or: [
+          { expiresAt: null },
+          { expiresAt: { $gt: new Date() } }
+        ]
+      }
     ]
   };
   
   if (type) {
-    query.type = type;
+    query.$and.push({ type: type });
   }
   
   if (unreadOnly) {
-    query['readBy.user'] = { $ne: userId };
+    query.$and.push({ 'readBy.user': { $ne: userId } });
   }
   
   const skip = (page - 1) * limit;
@@ -191,15 +199,25 @@ const markAllNotificationsAsRead = async (userId) => {
  */
 const getUnreadNotificationCount = async (userId) => {
   const count = await Notification.countDocuments({
-    $or: [
-      { userId: userId },
-      { userId: null }
-    ],
-    status: { $in: ['sent', 'delivered'] },
-    'readBy.user': { $ne: userId },
-    $or: [
-      { expiresAt: null },
-      { expiresAt: { $gt: new Date() } }
+    $and: [
+      {
+        $or: [
+          { userId: userId },
+          { userId: null }
+        ]
+      },
+      {
+        status: { $in: ['sent', 'delivered'] }
+      },
+      {
+        'readBy.user': { $ne: userId }
+      },
+      {
+        $or: [
+          { expiresAt: null },
+          { expiresAt: { $gt: new Date() } }
+        ]
+      }
     ]
   });
   

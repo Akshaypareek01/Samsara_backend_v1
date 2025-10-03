@@ -114,8 +114,8 @@ async function seedMembershipData() {
         planType: 'limited-time',
         maxUsers: 1,
         isActive: true,
-        availableFrom: new Date('2025-09-01'),
-        availableUntil: new Date('2025-09-30T23:59:59.000Z'), // Can purchase until Sep 31, 2025
+        availableFrom: new Date('2025-10-01'),
+        availableUntil: new Date('2025-10-30T23:59:59.000Z'), // Can purchase until Sep 31, 2025
         taxConfig: {
           gst: {
             rate: 5,
