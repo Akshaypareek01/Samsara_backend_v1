@@ -39,6 +39,7 @@ const updateUser = {
       name: Joi.string(),
       profileImage: Joi.string().uri().allow('').optional(),
       AboutMe: Joi.string().allow('').optional(),
+      notificationToken: Joi.string().min(1).max(500).optional(),
     })
     .min(1),
 };

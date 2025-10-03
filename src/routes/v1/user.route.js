@@ -16,7 +16,7 @@ router
 router.route('/profile/image').patch(auth(), validate(userValidation.updateProfileImage), userController.updateProfileImage);
 
 // Notification token routes (must be before /:userId routes)
-router.route('/notification-token').patch(auth(), validate(userValidation.updateNotificationToken), userController.updateNotificationToken);
+router.route('/notification-token').post(auth(), validate(userValidation.updateNotificationToken), userController.updateNotificationToken);
 
 // User management routes
 router
