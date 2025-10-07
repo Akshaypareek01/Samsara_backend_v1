@@ -125,7 +125,7 @@ async function seedMembershipData() {
         },
         discountConfig: {
           maxDiscountPercentage: 100,
-          maxDiscountAmount: 12000
+          maxDiscountAmount: null // Allow unlimited discount for 100% coupons
         },
         metadata: {
           specialValidityEndDate: new Date('2025-12-30T23:59:59.000Z'), // All memberships expire on Dec 30, 2025

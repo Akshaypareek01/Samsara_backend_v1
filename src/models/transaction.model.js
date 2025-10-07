@@ -35,7 +35,7 @@ const transactionSchema = new mongoose.Schema(
     // Razorpay details
     razorpayOrderId: {
       type: String,
-      required: true,
+      required: false, // Not required for free orders
     },
     razorpayPaymentId: {
       type: String,

@@ -79,7 +79,100 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     finalAmount = finalAmount - discountAmount;
   }
 
-  // Create Razorpay order
+  // Handle zero amount orders (100% discount) - Create membership directly
+  if (finalAmount === 0) {
+    // Create transaction record for zero amount
+    const transaction = await Transaction.create({
+      userId: userId,
+      planId: planId,
+      planName: membershipPlan.name,
+      transactionId: razorpayService.generateReceiptId('TXN'),
+      orderId: razorpayService.generateReceiptId('FREE'),
+      amount: finalAmount,
+      originalAmount: membershipPlan.calculateTotalPrice(),
+      discountAmount: discountAmount,
+      currency: membershipPlan.currency,
+      razorpayOrderId: null,
+      couponCode: couponCodeDoc?._id || null,
+      couponCodeString: couponCode || null,
+      status: 'completed',
+      metadata: {
+        userEmail: user.email,
+        userName: user.name,
+        planType: membershipPlan.planType,
+        isFreeOrder: true,
+        paymentMethod: 'free_coupon'
+      }
+    });
+
+    // Calculate membership dates
+    const startDate = new Date();
+    const endDate = membershipPlan.getMembershipEndDate(startDate);
+    const actualValidityDays = membershipPlan.getActualValidityDays(startDate);
+
+    // Create membership directly
+    const membership = await Membership.create({
+      userId: userId,
+      planId: membershipPlan._id,
+      planName: membershipPlan.name,
+      validityDays: actualValidityDays,
+      startDate: startDate,
+      endDate: endDate,
+      amountPaid: transaction.amount,
+      originalAmount: transaction.originalAmount,
+      discountAmount: transaction.discountAmount,
+      currency: transaction.currency,
+      couponCode: transaction.couponCode,
+      couponCodeString: transaction.couponCodeString,
+      razorpayOrderId: null,
+      razorpayPaymentId: null,
+      razorpaySignature: null,
+      status: 'active',
+      metadata: {
+        transactionId: transaction._id,
+        paymentMethod: 'free_coupon',
+        isFreeOrder: true,
+        paymentDetails: {
+          status: 'free',
+          method: 'coupon_discount'
+        }
+      }
+    });
+
+    // Update transaction with membership ID
+    transaction.membershipId = membership._id;
+    await transaction.save();
+
+    // Increment coupon usage if applicable
+    if (transaction.couponCode) {
+      const couponCode = await CouponCode.findById(transaction.couponCode);
+      if (couponCode) {
+        await couponCode.incrementUsage();
+      }
+    }
+
+    // Calculate detailed pricing breakdown
+    const pricingBreakdown = membershipPlan.calculatePricingBreakdown(discountAmount, couponCode);
+
+    res.status(httpStatus.CREATED).send({
+      success: true,
+      message: 'Free membership created successfully with 100% discount',
+      membership: membership,
+      transaction: transaction,
+      plan: membershipPlan,
+      pricing: pricingBreakdown,
+      discount: {
+        couponCode: couponCode || null,
+        discountAmount: discountAmount,
+        originalAmount: membershipPlan.calculateTotalPrice(),
+        finalAmount: finalAmount
+      },
+      isFreeOrder: true
+    });
+    return;
+  }
+
+  // Create Razorpay order for paid orders
   const orderData = {
     amount: razorpayService.convertToPaise(finalAmount),
     currency: membershipPlan.currency,
