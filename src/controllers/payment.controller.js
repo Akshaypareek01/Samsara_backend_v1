@@ -75,7 +75,7 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     }
 
     const couponDiscountAmount = couponCodeDoc.calculateDiscount(finalAmount);
-    discountAmount = membershipPlan.calculateDiscountAmount(couponDiscountAmount);
+    discountAmount = membershipPlan.calculateDiscountAmount(couponDiscountAmount, finalAmount);
     finalAmount = finalAmount - discountAmount;
   }
 

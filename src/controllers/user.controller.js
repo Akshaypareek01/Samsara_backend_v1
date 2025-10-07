@@ -4,9 +4,48 @@ import ApiError from '../utils/ApiError.js';
 import catchAsync from '../utils/catchAsync.js';
 import * as userService from '../services/user.service.js';
 import { User, Class } from '../models/index.js';
+import {
+  sendWelcomeNotification,
+  sendProfileCompletionReminder,
+  sendMembershipExpiryWarning,
+  sendMembershipExpiredNotification,
+  sendMembershipRenewedNotification,
+  sendClassRegistrationConfirmation,
+  sendClassReminder,
+  sendMissedClassNotification,
+  sendClassCancellationNotification,
+  sendEventRegistrationConfirmation,
+  sendEventReminder,
+  sendPaymentSuccessNotification,
+  sendPaymentFailureNotification,
+  sendAssessmentCompletionNotification,
+  sendAssessmentReminder,
+  sendPeriodTrackerReminder,
+  sendMoodTrackingReminder,
+  sendAchievementUnlockedNotification,
+  sendStreakMilestoneNotification,
+  sendAppUpdateNotification,
+  sendMaintenanceNotification,
+  sendFeatureAnnouncement,
+  scheduleClassReminder,
+  scheduleEventReminder,
+  scheduleMembershipExpiryWarning
+} from '../utils/userNotificationHelpers.js';
 
 const createUser = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
+  
+  // Send welcome notification to new user
+  try {
+    await sendWelcomeNotification(user._id, {
+      name: user.name,
+      email: user.email
+    });
+  } catch (notificationError) {
+    console.error('Failed to send welcome notification:', notificationError);
+    // Don't fail user creation if notification fails
+  }
+  
   res.status(httpStatus.CREATED).send(user);
 });
 
@@ -106,6 +145,19 @@ const addAchievement = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
 
+  // Send achievement unlocked notification
+  try {
+    await sendAchievementUnlockedNotification(userId, {
+      id: achievement.id || new Date().getTime(),
+      title: achievement.title,
+      description: achievement.description,
+      category: achievement.category
+    });
+  } catch (notificationError) {
+    console.error('Failed to send achievement notification:', notificationError);
+    // Don't fail achievement addition if notification fails
+  }
+
   res.status(httpStatus.OK).json({
     status: 'success',
     data: { user },
@@ -199,6 +251,30 @@ const joinClass = catchAsync(async (req, res) => {
   user.attendance.push({ classId, joinedAt });
 
   await user.save();
+
+  // Send class registration confirmation notification
+  try {
+    await sendClassRegistrationConfirmation(userId, {
+      id: yogaClass._id,
+      title: yogaClass.title,
+      instructor: yogaClass.instructor,
+      schedule: yogaClass.schedule,
+      duration: yogaClass.duration,
+      classType: yogaClass.classType
+    });
+
+    // Schedule class reminder (1 hour before)
+    await scheduleClassReminder(userId, {
+      id: yogaClass._id,
+      title: yogaClass.title,
+      instructor: yogaClass.instructor,
+      schedule: yogaClass.schedule
+    });
+  } catch (notificationError) {
+    console.error('Failed to send class notifications:', notificationError);
+    // Don't fail class joining if notification fails
+  }
+
   res.status(httpStatus.OK).json({ message: 'User joined the class', joinedAt });
 });
 
@@ -463,6 +539,311 @@ const getUsersByRole = catchAsync(async (req, res) => {
   });
 });
 
+// NEW NOTIFICATION FUNCTIONS
+
+/**
+ * Send membership expiry warning to user
+ */
+const sendMembershipExpiryWarningToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { membershipData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendMembershipExpiryWarning(userId, membershipData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Membership expiry warning sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send membership expiry warning');
+  }
+});
+
+/**
+ * Send membership expired notification to user
+ */
+const sendMembershipExpiredToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { membershipData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendMembershipExpiredNotification(userId, membershipData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Membership expired notification sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send membership expired notification');
+  }
+});
+
+/**
+ * Send missed class notification to user
+ */
+const sendMissedClassToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { classData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendMissedClassNotification(userId, classData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Missed class notification sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send missed class notification');
+  }
+});
+
+/**
+ * Send class cancellation notification to user
+ */
+const sendClassCancellationToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { classData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendClassCancellationNotification(userId, classData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Class cancellation notification sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send class cancellation notification');
+  }
+});
+
+/**
+ * Send event registration confirmation to user
+ */
+const sendEventRegistrationToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { eventData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendEventRegistrationConfirmation(userId, eventData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Event registration confirmation sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send event registration confirmation');
+  }
+});
+
+/**
+ * Send payment success notification to user
+ */
+const sendPaymentSuccessToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { paymentData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendPaymentSuccessNotification(userId, paymentData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Payment success notification sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send payment success notification');
+  }
+});
+
+/**
+ * Send payment failure notification to user
+ */
+const sendPaymentFailureToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { paymentData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendPaymentFailureNotification(userId, paymentData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Payment failure notification sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send payment failure notification');
+  }
+});
+
+/**
+ * Send assessment completion notification to user
+ */
+const sendAssessmentCompletionToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { assessmentData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendAssessmentCompletionNotification(userId, assessmentData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Assessment completion notification sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send assessment completion notification');
+  }
+});
+
+/**
+ * Send streak milestone notification to user
+ */
+const sendStreakMilestoneToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { streakData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendStreakMilestoneNotification(userId, streakData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Streak milestone notification sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send streak milestone notification');
+  }
+});
+
+/**
+ * Send mood tracking reminder to user
+ */
+const sendMoodTrackingReminderToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendMoodTrackingReminder(userId);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Mood tracking reminder sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send mood tracking reminder');
+  }
+});
+
+/**
+ * Send period tracker reminder to user
+ */
+const sendPeriodTrackerReminderToUser = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { trackerData } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  try {
+    await sendPeriodTrackerReminder(userId, trackerData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Period tracker reminder sent successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send period tracker reminder');
+  }
+});
+
+/**
+ * Send app update notification to all users
+ */
+const sendAppUpdateToAllUsers = catchAsync(async (req, res) => {
+  const { updateData } = req.body;
+
+  try {
+    await sendAppUpdateNotification(updateData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'App update notification sent to all users successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send app update notification');
+  }
+});
+
+/**
+ * Send maintenance notification to all users
+ */
+const sendMaintenanceToAllUsers = catchAsync(async (req, res) => {
+  const { maintenanceData } = req.body;
+
+  try {
+    await sendMaintenanceNotification(maintenanceData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Maintenance notification sent to all users successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send maintenance notification');
+  }
+});
+
+/**
+ * Send feature announcement to all users
+ */
+const sendFeatureAnnouncementToAllUsers = catchAsync(async (req, res) => {
+  const { featureData } = req.body;
+
+  try {
+    await sendFeatureAnnouncement(featureData);
+    res.status(httpStatus.OK).json({
+      status: 'success',
+      message: 'Feature announcement sent to all users successfully'
+    });
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send feature announcement');
+  }
+});
+
 export {
   createUser,
   getUsers,
@@ -488,4 +869,19 @@ export {
   deleteUserImageByKey,
   deleteUserImageByFilename,
   getUsersByRole,
+  // New notification functions
+  sendMembershipExpiryWarningToUser,
+  sendMembershipExpiredToUser,
+  sendMissedClassToUser,
+  sendClassCancellationToUser,
+  sendEventRegistrationToUser,
+  sendPaymentSuccessToUser,
+  sendPaymentFailureToUser,
+  sendAssessmentCompletionToUser,
+  sendStreakMilestoneToUser,
+  sendMoodTrackingReminderToUser,
+  sendPeriodTrackerReminderToUser,
+  sendAppUpdateToAllUsers,
+  sendMaintenanceToAllUsers,
+  sendFeatureAnnouncementToAllUsers,
 };

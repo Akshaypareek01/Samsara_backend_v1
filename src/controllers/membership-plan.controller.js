@@ -232,7 +232,7 @@ const getPlanPricingBreakdown = catchAsync(async (req, res) => {
       const totalPrice = membershipPlan.calculateTotalPrice();
       if (couponCodeDoc.canApplyToPlan(planId) && totalPrice >= couponCodeDoc.minOrderAmount) {
         const couponDiscountAmount = couponCodeDoc.calculateDiscount(totalPrice);
-        discountAmount = membershipPlan.calculateDiscountAmount(couponDiscountAmount);
+        discountAmount = membershipPlan.calculateDiscountAmount(couponDiscountAmount, totalPrice);
       }
     }
   }

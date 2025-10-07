@@ -41,7 +41,22 @@ const notificationSchema = new mongoose.Schema(
         'assessment',
         'meditation',
         'diet',
-        'period_tracker'
+        'period_tracker',
+        'welcome',
+        'onboarding',
+        'achievement',
+        'streak',
+        'maintenance',
+        'feature_announcement',
+        'reminder',
+        'cancellation',
+        'expiry_warning',
+        'expired',
+        'renewal_success',
+        'registration_confirmed',
+        'missed_class',
+        'mood_tracking',
+        'system'
       ],
       default: 'general'
     },

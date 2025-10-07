@@ -277,7 +277,7 @@ membershipPlanSchema.methods.calculatePricingBreakdown = function(discountAmount
 };
 
 // Method to calculate discount amount with plan-specific limits
-membershipPlanSchema.methods.calculateDiscountAmount = function(couponDiscountAmount) {
+membershipPlanSchema.methods.calculateDiscountAmount = function(couponDiscountAmount, totalOrderAmount = null) {
   let finalDiscountAmount = couponDiscountAmount;
   
   // Apply plan-specific discount limits
@@ -285,8 +285,9 @@ membershipPlanSchema.methods.calculateDiscountAmount = function(couponDiscountAm
     finalDiscountAmount = Math.min(finalDiscountAmount, this.discountConfig.maxDiscountAmount);
   }
   
-  // Apply percentage limit based on base price
-  const maxPercentageDiscount = (this.basePrice * this.discountConfig.maxDiscountPercentage) / 100;
+  // Apply percentage limit based on total order amount (including taxes) instead of base price
+  const orderAmount = totalOrderAmount || this.calculateTotalPrice();
+  const maxPercentageDiscount = (orderAmount * this.discountConfig.maxDiscountPercentage) / 100;
   finalDiscountAmount = Math.min(finalDiscountAmount, maxPercentageDiscount);
   
   return Math.round(finalDiscountAmount * 100) / 100;
