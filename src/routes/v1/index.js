@@ -19,6 +19,7 @@ import meditationRoute from './meditation.router.js';
 import masterCategoryRoute from './masterCategory.router.js';
 import medicationRoute from './medication.router.js';
 import ratingRoute from './rating.router.js';
+import teacherRatingRoute from './teacher-rating.router.js';
 import userAnalyticsRoute from './userAnalytics.router.js';
 import config from '../../config/config.js';
 import doshaRoute from './dosha.router.js';
@@ -144,6 +145,10 @@ const defaultRoutes = [
   {
     path: '/ratings',
     route: ratingRoute,
+  },
+  {
+    path: '/teacher-ratings',
+    route: teacherRatingRoute,
   },
   {
     path: '/user-analytics',
