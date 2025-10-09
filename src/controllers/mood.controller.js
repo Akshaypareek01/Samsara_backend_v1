@@ -47,6 +47,16 @@ const getMoodEntries = catchAsync(async (req, res) => {
   // Add userId filter to only get current user's moods
   filter.userId = req.user.id;
   
+  // Handle array filtering for whatWasItAbout
+  if (filter.whatWasItAbout) {
+    // If it's an array, use $in operator, otherwise convert to array
+    if (Array.isArray(filter.whatWasItAbout)) {
+      filter.whatWasItAbout = { $in: filter.whatWasItAbout };
+    } else {
+      filter.whatWasItAbout = { $in: [filter.whatWasItAbout] };
+    }
+  }
+  
   const result = await queryMoods(filter, options);
   res.send({
     success: true,
