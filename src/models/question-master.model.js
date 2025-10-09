@@ -26,6 +26,12 @@ const QuestionSchema = new mongoose.Schema(
         description: {
           type: String,
         }, // optional
+        severityWeight: {
+          type: Number,
+          default: 1,
+          min: 1,
+          max: 5,
+        }, // For Vikriti assessments: 1=mild, 2=moderate, 3=severe, 4=very severe, 5=extreme
       },
     ],
     order: {

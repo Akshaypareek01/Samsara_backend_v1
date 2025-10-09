@@ -5,7 +5,7 @@ import catchAsync from '../utils/catchAsync.js';
 import ApiError from '../utils/ApiError.js';
 
 // Helper function to calculate dosha scores and percentages
-const calculateDoshaScores = async (answers) => {
+const calculateDoshaScores = async (answers, assessmentType) => {
   const doshaScore = { vata: 0, pitta: 0, kapha: 0 };
 
   for (const answer of answers) {
@@ -25,7 +25,17 @@ const calculateDoshaScores = async (answers) => {
       if (question && question.options && question.options[answer.selectedOptionIndex]) {
         const selectedOption = question.options[answer.selectedOptionIndex];
         if (selectedOption && selectedOption.dosha) {
-          doshaScore[selectedOption.dosha.toLowerCase()]++;
+          const dosha = selectedOption.dosha.toLowerCase();
+          
+          // Different scoring logic based on assessment type
+          if (assessmentType === 'Prakriti') {
+            // Prakriti: Simple counting (constitutional assessment)
+            doshaScore[dosha]++;
+          } else if (assessmentType === 'Vikriti') {
+            // Vikriti: Weighted scoring based on severity
+            const severityWeight = selectedOption.severityWeight || 1;
+            doshaScore[dosha] += severityWeight;
+          }
         }
       }
     }
@@ -166,7 +176,7 @@ export const submitAnswer = catchAsync(async (req, res) => {
   await assessment.populate('answers.questionId');
 
   // Calculate dosha scores and percentages
-  const { doshaScore, doshaPercentages } = await calculateDoshaScores(assessment.answers);
+  const { doshaScore, doshaPercentages } = await calculateDoshaScores(assessment.answers, assessment.assessmentType);
   assessment.doshaScore = doshaScore;
   assessment.doshaPercentages = doshaPercentages;
 
@@ -187,7 +197,7 @@ export const calculateDoshaScore = catchAsync(async (req, res) => {
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found or already completed');
 
   // Calculate final dosha scores and percentages
-  const { doshaScore, doshaPercentages } = await calculateDoshaScores(assessment.answers);
+  const { doshaScore, doshaPercentages } = await calculateDoshaScores(assessment.answers, assessment.assessmentType);
   assessment.doshaScore = doshaScore;
   assessment.doshaPercentages = doshaPercentages;
   assessment.isCompleted = true;

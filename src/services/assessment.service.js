@@ -156,7 +156,17 @@ export const calculateDoshaScore = async (assessmentId, userId) => {
       const selectedOption = question.options[answer.selectedOptionIndex];
 
       if (selectedOption && selectedOption.dosha) {
-        doshaScore[selectedOption.dosha.toLowerCase()]++;
+        const dosha = selectedOption.dosha.toLowerCase();
+        
+        // Different scoring logic based on assessment type
+        if (assessment.assessmentType === 'Prakriti') {
+          // Prakriti: Simple counting (constitutional assessment)
+          doshaScore[dosha]++;
+        } else if (assessment.assessmentType === 'Vikriti') {
+          // Vikriti: Weighted scoring based on severity
+          const severityWeight = selectedOption.severityWeight || 1;
+          doshaScore[dosha] += severityWeight;
+        }
       }
     }
   }

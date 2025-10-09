@@ -36,14 +36,29 @@ export const calculateDoshaScore = async (assessmentId, userId) => {
     'answers.questionId'
   );
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found or already completed');
+  
   const doshaScore = { vata: 0, pitta: 0, kapha: 0 };
+  
   for (const answer of assessment.answers) {
     if (answer.questionId && answer.selectedOptionIndex !== undefined) {
       const q = answer.questionId;
       const opt = q.options[answer.selectedOptionIndex];
-      if (opt && opt.dosha) doshaScore[opt.dosha.toLowerCase()]++;
+      if (opt && opt.dosha) {
+        const dosha = opt.dosha.toLowerCase();
+        
+        // Different scoring logic based on assessment type
+        if (assessment.assessmentType === 'Prakriti') {
+          // Prakriti: Simple counting (constitutional assessment)
+          doshaScore[dosha]++;
+        } else if (assessment.assessmentType === 'Vikriti') {
+          // Vikriti: Weighted scoring based on severity
+          const severityWeight = opt.severityWeight || 1;
+          doshaScore[dosha] += severityWeight;
+        }
+      }
     }
   }
+  
   assessment.doshaScore = doshaScore;
   assessment.isCompleted = true;
   assessment.submittedAt = new Date();
