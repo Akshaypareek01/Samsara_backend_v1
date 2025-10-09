@@ -164,7 +164,9 @@ const getMoodAnalytics = async (userId, period, startDate, endDate) => {
       $group: {
         _id: '$mood',
         count: { $sum: 1 },
-        moodId: { $first: '$moodId' }
+        moodId: { $first: '$moodId' },
+        whatWasItAbout: { $first: '$whatWasItAbout' },
+        comments: { $first: '$comments' }
       }
     },
     {
@@ -220,7 +222,9 @@ const getMoodKPIs = async (userId, period, startDate, endDate) => {
         moodCounts: {
           $push: {
             mood: '$mood',
-            moodId: '$moodId'
+            moodId: '$moodId',
+            whatWasItAbout: '$whatWasItAbout',
+            comments: '$comments'
           }
         }
       }
@@ -385,6 +389,8 @@ const getMoodByDate = async (userId, date) => {
             _id: '$_id',
             mood: '$mood',
             moodId: '$moodId',
+            whatWasItAbout: '$whatWasItAbout',
+            comments: '$comments',
             createdAt: '$createdAt'
           }
         }
@@ -423,6 +429,8 @@ const getMoodByDate = async (userId, date) => {
             _id: '$_id',
             mood: '$mood',
             moodId: '$moodId',
+            whatWasItAbout: '$whatWasItAbout',
+            comments: '$comments',
             createdAt: '$createdAt'
           }
         }

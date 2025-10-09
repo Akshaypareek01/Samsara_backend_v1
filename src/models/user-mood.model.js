@@ -18,6 +18,16 @@ const moodSchema = new mongoose.Schema(
       required: true,
       enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], // Corresponding IDs for each mood
     },
+    whatWasItAbout: {
+      type: String,
+      enum: ['work', 'study', 'relationship', 'school', 'friends', 'health', 'job', 'life', 'politics', 'coworkers', 'self harm'],
+      required: false,
+    },
+    comments: {
+      type: String,
+      maxlength: 500,
+      required: false,
+    },
   },
   {
     timestamps: true,

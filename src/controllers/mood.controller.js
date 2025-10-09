@@ -41,7 +41,7 @@ const createMoodEntry = catchAsync(async (req, res) => {
  * @param {Function} next
  */
 const getMoodEntries = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['mood']);
+  const filter = pick(req.query, ['mood', 'whatWasItAbout']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   
   // Add userId filter to only get current user's moods

@@ -9,6 +9,12 @@ const createMood = {
     moodId: Joi.number()
       .valid(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
       .required(),
+    whatWasItAbout: Joi.string()
+      .valid('work', 'study', 'relationship', 'school', 'friends', 'health', 'job', 'life', 'politics', 'coworkers', 'self harm')
+      .optional(),
+    comments: Joi.string()
+      .max(500)
+      .optional(),
   }),
 };
 
@@ -16,6 +22,7 @@ const getMoods = {
   query: Joi.object().keys({
     userId: Joi.string().custom(objectId),
     mood: Joi.string().valid('Normal', 'Angry', 'Happy', 'Sad', 'Exhausted', 'Anxious', 'Depressed', 'In Love', 'Bored', 'Confident', 'Excited', 'Relaxed'),
+    whatWasItAbout: Joi.string().valid('work', 'study', 'relationship', 'school', 'friends', 'health', 'job', 'life', 'politics', 'coworkers', 'self harm'),
     sortBy: Joi.string(),
     limit: Joi.number().integer().min(1).max(100),
     page: Joi.number().integer().min(1),
@@ -36,6 +43,8 @@ const updateMood = {
     .keys({
       mood: Joi.string().valid('Normal', 'Angry', 'Happy', 'Sad', 'Exhausted', 'Anxious', 'Depressed', 'In Love', 'Bored', 'Confident', 'Excited', 'Relaxed'),
       moodId: Joi.number().valid(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12),
+      whatWasItAbout: Joi.string().valid('work', 'study', 'relationship', 'school', 'friends', 'health', 'job', 'life', 'politics', 'coworkers', 'self harm'),
+      comments: Joi.string().max(500),
     })
     .min(1),
 };
