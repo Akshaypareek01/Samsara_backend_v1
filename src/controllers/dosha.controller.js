@@ -230,3 +230,76 @@ export const getAssessmentById = catchAsync(async (req, res) => {
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found');
   res.send(assessment);
 });
+
+// Get latest Prakriti and Vikriti assessment results for user
+export const getLatestAssessmentResults = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  if (!userId) throw new ApiError(httpStatus.UNAUTHORIZED, 'User not authenticated');
+
+  try {
+    // Get latest Prakriti assessment
+    const latestPrakriti = await AssessmentResult.findOne({
+      userId,
+      assessmentType: 'Prakriti',
+      isCompleted: true
+    })
+      .populate('answers.questionId')
+      .sort({ submittedAt: -1 });
+
+    // Get latest Vikriti assessment
+    const latestVikriti = await AssessmentResult.findOne({
+      userId,
+      assessmentType: 'Vikriti',
+      isCompleted: true
+    })
+      .populate('answers.questionId')
+      .sort({ submittedAt: -1 });
+
+    // Prepare response
+    const response = {
+      prakriti: latestPrakriti ? {
+        id: latestPrakriti._id,
+        assessmentType: latestPrakriti.assessmentType,
+        doshaScore: latestPrakriti.doshaScore,
+        doshaPercentages: latestPrakriti.doshaPercentages,
+        submittedAt: latestPrakriti.submittedAt,
+        isCompleted: latestPrakriti.isCompleted,
+        dominantDosha: getDominantDosha(latestPrakriti.doshaScore),
+        explanation: "Your natural constitutional type (Prakriti) - shows your inherent body-mind nature"
+      } : null,
+      vikriti: latestVikriti ? {
+        id: latestVikriti._id,
+        assessmentType: latestVikriti.assessmentType,
+        doshaScore: latestVikriti.doshaScore,
+        doshaPercentages: latestVikriti.doshaPercentages,
+        submittedAt: latestVikriti.submittedAt,
+        isCompleted: latestVikriti.isCompleted,
+        dominantDosha: getDominantDosha(latestVikriti.doshaScore),
+        explanation: "Your current imbalances (Vikriti) - shows what's wrong now, weighted by severity"
+      } : null,
+      summary: {
+        hasPrakriti: !!latestPrakriti,
+        hasVikriti: !!latestVikriti,
+        totalAssessments: (latestPrakriti ? 1 : 0) + (latestVikriti ? 1 : 0)
+      }
+    };
+
+    res.send(response);
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch latest assessment results');
+  }
+});
+
+// Helper function to get dominant dosha
+const getDominantDosha = (doshaScore) => {
+  if (!doshaScore) return null;
+  
+  const scores = Object.entries(doshaScore);
+  const dominant = scores.reduce((a, b) => a[1] > b[1] ? a : b);
+  
+  return {
+    dosha: dominant[0],
+    score: dominant[1],
+    percentage: Math.round((dominant[1] / scores.reduce((sum, [, score]) => sum + score, 0)) * 100)
+  };
+};

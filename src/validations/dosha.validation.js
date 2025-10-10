@@ -45,3 +45,7 @@ export const getAssessmentById = {
     assessmentId: Joi.string().custom(objectId).required(),
   }),
 };
+
+export const getLatestAssessmentResults = {
+  // No validation needed - just returns latest results for authenticated user
+};

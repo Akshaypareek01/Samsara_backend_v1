@@ -30,6 +30,9 @@ router.post(
 // Get all assessment results
 router.get('/', auth(), validate(doshaValidation.getAssessmentResults), doshaController.getAssessmentResults);
 
+// Get latest Prakriti and Vikriti assessment results
+router.get('/latest', auth(), validate(doshaValidation.getLatestAssessmentResults), doshaController.getLatestAssessmentResults);
+
 // Get assessment by ID
 router.get('/:assessmentId', auth(), validate(doshaValidation.getAssessmentById), doshaController.getAssessmentById);
 
