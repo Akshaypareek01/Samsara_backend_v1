@@ -178,7 +178,7 @@ export const fetchZoomTokenServerOauth = async (req, res) => {
     }
 };
 
-const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassword) => {
+const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassword, zoomAccountUsed) => {
     try {
         // Find the class by ID
         const foundClass = await Class.findById(classId);
@@ -187,10 +187,11 @@ const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassw
             throw new Error("Class not found");
         }
 
-        // Update meeting number and password
+        // Update meeting number, password, and account used
         foundClass.meeting_number = newMeetingNumber;
         foundClass.password = newMeetingPassword;
         foundClass.status = true;
+        foundClass.zoomAccountUsed = zoomAccountUsed; // Track which account was used
         // Save the updated class
         await foundClass.save();
 
@@ -245,7 +246,7 @@ export const createZoomMeeting = async (req, res) => {
         const result = await createZoomMeetingService(meetingData);
 
         // Update class meeting info
-        await updateClassMeetingInfo(meetingdata._id, result.meetingId, result.password);
+        await updateClassMeetingInfo(meetingdata._id, result.meetingId, result.password, result.accountUsed);
         
         res.json({
             status: 'success',
@@ -265,7 +266,7 @@ export const createZoomMeeting = async (req, res) => {
     }
 };
 
-const updateSessionClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassword) => {
+const updateSessionClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassword, zoomAccountUsed) => {
     try {
         // Find the class by ID
         const foundClass = await CustomSession.findById(classId);
@@ -274,10 +275,11 @@ const updateSessionClassMeetingInfo = async (classId, newMeetingNumber, newMeeti
             throw new Error("Class not found");
         }
 
-        // Update meeting number and password
+        // Update meeting number, password, and account used
         foundClass.meeting_number = newMeetingNumber;
         foundClass.password = newMeetingPassword;
         foundClass.status = true;
+        foundClass.zoomAccountUsed = zoomAccountUsed; // Track which account was used
         // Save the updated class
         await foundClass.save();
 
@@ -332,7 +334,7 @@ export const createSessionZoomMeeting = async (req, res) => {
         const result = await createZoomMeetingService(meetingData);
 
         // Update session meeting info
-        await updateSessionClassMeetingInfo(meetingdata._id, result.meetingId, result.password);
+        await updateSessionClassMeetingInfo(meetingdata._id, result.meetingId, result.password, result.accountUsed);
         
         res.json({
             status: 'success',
@@ -352,7 +354,7 @@ export const createSessionZoomMeeting = async (req, res) => {
     }
 };
 
-const updateEventClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassword) => {
+const updateEventClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassword, zoomAccountUsed) => {
     try {
         // Find the class by ID
         const foundClass = await Event.findById(classId);
@@ -361,10 +363,11 @@ const updateEventClassMeetingInfo = async (classId, newMeetingNumber, newMeeting
             throw new Error("Class not found");
         }
 
-        // Update meeting number and password
+        // Update meeting number, password, and account used
         foundClass.meeting_number = newMeetingNumber;
         foundClass.password = newMeetingPassword;
         foundClass.status = true;
+        foundClass.zoomAccountUsed = zoomAccountUsed; // Track which account was used
         // Save the updated class
         await foundClass.save();
 
@@ -419,7 +422,7 @@ export const createEventZoomMeeting = async (req, res) => {
         const result = await createZoomMeetingService(meetingData);
 
         // Update event meeting info
-        await updateEventClassMeetingInfo(meetingdata._id, result.meetingId, result.password);
+        await updateEventClassMeetingInfo(meetingdata._id, result.meetingId, result.password, result.accountUsed);
         
         res.json({
             status: 'success',

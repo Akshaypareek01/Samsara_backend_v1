@@ -43,6 +43,7 @@ const customSessionSchema = new mongoose.Schema({
   },
   password: { type: String },
   meeting_number: { type: String },
+  zoomAccountUsed: { type: String }, // Track which Zoom account was used for this meeting
   message: {
     type: String,
     required: true,

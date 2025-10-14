@@ -5,6 +5,7 @@ const classSchema = new mongoose.Schema({
   description: { type: String, required: true },
   password: { type: String, required: false },
   meeting_number: { type: String },
+  zoomAccountUsed: { type: String }, // Track which Zoom account was used for this meeting
   teacher: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Users',

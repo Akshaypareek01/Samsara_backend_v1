@@ -741,16 +741,20 @@ export const removeStudentFromClass = async (req, res) => {
 
   export const EndMeeting = async (req, res) => {
     const { classId } = req.params;
-    const { meetingId } = req.body;
     try {
-      // Find the class to get the account used
+      // Find the class to get the account used and meeting ID
       const classDoc = await Class.findById(classId);
       if (!classDoc) {
         return res.status(404).json({ success: false, error: "Class not found" });
       }
 
+      // Check if class has a meeting ID
+      if (!classDoc.meeting_number) {
+        return res.status(400).json({ success: false, error: "No active meeting found for this class" });
+      }
+
       // Use centralized Zoom service to end meeting
-      const result = await endZoomMeeting(meetingId, classDoc.zoomAccountUsed || 'account_1');
+      const result = await endZoomMeeting(classDoc.meeting_number, classDoc.zoomAccountUsed || 'account_1');
 
       // Update class meeting info
       await updateClassMeetingInfo(classId);
@@ -758,7 +762,65 @@ export const removeStudentFromClass = async (req, res) => {
       res.json({ 
         success: true, 
         message: "Meeting Ended",
-        accountUsed: result.accountUsed
+        accountUsed: result.accountUsed,
+        meetingId: classDoc.meeting_number
+      });
+    } catch (error) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  };
+
+  // End all active meetings
+  export const EndAllMeetings = async (req, res) => {
+    try {
+      // Find all classes with active meetings
+      const activeClasses = await Class.find({ 
+        meeting_number: { $exists: true, $ne: "" },
+        status: true 
+      });
+
+      if (activeClasses.length === 0) {
+        return res.json({ 
+          success: true, 
+          message: "No active meetings found",
+          endedCount: 0
+        });
+      }
+
+      const results = [];
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Process each active meeting
+      for (const classDoc of activeClasses) {
+        try {
+          const result = await endZoomMeeting(classDoc.meeting_number, classDoc.zoomAccountUsed || 'account_1');
+          await updateClassMeetingInfo(classDoc._id);
+          
+          results.push({
+            classId: classDoc._id,
+            meetingId: classDoc.meeting_number,
+            status: 'success',
+            accountUsed: result.accountUsed
+          });
+          successCount++;
+        } catch (error) {
+          results.push({
+            classId: classDoc._id,
+            meetingId: classDoc.meeting_number,
+            status: 'error',
+            error: error.message
+          });
+          errorCount++;
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Processed ${activeClasses.length} meetings`,
+        endedCount: successCount,
+        errorCount: errorCount,
+        results: results
       });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });

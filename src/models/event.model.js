@@ -81,6 +81,7 @@ const eventSchema = new mongoose.Schema(
 
     password: { type: String, default: '' },
     meeting_number: { type: String, default: '' },
+    zoomAccountUsed: { type: String }, // Track which Zoom account was used for this meeting
     status: {
       type: Boolean,
       default: false,

@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   EndMeeting,
+  EndAllMeetings,
   addPredefinedClasses,
   addStudentToClass,
   assignTeacherToClass,
@@ -19,6 +20,7 @@ import {
   getAllTeachers,
   startClassMeeting,
 } from '../../controllers/classes.controller.js';
+import { getAccountUsageStats } from '../../services/zoomService.js';
 
 const classRouter = express.Router();
 
@@ -32,6 +34,16 @@ classRouter.get('/upcoming/category/:classCategory', getUpcomingClassesByCategor
 
 // Route for getting all teachers
 classRouter.get('/teachers', getAllTeachers);
+
+// Check Zoom account usage stats (must be before /:classId route)
+classRouter.get('/zoom_accounts', (req, res) => {
+  try {
+    const stats = getAccountUsageStats();
+    res.json({ success: true, accounts: stats });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Route for getting a class by ID
 classRouter.get('/:classId', getClassById);
@@ -59,6 +71,8 @@ classRouter.put('/:classId/remove-student/:studentId', removeStudentFromClass);
 classRouter.get('/teacher/:teacherId', getClassesByTeacher);
 
 classRouter.post('/end_meeting/:classId', EndMeeting);
+// End all active meetings
+classRouter.post('/end_all_meetings', EndAllMeetings);
 // Start a Zoom meeting for a class (single API call)
 classRouter.post('/start-meeting/:classId', startClassMeeting);
 

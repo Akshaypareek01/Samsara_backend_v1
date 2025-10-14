@@ -16,7 +16,7 @@ const ZOOM_ACCOUNTS = [
     isActive: true,
     lastUsed: null,
     activeMeetings: 0,
-    maxConcurrentMeetings: 10
+    maxConcurrentMeetings: 1
   },
   {
     id: 'account_2',
@@ -27,7 +27,7 @@ const ZOOM_ACCOUNTS = [
     isActive: true,
     lastUsed: null,
     activeMeetings: 0,
-    maxConcurrentMeetings: 10
+    maxConcurrentMeetings: 1
   },
   {
     id: 'account_3',
@@ -38,7 +38,7 @@ const ZOOM_ACCOUNTS = [
     isActive: true,
     lastUsed: null,
     activeMeetings: 0,
-    maxConcurrentMeetings: 10
+    maxConcurrentMeetings: 1
   },
   {
     id: 'account_4',
@@ -49,7 +49,7 @@ const ZOOM_ACCOUNTS = [
     isActive: true,
     lastUsed: null,
     activeMeetings: 0,
-    maxConcurrentMeetings: 10
+    maxConcurrentMeetings: 1
   }
 ].filter(account => account.clientId && account.clientSecret && account.accountId);
 
@@ -67,22 +67,33 @@ const getBestAvailableAccount = () => {
     throw new Error('No active Zoom accounts available');
   }
 
-  // Sort accounts by least active meetings and least recently used
-  const sortedAccounts = activeAccounts.sort((a, b) => {
-    const aActiveMeetings = accountUsageTracker.get(a.id)?.activeMeetings || 0;
-    const bActiveMeetings = accountUsageTracker.get(b.id)?.activeMeetings || 0;
-    
-    if (aActiveMeetings !== bActiveMeetings) {
-      return aActiveMeetings - bActiveMeetings;
-    }
-    
+  // Filter out accounts that are at capacity (have active meetings)
+  const availableAccounts = activeAccounts.filter(account => {
+    const activeMeetings = accountUsageTracker.get(account.id)?.activeMeetings || 0;
+    return activeMeetings < account.maxConcurrentMeetings;
+  });
+
+  if (availableAccounts.length === 0) {
+    throw new Error('All Zoom accounts are currently busy with active meetings');
+  }
+
+  // Sort available accounts by least recently used
+  const sortedAccounts = availableAccounts.sort((a, b) => {
     const aLastUsed = accountUsageTracker.get(a.id)?.lastUsed || 0;
     const bLastUsed = accountUsageTracker.get(b.id)?.lastUsed || 0;
-    
     return aLastUsed - bLastUsed;
   });
 
-  const selectedAccount = sortedAccounts[0];
+  // If all accounts have same usage, randomly select from top 3 to distribute load
+  const topAccounts = sortedAccounts.filter(account => {
+    const lastUsed = accountUsageTracker.get(account.id)?.lastUsed || 0;
+    const topLastUsed = accountUsageTracker.get(sortedAccounts[0].id)?.lastUsed || 0;
+    return lastUsed === topLastUsed;
+  });
+
+  const selectedAccount = topAccounts.length > 1 
+    ? topAccounts[Math.floor(Math.random() * Math.min(topAccounts.length, 3))]
+    : sortedAccounts[0];
   
   // Update usage tracker
   const currentUsage = accountUsageTracker.get(selectedAccount.id) || { activeMeetings: 0, lastUsed: 0 };
@@ -137,18 +148,9 @@ export const createZoomMeeting = async (meetingData) => {
 
   while (attempts < maxAttempts) {
     try {
-      // Get the best available account
+      // Get the best available account (this now filters out busy accounts)
       selectedAccount = getBestAvailableAccount();
       
-      // Check if account has capacity for more meetings
-      const currentUsage = accountUsageTracker.get(selectedAccount.id) || { activeMeetings: 0 };
-      if (currentUsage.activeMeetings >= selectedAccount.maxConcurrentMeetings) {
-        console.warn(`Account ${selectedAccount.id} is at capacity (${currentUsage.activeMeetings}/${selectedAccount.maxConcurrentMeetings})`);
-        selectedAccount.isActive = false; // Temporarily disable this account
-        attempts++;
-        continue;
-      }
-
       // Get OAuth token
       const zoomToken = await getZoomOAuthToken(selectedAccount);
 
@@ -185,7 +187,7 @@ export const createZoomMeeting = async (meetingData) => {
         }
       );
 
-      // Update usage tracker
+      // Update usage tracker - increment active meetings
       const updatedUsage = accountUsageTracker.get(selectedAccount.id) || { activeMeetings: 0 };
       accountUsageTracker.set(selectedAccount.id, {
         ...updatedUsage,
@@ -347,3 +349,4 @@ export default {
 
 // Export for testing purposes
 export { ZOOM_ACCOUNTS, accountUsageTracker, getBestAvailableAccount };
+
