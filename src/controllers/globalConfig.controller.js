@@ -13,8 +13,8 @@ const getGlobalConfig = catchAsync(async (req, res) => {
     link: "https://samsarawellness.in/contact-us/",
     emailEnabled: true,
     whatsappEnabled: true,
-    linkEnabled: true,
-    mobilenumberEnabled: true
+    linkEnabled: false,
+    mobilenumberEnabled: false
   };
 
   res.status(httpStatus.OK).json(globalConfig);
