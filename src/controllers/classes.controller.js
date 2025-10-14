@@ -2,6 +2,7 @@ import axios from "axios";
 import { Class, User } from "../models/index.js";
 import { createZoomMeeting as createZoomMeetingBackend } from './zoom.controller.js';
 import { createUserNotification } from '../utils/notificationUtils.js';
+import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
 
 // Helper function to get teacher data with first image
 const getTeacherData = (teacher) => {
@@ -742,30 +743,23 @@ export const removeStudentFromClass = async (req, res) => {
     const { classId } = req.params;
     const { meetingId } = req.body;
     try {
-      // Generate fresh Zoom token
-      const clientId = "_nLks8WMQDO1I34y6RQNXA";
-      const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
-      const accountId = "C76CruAJSpitbs_UIRb4eQ";
-      const authHeader = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
-      const tokenRes = await axios.post(
-        'https://zoom.us/oauth/token',
-        null,
-        {
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          params: {
-            grant_type: 'account_credentials',
-            account_id: accountId,
-          },
-        }
-      );
-      const zoomToken = tokenRes.data.access_token;
+      // Find the class to get the account used
+      const classDoc = await Class.findById(classId);
+      if (!classDoc) {
+        return res.status(404).json({ success: false, error: "Class not found" });
+      }
 
-      updateClassMeetingInfo(classId);
-      deleteMeeting(zoomToken, meetingId);
-      res.json({ success: true, message:"Meeting End" });
+      // Use centralized Zoom service to end meeting
+      const result = await endZoomMeeting(meetingId, classDoc.zoomAccountUsed || 'account_1');
+
+      // Update class meeting info
+      await updateClassMeetingInfo(classId);
+
+      res.json({ 
+        success: true, 
+        message: "Meeting Ended",
+        accountUsed: result.accountUsed
+      });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }
@@ -778,34 +772,10 @@ export const startClassMeeting = async (req, res) => {
     const classDoc = await Class.findById(classId);
     if (!classDoc) return res.status(404).json({ success: false, error: "Class not found" });
 
-    // 1. Get Zoom OAuth token (account credentials grant)
-    // You may want to move these to config/env
-    const clientId = "_nLks8WMQDO1I34y6RQNXA";
-    const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
-    const accountId = "C76CruAJSpitbs_UIRb4eQ";
-    const authHeader = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
-    const tokenRes = await axios.post(
-      'https://zoom.us/oauth/token',
-      null,
-      {
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        params: {
-          grant_type: 'account_credentials',
-          account_id: accountId,
-        },
-      }
-    );
-    const zoomToken = tokenRes.data.access_token;
-
-    // 2. Build Zoom meeting request
-    const userId = 'developer@theodin.in';
-    const requestBody = {
+    // Use centralized Zoom service with multiple account support
+    const meetingData = {
       topic: classDoc.title || "Class Meeting",
-      type: 2,
-      start_time: new Date(classDoc.schedule).toISOString(),
+      startTime: new Date(classDoc.schedule).toISOString(),
       duration: classDoc.duration || 60,
       timezone: 'Asia/Kolkata',
       password: classDoc.password || "",
@@ -821,31 +791,25 @@ export const startClassMeeting = async (req, res) => {
       },
     };
 
-    // 3. Create Zoom meeting
-    const response = await axios.post(
-      `https://api.zoom.us/v2/users/${userId}/meetings`,
-      requestBody,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${zoomToken}`,
-        },
-      }
-    );
+    // Create Zoom meeting using the centralized service
+    const result = await createZoomMeeting(meetingData);
 
-    // 4. Save meeting info to class
-    classDoc.meeting_number = response.data.id;
-    classDoc.password = response.data.password;
+    // Save meeting info to class
+    classDoc.meeting_number = result.meetingId;
+    classDoc.password = result.password;
     classDoc.status = true;
+    classDoc.zoomAccountUsed = result.accountUsed; // Track which account was used
     await classDoc.save();
 
     res.json({
       success: true,
-      meetingNumber: response.data.id,
-      password: response.data.password,
+      meetingNumber: result.meetingId,
+      password: result.password,
+      joinUrl: result.joinUrl,
+      accountUsed: result.accountUsed,
     });
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error('Error starting class meeting:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 };

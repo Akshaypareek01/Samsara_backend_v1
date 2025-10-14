@@ -1,5 +1,6 @@
 import { CustomSession, TimeSlot } from "../models/index.js";
 import axios from 'axios';
+import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
 
 // Create a new custom session
 const createSession = async (req, res) => {
@@ -67,33 +68,10 @@ const updateSessionById = async (req, res) => {
     const sessionDoc = await CustomSession.findById(sessionId);
     if (!sessionDoc) return res.status(404).json({ success: false, error: "Session not found" });
 
-    // 1. Get Zoom OAuth token (account credentials grant)
-    const clientId = "_nLks8WMQDO1I34y6RQNXA";
-    const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
-    const accountId = "C76CruAJSpitbs_UIRb4eQ";
-    const authHeader = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
-    const tokenRes = await axios.post(
-      'https://zoom.us/oauth/token',
-      null,
-      {
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        params: {
-          grant_type: 'account_credentials',
-          account_id: accountId,
-        },
-      }
-    );
-    const zoomToken = tokenRes.data.access_token;
-
-    // 2. Build Zoom meeting request
-    const userId = 'developer@theodin.in';
-    const requestBody = {
+    // Use centralized Zoom service with multiple account support
+    const meetingData = {
       topic: sessionDoc.title || "Session Meeting",
-      type: 2,
-      start_time: new Date(sessionDoc.date).toISOString(),
+      startTime: new Date(sessionDoc.date).toISOString(),
       duration: sessionDoc.duration || 60,
       timezone: 'Asia/Kolkata',
       password: sessionDoc.password || "",
@@ -109,31 +87,25 @@ const updateSessionById = async (req, res) => {
       },
     };
 
-    // 3. Create Zoom meeting
-    const response = await axios.post(
-      `https://api.zoom.us/v2/users/${userId}/meetings`,
-      requestBody,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${zoomToken}`,
-        },
-      }
-    );
+    // Create Zoom meeting using the centralized service
+    const result = await createZoomMeeting(meetingData);
 
-    // 4. Save meeting info to session
-    sessionDoc.meeting_number = response.data.id;
-    sessionDoc.password = response.data.password;
+    // Save meeting info to session
+    sessionDoc.meeting_number = result.meetingId;
+    sessionDoc.password = result.password;
     sessionDoc.status = true;
+    sessionDoc.zoomAccountUsed = result.accountUsed; // Track which account was used
     await sessionDoc.save();
 
     res.json({
       success: true,
-      meetingNumber: response.data.id,
-      password: response.data.password,
+      meetingNumber: result.meetingId,
+      password: result.password,
+      joinUrl: result.joinUrl,
+      accountUsed: result.accountUsed,
     });
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error('Error starting session meeting:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -370,30 +342,23 @@ export const getSessionDetails = async (req, res) => {
     const { classId } = req.params;
     const { meetingId } = req.body;
     try {
-      // Generate fresh Zoom token
-      const clientId = "_nLks8WMQDO1I34y6RQNXA";
-      const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
-      const accountId = "C76CruAJSpitbs_UIRb4eQ";
-      const authHeader = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
-      const tokenRes = await axios.post(
-        'https://zoom.us/oauth/token',
-        null,
-        {
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          params: {
-            grant_type: 'account_credentials',
-            account_id: accountId,
-          },
-        }
-      );
-      const zoomToken = tokenRes.data.access_token;
+      // Find the session to get the account used
+      const sessionDoc = await CustomSession.findById(classId);
+      if (!sessionDoc) {
+        return res.status(404).json({ success: false, error: "Session not found" });
+      }
 
+      // Use centralized Zoom service to end meeting
+      const result = await endZoomMeeting(meetingId, sessionDoc.zoomAccountUsed || 'account_1');
+
+      // Update session meeting info
       await updateClassMeetingInfo(classId);
-      await deleteMeeting(zoomToken, meetingId);
-      res.json({ success: true, message: "Meeting End" });
+
+      res.json({ 
+        success: true, 
+        message: "Meeting Ended",
+        accountUsed: result.accountUsed
+      });
     } catch (error) {
       res.status(500).json({ success: false, error: error.message });
     }

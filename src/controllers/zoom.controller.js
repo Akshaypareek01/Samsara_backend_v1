@@ -8,6 +8,7 @@ import cors from 'cors';
 import KJUR from 'jsrsasign';
 import jwt from 'jsonwebtoken';
 import { Class, CustomSession, Event } from '../models/index.js';
+import { createZoomMeeting as createZoomMeetingService, endZoomMeeting } from '../services/zoomService.js';
 
 const CLIENT_ID = 'USSKQRgqQwGWNLpTjHStQ';
 const CLIENT_SECRET = 'GkZ34TNaLUUsePqd0UkRmtJCM1uKa5mz';
@@ -202,9 +203,6 @@ const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassw
 
 export const createZoomMeeting = async (req, res) => {
     try {
-        const userId = 'developer@theodin.in';
-        const apiKey = '_nLks8WMQDO1I34y6RQNXA';
-        const apiSecret = 'hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ';
         const { token, data } = req.body;
         
         if (!token || !data) {
@@ -215,13 +213,11 @@ export const createZoomMeeting = async (req, res) => {
         }
 
         const meetingdata = data;
-        // Construct the API endpoint
-        const endpoint = `https://api.zoom.us/v2/users/${userId}/meetings`;
-
-        const requestBody = {
+        
+        // Use centralized Zoom service with multiple account support
+        const meetingData = {
             topic: meetingdata.title,
-            type: 2,
-            start_time: "2021-03-18T17:00:00",
+            startTime: "2021-03-18T17:00:00",
             duration: 60,
             timezone: 'India',
             password: "",
@@ -245,28 +241,19 @@ export const createZoomMeeting = async (req, res) => {
             },
         };
 
-        // Make the POST request to create the meeting using Axios
-        const response = await axios.post(endpoint, requestBody, {
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`, // You need to implement a function to generate a JWT token
-            },
-        });
+        // Create Zoom meeting using the centralized service
+        const result = await createZoomMeetingService(meetingData);
 
-        // Axios automatically throws an error for non-2xx responses
-        const responseData = response.data;
-        console.log('Meeting created successfully:', meetingdata);
-
-        // Now you can send the meeting number to the frontend
-        const meetingNumber = responseData.id;
-        const password = responseData.password;
-        await updateClassMeetingInfo(meetingdata._id, meetingNumber, password);
+        // Update class meeting info
+        await updateClassMeetingInfo(meetingdata._id, result.meetingId, result.password);
         
         res.json({
             status: 'success',
             data: {
-                meetingNumber,
-                password
+                meetingNumber: result.meetingId,
+                password: result.password,
+                joinUrl: result.joinUrl,
+                accountUsed: result.accountUsed
             }
         });
     } catch (error) {
@@ -303,9 +290,6 @@ const updateSessionClassMeetingInfo = async (classId, newMeetingNumber, newMeeti
 
 export const createSessionZoomMeeting = async (req, res) => {
     try {
-        const userId = 'developer@theodin.in';
-        const apiKey = '_nLks8WMQDO1I34y6RQNXA';
-        const apiSecret = 'hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ';
         const { token, data } = req.body;
         
         if (!token || !data) {
@@ -316,13 +300,11 @@ export const createSessionZoomMeeting = async (req, res) => {
         }
 
         const meetingdata = data;
-        // Construct the API endpoint
-        const endpoint = `https://api.zoom.us/v2/users/${userId}/meetings`;
-
-        const requestBody = {
+        
+        // Use centralized Zoom service with multiple account support
+        const meetingData = {
             topic: meetingdata.title,
-            type: 2,
-            start_time: "2021-03-18T17:00:00",
+            startTime: "2021-03-18T17:00:00",
             duration: 60,
             timezone: 'India',
             password: "",
@@ -346,28 +328,19 @@ export const createSessionZoomMeeting = async (req, res) => {
             },
         };
 
-        // Make the POST request to create the meeting using Axios
-        const response = await axios.post(endpoint, requestBody, {
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`, // You need to implement a function to generate a JWT token
-            },
-        });
+        // Create Zoom meeting using the centralized service
+        const result = await createZoomMeetingService(meetingData);
 
-        // Axios automatically throws an error for non-2xx responses
-        const responseData = response.data;
-        console.log('Meeting created successfully:', meetingdata);
-
-        // Now you can send the meeting number to the frontend
-        const meetingNumber = responseData.id;
-        const password = responseData.password;
-        await updateSessionClassMeetingInfo(meetingdata._id, meetingNumber, password);
+        // Update session meeting info
+        await updateSessionClassMeetingInfo(meetingdata._id, result.meetingId, result.password);
         
         res.json({
             status: 'success',
             data: {
-                meetingNumber,
-                password
+                meetingNumber: result.meetingId,
+                password: result.password,
+                joinUrl: result.joinUrl,
+                accountUsed: result.accountUsed
             }
         });
     } catch (error) {
@@ -404,9 +377,6 @@ const updateEventClassMeetingInfo = async (classId, newMeetingNumber, newMeeting
 
 export const createEventZoomMeeting = async (req, res) => {
     try {
-        const userId = 'developer@theodin.in';
-        const apiKey = '_nLks8WMQDO1I34y6RQNXA';
-        const apiSecret = 'hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ';
         const { token, data } = req.body;
         
         if (!token || !data) {
@@ -417,13 +387,11 @@ export const createEventZoomMeeting = async (req, res) => {
         }
 
         const meetingdata = data;
-        // Construct the API endpoint
-        const endpoint = `https://api.zoom.us/v2/users/${userId}/meetings`;
-
-        const requestBody = {
+        
+        // Use centralized Zoom service with multiple account support
+        const meetingData = {
             topic: meetingdata.title,
-            type: 2,
-            start_time: "2021-03-18T17:00:00",
+            startTime: "2021-03-18T17:00:00",
             duration: 60,
             timezone: 'India',
             password: "",
@@ -447,28 +415,19 @@ export const createEventZoomMeeting = async (req, res) => {
             },
         };
 
-        // Make the POST request to create the meeting using Axios
-        const response = await axios.post(endpoint, requestBody, {
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`, // You need to implement a function to generate a JWT token
-            },
-        });
+        // Create Zoom meeting using the centralized service
+        const result = await createZoomMeetingService(meetingData);
 
-        // Axios automatically throws an error for non-2xx responses
-        const responseData = response.data;
-        console.log('Meeting created successfully:', meetingdata);
-
-        // Now you can send the meeting number to the frontend
-        const meetingNumber = responseData.id;
-        const password = responseData.password;
-        await updateEventClassMeetingInfo(meetingdata._id, meetingNumber, password);
+        // Update event meeting info
+        await updateEventClassMeetingInfo(meetingdata._id, result.meetingId, result.password);
         
         res.json({
             status: 'success',
             data: {
-                meetingNumber,
-                password
+                meetingNumber: result.meetingId,
+                password: result.password,
+                joinUrl: result.joinUrl,
+                accountUsed: result.accountUsed
             }
         });
     } catch (error) {
