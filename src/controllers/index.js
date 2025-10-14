@@ -20,6 +20,7 @@ import * as userAnalyticsController from './userAnalytics.controller.js';
 import uploadController from './upload.controller.js';
 import * as doshaController from './dosha.controller.js';
 import * as dietGenerationController from './dietGeneration.controller.js';
+import * as globalConfigController from './globalConfig.controller.js';
 
 
 export { 
@@ -44,6 +45,7 @@ export {
   userAnalyticsController,
   uploadController,
   doshaController,
-  dietGenerationController
+  dietGenerationController,
+  globalConfigController
 };
 

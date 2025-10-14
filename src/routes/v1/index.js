@@ -38,6 +38,7 @@ import moodRoute from './mood.route.js';
 import notificationRoute from './notification.route.js';
 import dataNotificationRoute from './dataNotification.route.js';
 import notificationPreferencesRoute from './notificationPreferences.route.js';
+import globalConfigRoute from './globalConfig.route.js';
 
 const router = express.Router();
 
@@ -189,6 +190,10 @@ const defaultRoutes = [
   {
     path: '/notification-preferences',
     route: notificationPreferencesRoute,
+  },
+  {
+    path: '/globalconfig',
+    route: globalConfigRoute,
   },
 ];
 
