@@ -7,10 +7,10 @@ import catchAsync from '../utils/catchAsync.js';
  */
 const getGlobalConfig = catchAsync(async (req, res) => {
   const globalConfig = {
-    email: "support@gmail.com",
-    whatsappnumber: "9898989898",
-    mobilenumber: "999999999",
-    link: "https://support.com",
+    email: "support@samsarawellness.in",
+    whatsappnumber: "8660686699",
+    mobilenumber: "8660686699",
+    link: "https://samsarawellness.in/contact-us/",
     emailEnabled: true,
     whatsappEnabled: true,
     linkEnabled: true,
