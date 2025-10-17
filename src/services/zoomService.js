@@ -18,39 +18,39 @@ const ZOOM_ACCOUNTS = [
     activeMeetings: 0,
     maxConcurrentMeetings: 1
   },
-  {
-    id: 'account_2',
-    clientId: process.env.ZOOM_CLIENT_ID_2,
-    clientSecret: process.env.ZOOM_CLIENT_SECRET_2,
-    accountId: process.env.ZOOM_ACCOUNT_ID_2,
-    userId: process.env.ZOOM_USER_ID_2,
-    isActive: true,
-    lastUsed: null,
-    activeMeetings: 0,
-    maxConcurrentMeetings: 1
-  },
-  {
-    id: 'account_3',
-    clientId: process.env.ZOOM_CLIENT_ID_3,
-    clientSecret: process.env.ZOOM_CLIENT_SECRET_3,
-    accountId: process.env.ZOOM_ACCOUNT_ID_3,
-    userId: process.env.ZOOM_USER_ID_3,
-    isActive: true,
-    lastUsed: null,
-    activeMeetings: 0,
-    maxConcurrentMeetings: 1
-  },
-  {
-    id: 'account_4',
-    clientId: process.env.ZOOM_CLIENT_ID_4,
-    clientSecret: process.env.ZOOM_CLIENT_SECRET_4,
-    accountId: process.env.ZOOM_ACCOUNT_ID_4,
-    userId: process.env.ZOOM_USER_ID_4,
-    isActive: true,
-    lastUsed: null,
-    activeMeetings: 0,
-    maxConcurrentMeetings: 1
-  }
+  // {
+  //   id: 'account_2',
+  //   clientId: process.env.ZOOM_CLIENT_ID_2,
+  //   clientSecret: process.env.ZOOM_CLIENT_SECRET_2,
+  //   accountId: process.env.ZOOM_ACCOUNT_ID_2,
+  //   userId: process.env.ZOOM_USER_ID_2,
+  //   isActive: true,
+  //   lastUsed: null,
+  //   activeMeetings: 0,
+  //   maxConcurrentMeetings: 1
+  // },
+  // {
+  //   id: 'account_3',
+  //   clientId: process.env.ZOOM_CLIENT_ID_3,
+  //   clientSecret: process.env.ZOOM_CLIENT_SECRET_3,
+  //   accountId: process.env.ZOOM_ACCOUNT_ID_3,
+  //   userId: process.env.ZOOM_USER_ID_3,
+  //   isActive: true,
+  //   lastUsed: null,
+  //   activeMeetings: 0,
+  //   maxConcurrentMeetings: 1
+  // },
+  // {
+  //   id: 'account_4',
+  //   clientId: process.env.ZOOM_CLIENT_ID_4,
+  //   clientSecret: process.env.ZOOM_CLIENT_SECRET_4,
+  //   accountId: process.env.ZOOM_ACCOUNT_ID_4,
+  //   userId: process.env.ZOOM_USER_ID_4,
+  //   isActive: true,
+  //   lastUsed: null,
+  //   activeMeetings: 0,
+  //   maxConcurrentMeetings: 1
+  // }
 ].filter(account => account.clientId && account.clientSecret && account.accountId);
 
 // Account usage tracking
