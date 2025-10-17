@@ -37,9 +37,18 @@ const createWaterTracker = {
 const createMoodTracker = {
   body: Joi.object().keys({
     mood: Joi.string()
-      .valid('Happy', 'Sad', 'Angry', 'Anxious', 'Excited', 'Calm', 'Stressed', 'Energetic', 'Tired', 'Neutral')
+      .valid('Normal', 'Angry', 'Happy', 'Sad', 'Exhausted', 'Anxious', 'Depressed', 'In Love', 'Bored', 'Confident', 'Excited', 'Relaxed')
       .required(),
-    note: Joi.string().max(500),
+    moodId: Joi.number()
+      .valid(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+      .required(),
+    whatWasItAbout: Joi.array()
+      .items(Joi.string().valid('work', 'study', 'relationship', 'school', 'friends', 'health', 'job', 'life', 'politics', 'coworkers', 'self harm'))
+      .optional(),
+    comments: Joi.string()
+      .max(500)
+      .optional(),
+    note: Joi.string().max(500), // Keep for backward compatibility
   }),
 };
 

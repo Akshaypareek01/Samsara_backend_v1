@@ -287,7 +287,23 @@ async function seedMembershipData() {
         applicableUserCategories: ['Personal', 'Corporate'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(),
-      }
+      },
+      {
+        code: 'DIWALI70',
+        name: 'Diwali Special Discount',
+        description: '70% off on any plan',
+        discountType: 'percentage',
+        discountValue: 70,
+        minOrderAmount: 0,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 5000,
+        usageLimitPerUser: 1,
+        applicablePlans: [], // Applicable to all plans
+        applicableUserCategories: ['Personal', 'Corporate'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(),
+      },
     ];
 
     const createdCoupons = await CouponCode.insertMany(couponCodes);

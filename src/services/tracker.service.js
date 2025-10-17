@@ -754,7 +754,14 @@ const deleteWaterIntake = async (userId, trackerId, amountMl) => {
  * @returns {Promise<Object>}
  */
 const addMoodEntry = async (userId, moodData) => {
-  return Mood.create({ userId, ...moodData });
+  // Handle backward compatibility: map 'note' to 'comments' if 'comments' is not provided
+  const processedMoodData = { ...moodData };
+  if (moodData.note && !moodData.comments) {
+    processedMoodData.comments = moodData.note;
+    delete processedMoodData.note;
+  }
+  
+  return Mood.create({ userId, ...processedMoodData });
 };
 
 /**
