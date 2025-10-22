@@ -75,7 +75,7 @@ const verifyRegistrationOTPController = catchAsync(async (req, res) => {
   // Create user with role-specific details
   const userData = {
     email,
-    name,
+    name: name || 'Demo User', // Use 'Demo User' as default if name is null/undefined
     role,
     active: true, // Mark as active since email is verified
   };

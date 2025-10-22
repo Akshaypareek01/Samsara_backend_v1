@@ -20,7 +20,7 @@ const login = {
 const sendRegistrationOTP = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
-    name: Joi.string().required().max(20),
+    name: Joi.string().allow(null).max(20),
     mobile: Joi.string().optional().min(10),
     role: Joi.string().valid('user', 'teacher').required(),
     // For users: category is required
@@ -53,7 +53,7 @@ const verifyRegistrationOTP = {
       .required()
       .length(4)
       .pattern(/^\d{4}$/),
-    name: Joi.string().required().max(20),
+    name: Joi.string().allow(null).max(20),
     mobile: Joi.string().optional().min(10),
     role: Joi.string().valid('user', 'teacher').required(),
     // For users: category is required

@@ -115,7 +115,7 @@ async function seedMembershipData() {
         maxUsers: 1,
         isActive: true,
         availableFrom: new Date('2025-10-01'),
-        availableUntil: new Date('2025-10-30T23:59:59.000Z'), // Can purchase until Sep 31, 2025
+        availableUntil: new Date('2026-01-31T23:59:59.000Z'), // Can purchase until Sep 31, 2025
         taxConfig: {
           gst: {
             rate: 5,
@@ -128,7 +128,7 @@ async function seedMembershipData() {
           maxDiscountAmount: null // Allow unlimited discount for 100% coupons
         },
         metadata: {
-          specialValidityEndDate: new Date('2025-12-30T23:59:59.000Z'), // All memberships expire on Dec 30, 2025
+          specialValidityEndDate: new Date('2026-01-31T23:59:59.000Z'), // All memberships expire on Dec 30, 2025
           description: 'This plan can be purchased until September 31, 2025. All memberships from this plan will expire on December 30, 2025, regardless of purchase date.'
         }
       }
