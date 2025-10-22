@@ -23,6 +23,13 @@ const envVarsSchema = Joi.object()
     SMTP_USERNAME: Joi.string().description('username for email server'),
     SMTP_PASSWORD: Joi.string().description('password for email server'),
     EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app'),
+    // AWS SES SMTP Configuration
+    SES_SMTP_IAM_USER: Joi.string().description('AWS SES SMTP IAM user'),
+    SES_SMTP_USERNAME: Joi.string().description('AWS SES SMTP username'),
+    SES_SMTP_PASSWORD: Joi.string().description('AWS SES SMTP password'),
+    SES_SMTP_ENDPOINT: Joi.string().description('AWS SES SMTP endpoint'),
+    SES_SMTP_PORT: Joi.alternatives().try(Joi.number(), Joi.string().pattern(/^\d+/)).description('AWS SES SMTP port'),
+    SMTP_TIMEOUT: Joi.number().default(7).description('SMTP connection timeout in seconds'),
     DIET_MODEL_URL: Joi.string().description('URL for the AI diet model API'),
     RAZORPAY_KEY_ID: Joi.string().description('Razorpay Key ID'),
     RAZORPAY_SECRET: Joi.string().description('Razorpay Secret Key'),
@@ -54,14 +61,33 @@ const config = {
     verifyEmailExpirationMinutes: envVars.JWT_VERIFY_EMAIL_EXPIRATION_MINUTES,
   },
   email: {
+    // Primary SMTP (AWS SES)
     smtp: {
+      host: envVars.SES_SMTP_ENDPOINT || envVars.SMTP_HOST,
+      port: parseInt(envVars.SES_SMTP_PORT) || envVars.SMTP_PORT,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: envVars.SES_SMTP_USERNAME || envVars.SMTP_USERNAME,
+        pass: envVars.SES_SMTP_PASSWORD || envVars.SMTP_PASSWORD,
+      },
+      connectionTimeout: (envVars.SMTP_TIMEOUT || 7) * 1000, // Convert to milliseconds
+      greetingTimeout: (envVars.SMTP_TIMEOUT || 7) * 1000,
+      socketTimeout: (envVars.SMTP_TIMEOUT || 7) * 1000,
+    },
+    // Fallback SMTP (legacy SMTP) - only if different from primary
+    fallbackSmtp: (envVars.SES_SMTP_ENDPOINT && envVars.SMTP_HOST && 
+                   envVars.SES_SMTP_ENDPOINT !== envVars.SMTP_HOST) ? {
       host: envVars.SMTP_HOST,
       port: envVars.SMTP_PORT,
+      secure: false,
       auth: {
         user: envVars.SMTP_USERNAME,
         pass: envVars.SMTP_PASSWORD,
       },
-    },
+      connectionTimeout: (envVars.SMTP_TIMEOUT || 7) * 1000,
+      greetingTimeout: (envVars.SMTP_TIMEOUT || 7) * 1000,
+      socketTimeout: (envVars.SMTP_TIMEOUT || 7) * 1000,
+    } : null,
     from: envVars.EMAIL_FROM,
   },
   dietModelUrl: envVars.DIET_MODEL_URL,
