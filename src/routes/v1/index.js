@@ -39,6 +39,7 @@ import notificationRoute from './notification.route.js';
 import dataNotificationRoute from './dataNotification.route.js';
 import notificationPreferencesRoute from './notificationPreferences.route.js';
 import globalConfigRoute from './globalConfig.route.js';
+import whatsappRoute from './whatsapp.route.js';
 
 const router = express.Router();
 
@@ -194,6 +195,10 @@ const defaultRoutes = [
   {
     path: '/globalconfig',
     route: globalConfigRoute,
+  },
+  {
+    path: '/whatsapp',
+    route: whatsappRoute,
   },
 ];
 

@@ -28,7 +28,9 @@
     "test:notification-preferences": "node test-notification-preferences.js",
     "test:notification-preferences-api": "node test-notification-preferences-api.js",
     "test:user-notification-preferences": "node test-user-notification-preferences.js",
-    "get-user-token": "node get-user-token.js"
+    "get-user-token": "node get-user-token.js",
+    "test:whatsapp-webhook": "node test-whatsapp-webhook.js",
+    "test:whatsapp-bot": "node test-whatsapp-bot.js"
   },
   "keywords": [
     "node",
@@ -74,6 +76,7 @@
     "multer": "^2.0.1",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.3.1",
+    "openai": "^4.104.0",
     "passport": "^0.4.0",
     "passport-jwt": "^4.0.0",
     "pm2": "^5.1.0",

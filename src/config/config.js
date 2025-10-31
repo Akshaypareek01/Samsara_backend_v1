@@ -33,6 +33,13 @@ const envVarsSchema = Joi.object()
     DIET_MODEL_URL: Joi.string().description('URL for the AI diet model API'),
     RAZORPAY_KEY_ID: Joi.string().description('Razorpay Key ID'),
     RAZORPAY_SECRET: Joi.string().description('Razorpay Secret Key'),
+    OPEN_AI_KEY: Joi.string().description('OpenAI API Key'),
+    ASSISTANTS_ID: Joi.string().description('OpenAI Assistant ID'),
+    WHATSAPP_PHONE_NUMBER_ID: Joi.string().description('WhatsApp Phone Number ID'),
+    WHATSAPP_ACCESS_TOKEN: Joi.string().description('WhatsApp Access Token'),
+    WHATSAPP_VERIFY_TOKEN: Joi.string().description('WhatsApp Webhook Verify Token'),
+    WHATSAPP_API_VERSION: Joi.string().default('v22.0').description('WhatsApp API Version'),
+    WHATSAPP_BUSINESS_ACCOUNT_ID: Joi.string().description('WhatsApp Business Account ID'),
   })
   .unknown();
 
@@ -94,6 +101,17 @@ const config = {
   razorpay: {
     keyId: envVars.RAZORPAY_KEY_ID,
     secretKey: envVars.RAZORPAY_SECRET,
+  },
+  openai: {
+    apiKey: envVars.OPEN_AI_KEY,
+    assistantId: envVars.ASSISTANTS_ID,
+  },
+  whatsapp: {
+    phoneNumberId: envVars.WHATSAPP_PHONE_NUMBER_ID,
+    accessToken: envVars.WHATSAPP_ACCESS_TOKEN,
+    verifyToken: envVars.WHATSAPP_VERIFY_TOKEN,
+    apiVersion: envVars.WHATSAPP_API_VERSION,
+    businessAccountId: envVars.WHATSAPP_BUSINESS_ACCOUNT_ID,
   },
 };
 

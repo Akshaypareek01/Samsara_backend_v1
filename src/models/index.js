@@ -42,6 +42,7 @@ import { PeriodSettings } from './period-settings.model.js';
 import { DietGeneration } from './diet-generation.model.js';
 import BloodReport from './bloodReport.model.js';
 import NotificationPreferences from './notificationPreferences.model.js';
+import { WhatsAppConversation } from './whatsapp-conversation.model.js';
 
 export {
   Token,
@@ -89,6 +90,7 @@ export {
   PeriodSettings,
   DietGeneration,
   BloodReport,
-  NotificationPreferences
+  NotificationPreferences,
+  WhatsAppConversation
 };
 
