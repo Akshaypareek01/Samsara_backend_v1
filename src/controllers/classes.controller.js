@@ -4,6 +4,61 @@ import { createZoomMeeting as createZoomMeetingBackend } from './zoom.controller
 import { createUserNotification } from '../utils/notificationUtils.js';
 import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
 
+// Helper function to filter upcoming classes (handles both single schedule date and recurring schedules)
+const filterUpcomingClasses = (classes, currentDate = null) => {
+  const now = currentDate || new Date();
+  now.setHours(0, 0, 0, 0);
+  
+  // Calculate end date for upcoming week (next 7 days)
+  const weekEndDate = new Date(now);
+  weekEndDate.setDate(weekEndDate.getDate() + 7);
+
+  // Day name mapping
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  return classes.filter(classItem => {
+    const classData = classItem.toObject ? classItem.toObject() : classItem;
+    
+    // Case 1: Class has a schedule date in the future
+    if (classData.schedule) {
+      const scheduleDate = new Date(classData.schedule);
+      scheduleDate.setHours(0, 0, 0, 0);
+      if (scheduleDate >= now) {
+        return true;
+      }
+    }
+    
+    // Case 2: Class has recurring schedules - check if any day matches current/upcoming week
+    if (classData.schedules && classData.schedules.length > 0) {
+      // Check all schedule entries
+      for (const schedule of classData.schedules) {
+        if (schedule.days && schedule.days.length > 0) {
+          // Check if today's day or any day in the upcoming week matches the schedule
+          for (let i = 0; i < 7; i++) {
+            const checkDate = new Date(now);
+            checkDate.setDate(checkDate.getDate() + i);
+            const dayOfWeek = dayNames[checkDate.getDay()];
+            
+            // If this day matches any day in the schedule, the class is upcoming
+            if (schedule.days.includes(dayOfWeek)) {
+              // Also verify the schedule date has passed (class has started)
+              const scheduleStartDate = classData.schedule ? new Date(classData.schedule) : now;
+              scheduleStartDate.setHours(0, 0, 0, 0);
+              
+              // Class is upcoming if schedule date has passed (or is today) and we're checking within the week
+              if (checkDate >= scheduleStartDate && checkDate <= weekEndDate) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    return false;
+  });
+};
+
 // Helper function to get teacher data with first image
 const getTeacherData = (teacher) => {
     if (!teacher) return null;
@@ -151,16 +206,27 @@ export const getAllUpcomingClasses = async (req, res) => {
   try {
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0); // Reset time to 00:00:00 for the current day
-
-    const classes = await Class.find({ schedule: { $gte: currentDate } }) // Includes today & future dates
+    
+    // Get all active classes (we'll filter them in JavaScript to handle recurring schedules)
+    const allClasses = await Class.find({ status: true })
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
 
-    const classesWithTeacherData = classes.map(classItem => {
-      const classData = classItem.toObject();
+    // Filter classes that are upcoming (handles both schedule date and recurring schedules)
+    const upcomingClasses = filterUpcomingClasses(allClasses, currentDate);
+
+    const classesWithTeacherData = upcomingClasses.map(classItem => {
+      const classData = classItem.toObject ? classItem.toObject() : classItem;
       classData.teacher = getTeacherData(classData.teacher);
       return classData;
+    });
+
+    // Sort by schedule date
+    classesWithTeacherData.sort((a, b) => {
+      const dateA = new Date(a.schedule || 0);
+      const dateB = new Date(b.schedule || 0);
+      return dateA - dateB;
     });
 
     res.json({ success: true, data: classesWithTeacherData });
@@ -184,18 +250,29 @@ export const getUpcomingClassesByCategory = async (req, res) => {
       });
     }
 
-    const classes = await Class.find({ 
-      schedule: { $gte: currentDate }, // Includes today & future dates
+    // Get all classes for this category (we'll filter by upcoming in JavaScript)
+    const allClasses = await Class.find({ 
+      status: true,
       classCategory: classCategory 
     })
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
 
-    const classesWithTeacherData = classes.map(classItem => {
-      const classData = classItem.toObject();
+    // Filter classes that are upcoming (handles both schedule date and recurring schedules)
+    const upcomingClasses = filterUpcomingClasses(allClasses, currentDate);
+
+    const classesWithTeacherData = upcomingClasses.map(classItem => {
+      const classData = classItem.toObject ? classItem.toObject() : classItem;
       classData.teacher = getTeacherData(classData.teacher);
       return classData;
+    });
+
+    // Sort by schedule date
+    classesWithTeacherData.sort((a, b) => {
+      const dateA = new Date(a.schedule || 0);
+      const dateB = new Date(b.schedule || 0);
+      return dateA - dateB;
     });
 
     res.json({ 
@@ -487,18 +564,28 @@ export const getStudentUpcomingClasses = async (req, res) => {
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0); // Reset time to midnight (00:00:00) to include today's classes
 
-    // Find all upcoming classes where the student is enrolled
-    const classes = await Class.find({ 
-      students: studentId, 
-      schedule: { $gte: currentDate } // Only fetch today's and future classes
+    // Find all classes where the student is enrolled (we'll filter by upcoming in JavaScript)
+    const allClasses = await Class.find({ 
+      students: studentId,
+      status: true
     })
     .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
     .exec();
 
-    const classesWithTeacherData = classes.map(classItem => {
-      const classData = classItem.toObject();
+    // Filter classes that are upcoming (handles both schedule date and recurring schedules)
+    const upcomingClasses = filterUpcomingClasses(allClasses, currentDate);
+
+    const classesWithTeacherData = upcomingClasses.map(classItem => {
+      const classData = classItem.toObject ? classItem.toObject() : classItem;
       classData.teacher = getTeacherData(classData.teacher);
       return classData;
+    });
+
+    // Sort by schedule date
+    classesWithTeacherData.sort((a, b) => {
+      const dateA = new Date(a.schedule || 0);
+      const dateB = new Date(b.schedule || 0);
+      return dateA - dateB;
     });
 
     res.json({ success: true, data: classesWithTeacherData });
