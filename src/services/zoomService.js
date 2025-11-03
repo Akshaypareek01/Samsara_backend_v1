@@ -18,17 +18,17 @@ const ZOOM_ACCOUNTS = [
     activeMeetings: 0,
     maxConcurrentMeetings: 1
   },
-  // {
-  //   id: 'account_2',
-  //   clientId: process.env.ZOOM_CLIENT_ID_2,
-  //   clientSecret: process.env.ZOOM_CLIENT_SECRET_2,
-  //   accountId: process.env.ZOOM_ACCOUNT_ID_2,
-  //   userId: process.env.ZOOM_USER_ID_2,
-  //   isActive: true,
-  //   lastUsed: null,
-  //   activeMeetings: 0,
-  //   maxConcurrentMeetings: 1
-  // },
+  {
+    id: 'account_2',
+    clientId: process.env.ZOOM_CLIENT_ID_2,
+    clientSecret: process.env.ZOOM_CLIENT_SECRET_2,
+    accountId: process.env.ZOOM_ACCOUNT_ID_2,
+    userId: process.env.ZOOM_USER_ID_2,
+    isActive: true,
+    lastUsed: null,
+    activeMeetings: 0,
+    maxConcurrentMeetings: 1
+  },
   // {
   //   id: 'account_3',
   //   clientId: process.env.ZOOM_CLIENT_ID_3,
@@ -53,6 +53,86 @@ const ZOOM_ACCOUNTS = [
   // }
 ].filter(account => account.clientId && account.clientSecret && account.accountId);
 
+// Sanitize and validate credentials
+const sanitizeCredential = (value) => {
+  if (!value) return null;
+  // Remove whitespace and newlines
+  return String(value).trim().replace(/\s+/g, '');
+};
+
+// Validate account credentials before adding to active accounts
+const validateAccount = (account) => {
+  // Sanitize credentials (remove whitespace, newlines)
+  account.clientId = sanitizeCredential(account.clientId);
+  account.clientSecret = sanitizeCredential(account.clientSecret);
+  account.accountId = sanitizeCredential(account.accountId);
+  account.userId = sanitizeCredential(account.userId);
+  
+  const hasRequiredFields = account.clientId && account.clientSecret && account.accountId && account.userId;
+  if (!hasRequiredFields) {
+    console.warn(`Account ${account.id} is missing required credentials and will be skipped`);
+    return false;
+  }
+  
+  // Check if credentials are not just empty strings
+  const hasValidCredentials = 
+    account.clientId !== '' && 
+    account.clientSecret !== '' && 
+    account.accountId !== '' &&
+    account.userId !== '';
+  
+  if (!hasValidCredentials) {
+    console.warn(`Account ${account.id} has empty credentials and will be skipped`);
+    return false;
+  }
+  
+  // Check for common credential mix-ups
+  if (account.clientId && account.accountId) {
+    // Check if Client ID starts with Account ID prefix (common mistake)
+    if (account.clientId.toLowerCase().startsWith(account.accountId.substring(0, 3).toLowerCase())) {
+      console.error(`\n🚨 CRITICAL ERROR: Account ${account.id} credentials are MIXED UP!`);
+      console.error(`   Client ID starts with Account ID prefix: ${account.clientId.substring(0, 10)}...`);
+      console.error(`   This usually means your .env file has the wrong values.`);
+      console.error(`\n   ✅ CORRECT FORMAT for ${account.id}:`);
+      console.error(`   ZOOM_CLIENT_ID_2="VGOjM_OiSsSY1mPGWltO8w"`);
+      console.error(`   ZOOM_ACCOUNT_ID_2="gU-rDtLBRWCzudJTSBnM7A"`);
+      console.error(`   ZOOM_USER_ID_2="tech.samsarawellness@gmail.com"`);
+      console.error(`   ZOOM_CLIENT_SECRET_2="<your_secret_from_dashboard>"`);
+      console.error(`\n   ⚠️  Client ID should NOT start with "gU-" (that's Account ID prefix)`);
+      console.error(`   ⚠️  Client ID should start with "VGOjM_" (from Zoom dashboard)\n`);
+      return false; // Reject account with mixed credentials
+    }
+  }
+  
+  return true;
+};
+
+// Filter and validate accounts
+const validAccounts = ZOOM_ACCOUNTS.filter(validateAccount);
+
+// Detailed logging for credential verification
+console.log(`Initialized with ${validAccounts.length} valid Zoom account(s):`);
+validAccounts.forEach(acc => {
+  console.log(`  ${acc.id}:`, {
+    userId: acc.userId,
+    isActive: acc.isActive,
+    clientId: acc.clientId ? `${acc.clientId.substring(0, 8)}...${acc.clientId.substring(acc.clientId.length - 4)}` : 'MISSING',
+    clientIdLength: acc.clientId?.length || 0,
+    accountId: acc.accountId || 'MISSING',
+    accountIdLength: acc.accountId?.length || 0,
+    hasClientSecret: !!acc.clientSecret
+  });
+});
+
+// Check for potential credential mix-ups
+validAccounts.forEach(acc => {
+  if (acc.clientId && acc.accountId && acc.clientId.startsWith(acc.accountId.substring(0, 3))) {
+    console.warn(`⚠️  WARNING: ${acc.id} Client ID might be mixed with Account ID!`);
+    console.warn(`   Client ID starts with: ${acc.clientId.substring(0, 8)}`);
+    console.warn(`   Account ID starts with: ${acc.accountId.substring(0, 8)}`);
+  }
+});
+
 // Account usage tracking
 let accountUsageTracker = new Map();
 
@@ -61,11 +141,18 @@ let accountUsageTracker = new Map();
  * @returns {Object} Selected Zoom account configuration
  */
 const getBestAvailableAccount = () => {
-  const activeAccounts = ZOOM_ACCOUNTS.filter(account => account.isActive);
+  // Only consider validated accounts
+  const activeAccounts = validAccounts.filter(account => account.isActive);
   
   if (activeAccounts.length === 0) {
+    const inactiveCount = validAccounts.filter(acc => !acc.isActive).length;
+    console.error(`No active Zoom accounts available. Total validated accounts: ${validAccounts.length}, Inactive: ${inactiveCount}`);
     throw new Error('No active Zoom accounts available');
   }
+  
+  console.log(`Selecting from ${activeAccounts.length} active account(s):`, 
+    activeAccounts.map(acc => ({ id: acc.id, activeMeetings: accountUsageTracker.get(acc.id)?.activeMeetings || 0 }))
+  );
 
   // Filter out accounts that are at capacity (have active meetings)
   const availableAccounts = activeAccounts.filter(account => {
@@ -112,6 +199,24 @@ const getBestAvailableAccount = () => {
  */
 const getZoomOAuthToken = async (account) => {
   try {
+    console.log(`Attempting OAuth authentication for account ${account.id}...`);
+    console.log(`Account ${account.id} details:`, {
+      clientId: account.clientId ? `${account.clientId.substring(0, 8)}...${account.clientId.substring(account.clientId.length - 4)} (length: ${account.clientId.length})` : 'MISSING',
+      clientSecret: account.clientSecret ? `***SET*** (length: ${account.clientSecret.length})` : 'MISSING',
+      accountId: account.accountId ? `${account.accountId} (length: ${account.accountId.length})` : 'MISSING',
+      userId: account.userId || 'MISSING'
+    });
+    
+    // Validate Client ID format (should not start with Account ID prefix)
+    if (account.clientId && account.accountId && account.clientId.startsWith(account.accountId.substring(0, 3))) {
+      console.error(`🚨 CREDENTIAL ERROR: ${account.id} Client ID appears to have Account ID prefix!`);
+      console.error(`   Expected Client ID format: VGOjM_... (from Zoom dashboard)`);
+      console.error(`   Current Client ID starts: ${account.clientId.substring(0, 10)}...`);
+      console.error(`   Account ID starts: ${account.accountId.substring(0, 10)}...`);
+      console.error(`   ⚠️  Check your .env file - ZOOM_CLIENT_ID_2 should be: VGOjM_OiSsSY1mPGWltO8w`);
+      console.error(`   ⚠️  And ZOOM_ACCOUNT_ID_2 should be: gU-rDtLBRWCzudJTSBnM7A`);
+    }
+    
     const authHeader = `Basic ${Buffer.from(`${account.clientId}:${account.clientSecret}`).toString('base64')}`;
     
     const tokenRes = await axios.post(
@@ -129,10 +234,25 @@ const getZoomOAuthToken = async (account) => {
       }
     );
 
+    console.log(`✅ Successfully authenticated account ${account.id}`);
     return tokenRes.data.access_token;
   } catch (error) {
-    console.error(`Failed to get OAuth token for account ${account.id}:`, error.response?.data || error.message);
-    throw new Error(`Failed to authenticate with Zoom account ${account.id}`);
+    const errorDetails = error.response?.data || error.message;
+    console.error(`❌ Failed to get OAuth token for account ${account.id}:`, {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      error: errorDetails,
+      accountId: account.id,
+      userId: account.userId,
+      clientIdPrefix: account.clientId ? account.clientId.substring(0, 8) : 'MISSING'
+    });
+    
+    // Check if it's specifically an invalid_client error
+    if (errorDetails?.error === 'invalid_client' || error.response?.status === 401) {
+      console.error(`🔴 Account ${account.id} has INVALID credentials. This account will be marked inactive.`);
+    }
+    
+    throw new Error(`Failed to authenticate with Zoom account ${account.id}: ${errorDetails?.error || errorDetails}`);
   }
 };
 
@@ -144,12 +264,25 @@ const getZoomOAuthToken = async (account) => {
 export const createZoomMeeting = async (meetingData) => {
   let selectedAccount = null;
   let attempts = 0;
-  const maxAttempts = ZOOM_ACCOUNTS.length;
+  const maxAttempts = validAccounts.length;
+  const triedAccounts = [];
+
+  console.log(`\n🚀 Starting meeting creation. Available validated accounts: ${validAccounts.length}`);
 
   while (attempts < maxAttempts) {
     try {
       // Get the best available account (this now filters out busy accounts)
       selectedAccount = getBestAvailableAccount();
+      
+      if (triedAccounts.includes(selectedAccount.id)) {
+        console.warn(`⚠️  Account ${selectedAccount.id} was already tried, skipping to next account`);
+        selectedAccount.isActive = false; // Temporarily disable to try next account
+        attempts++;
+        continue;
+      }
+      
+      triedAccounts.push(selectedAccount.id);
+      console.log(`\n📋 Attempt ${attempts + 1}/${maxAttempts}: Trying account ${selectedAccount.id}`);
       
       // Get OAuth token
       const zoomToken = await getZoomOAuthToken(selectedAccount);
@@ -211,11 +344,16 @@ export const createZoomMeeting = async (meetingData) => {
       };
 
     } catch (error) {
-      console.error(`Failed to create meeting with account ${selectedAccount?.id}:`, error.response?.data || error.message);
+      const errorDetails = error.response?.data || error.message;
+      console.error(`\n❌ Failed to create meeting with account ${selectedAccount?.id}:`, {
+        status: error.response?.status,
+        error: errorDetails,
+        message: error.message
+      });
       
       // If this is an authentication error, mark account as inactive temporarily
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        console.warn(`Account ${selectedAccount?.id} authentication failed, marking as inactive`);
+      if (error.response?.status === 401 || error.response?.status === 403 || errorDetails?.error === 'invalid_client') {
+        console.warn(`🔴 Account ${selectedAccount?.id} authentication failed (${error.response?.status || 'invalid_client'}), marking as inactive`);
         if (selectedAccount) {
           selectedAccount.isActive = false;
         }
@@ -223,10 +361,15 @@ export const createZoomMeeting = async (meetingData) => {
       
       attempts++;
       
-      // If we've tried all accounts, throw the error
+      // If we've tried all accounts, provide detailed error summary
       if (attempts >= maxAttempts) {
-        throw new Error(`Failed to create meeting after trying ${maxAttempts} accounts: ${error.message}`);
+        const activeCount = validAccounts.filter(acc => acc.isActive).length;
+        console.error(`\n💥 All ${maxAttempts} account(s) exhausted. Active accounts remaining: ${activeCount}`);
+        console.error(`Tried accounts: ${triedAccounts.join(', ')}`);
+        throw new Error(`Failed to create meeting after trying ${maxAttempts} account(s): ${error.message}`);
       }
+      
+      console.log(`\n🔄 Retrying with next available account... (${attempts}/${maxAttempts} attempts used)`);
     }
   }
 };
@@ -239,7 +382,7 @@ export const createZoomMeeting = async (meetingData) => {
  */
 export const endZoomMeeting = async (meetingId, accountId) => {
   try {
-    const account = ZOOM_ACCOUNTS.find(acc => acc.id === accountId);
+    const account = validAccounts.find(acc => acc.id === accountId);
     if (!account) {
       throw new Error(`Account ${accountId} not found`);
     }
@@ -304,7 +447,7 @@ export const endZoomMeeting = async (meetingId, accountId) => {
 export const getAccountUsageStats = () => {
   const stats = {};
   
-  ZOOM_ACCOUNTS.forEach(account => {
+  validAccounts.forEach(account => {
     const usage = accountUsageTracker.get(account.id) || { activeMeetings: 0, lastUsed: 0 };
     stats[account.id] = {
       ...account,
@@ -322,10 +465,12 @@ export const getAccountUsageStats = () => {
  * @param {string} accountId - Account ID to reset
  */
 export const resetAccountStatus = (accountId) => {
-  const account = ZOOM_ACCOUNTS.find(acc => acc.id === accountId);
+  const account = validAccounts.find(acc => acc.id === accountId);
   if (account) {
     account.isActive = true;
     console.log(`Account ${accountId} status reset to active`);
+  } else {
+    console.warn(`Account ${accountId} not found in valid accounts`);
   }
 };
 
@@ -333,10 +478,10 @@ export const resetAccountStatus = (accountId) => {
  * Reset all account statuses
  */
 export const resetAllAccountStatuses = () => {
-  ZOOM_ACCOUNTS.forEach(account => {
+  validAccounts.forEach(account => {
     account.isActive = true;
   });
-  console.log('All account statuses reset to active');
+  console.log(`All ${validAccounts.length} account statuses reset to active`);
 };
 
 export default {
@@ -348,5 +493,5 @@ export default {
 };
 
 // Export for testing purposes
-export { ZOOM_ACCOUNTS, accountUsageTracker, getBestAvailableAccount };
+export { ZOOM_ACCOUNTS, validAccounts, accountUsageTracker, getBestAvailableAccount };
 
