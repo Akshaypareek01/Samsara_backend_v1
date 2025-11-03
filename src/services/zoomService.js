@@ -16,7 +16,7 @@ const ZOOM_ACCOUNTS = [
     isActive: true,
     lastUsed: null,
     activeMeetings: 0,
-    maxConcurrentMeetings: 1
+    maxConcurrentMeetings: 100 // Allow multiple meetings per account
   },
   // {
   //   id: 'account_2',
@@ -27,7 +27,7 @@ const ZOOM_ACCOUNTS = [
   //   isActive: true,
   //   lastUsed: null,
   //   activeMeetings: 0,
-  //   maxConcurrentMeetings: 1
+  //   maxConcurrentMeetings: 100 // Allow multiple meetings per account
   // },
   // {
   //   id: 'account_3',
@@ -38,7 +38,7 @@ const ZOOM_ACCOUNTS = [
   //   isActive: true,
   //   lastUsed: null,
   //   activeMeetings: 0,
-  //   maxConcurrentMeetings: 1
+  //   maxConcurrentMeetings: 100 // Allow multiple meetings per account
   // },
   // {
   //   id: 'account_4',
@@ -138,6 +138,7 @@ let accountUsageTracker = new Map();
 
 /**
  * Get the best available Zoom account based on load balancing
+ * Supports multiple meetings per account and round-robin distribution
  * @returns {Object} Selected Zoom account configuration
  */
 const getBestAvailableAccount = () => {
@@ -151,36 +152,67 @@ const getBestAvailableAccount = () => {
   }
   
   console.log(`Selecting from ${activeAccounts.length} active account(s):`, 
-    activeAccounts.map(acc => ({ id: acc.id, activeMeetings: accountUsageTracker.get(acc.id)?.activeMeetings || 0 }))
+    activeAccounts.map(acc => ({ 
+      id: acc.id, 
+      activeMeetings: accountUsageTracker.get(acc.id)?.activeMeetings || 0,
+      maxMeetings: acc.maxConcurrentMeetings
+    }))
   );
 
-  // Filter out accounts that are at capacity (have active meetings)
+  // If only one account, use it for all meetings (no capacity check)
+  if (activeAccounts.length === 1) {
+    const selectedAccount = activeAccounts[0];
+    const currentUsage = accountUsageTracker.get(selectedAccount.id) || { activeMeetings: 0, lastUsed: 0 };
+    accountUsageTracker.set(selectedAccount.id, {
+      ...currentUsage,
+      lastUsed: Date.now()
+    });
+    console.log(`Single account mode: Using ${selectedAccount.id} (${currentUsage.activeMeetings} active meetings)`);
+    return selectedAccount;
+  }
+
+  // Multiple accounts: Load balancing logic
+  // Filter out accounts that are at capacity
   const availableAccounts = activeAccounts.filter(account => {
     const activeMeetings = accountUsageTracker.get(account.id)?.activeMeetings || 0;
     return activeMeetings < account.maxConcurrentMeetings;
   });
 
   if (availableAccounts.length === 0) {
-    throw new Error('All Zoom accounts are currently busy with active meetings');
+    // All accounts at capacity - use the one with least meetings
+    const sortedByMeetings = activeAccounts.sort((a, b) => {
+      const aMeetings = accountUsageTracker.get(a.id)?.activeMeetings || 0;
+      const bMeetings = accountUsageTracker.get(b.id)?.activeMeetings || 0;
+      return aMeetings - bMeetings;
+    });
+    const selectedAccount = sortedByMeetings[0];
+    const currentUsage = accountUsageTracker.get(selectedAccount.id) || { activeMeetings: 0, lastUsed: 0 };
+    accountUsageTracker.set(selectedAccount.id, {
+      ...currentUsage,
+      lastUsed: Date.now()
+    });
+    console.log(`All accounts busy, using least loaded: ${selectedAccount.id}`);
+    return selectedAccount;
   }
 
-  // Sort available accounts by least recently used
+  // Round-robin: Sort by active meetings (least loaded first), then by last used
   const sortedAccounts = availableAccounts.sort((a, b) => {
+    const aMeetings = accountUsageTracker.get(a.id)?.activeMeetings || 0;
+    const bMeetings = accountUsageTracker.get(b.id)?.activeMeetings || 0;
+    
+    // First sort by active meetings (least loaded first)
+    if (aMeetings !== bMeetings) {
+      return aMeetings - bMeetings;
+    }
+    
+    // If same number of meetings, sort by last used (least recently used first)
     const aLastUsed = accountUsageTracker.get(a.id)?.lastUsed || 0;
     const bLastUsed = accountUsageTracker.get(b.id)?.lastUsed || 0;
     return aLastUsed - bLastUsed;
   });
 
-  // If all accounts have same usage, randomly select from top 3 to distribute load
-  const topAccounts = sortedAccounts.filter(account => {
-    const lastUsed = accountUsageTracker.get(account.id)?.lastUsed || 0;
-    const topLastUsed = accountUsageTracker.get(sortedAccounts[0].id)?.lastUsed || 0;
-    return lastUsed === topLastUsed;
-  });
-
-  const selectedAccount = topAccounts.length > 1 
-    ? topAccounts[Math.floor(Math.random() * Math.min(topAccounts.length, 3))]
-    : sortedAccounts[0];
+  // Select the account with least meetings (round-robin effect)
+  const selectedAccount = sortedAccounts[0];
   
   // Update usage tracker
   const currentUsage = accountUsageTracker.get(selectedAccount.id) || { activeMeetings: 0, lastUsed: 0 };
@@ -189,6 +221,7 @@ const getBestAvailableAccount = () => {
     lastUsed: Date.now()
   });
 
+  console.log(`Selected ${selectedAccount.id} for load balancing (${currentUsage.activeMeetings} active meetings)`);
   return selectedAccount;
 };
 
@@ -273,6 +306,12 @@ export const createZoomMeeting = async (meetingData) => {
     try {
       // Get the best available account (this now filters out busy accounts)
       selectedAccount = getBestAvailableAccount();
+      
+      // Safety check
+      if (!selectedAccount || !selectedAccount.id) {
+        console.error(`❌ getBestAvailableAccount returned invalid account:`, selectedAccount);
+        throw new Error('Failed to get a valid account for meeting creation');
+      }
       
       if (triedAccounts.includes(selectedAccount.id)) {
         console.warn(`⚠️  Account ${selectedAccount.id} was already tried, skipping to next account`);
