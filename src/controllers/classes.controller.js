@@ -207,8 +207,8 @@ export const getAllUpcomingClasses = async (req, res) => {
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0); // Reset time to 00:00:00 for the current day
     
-    // Get all active classes (we'll filter them in JavaScript to handle recurring schedules)
-    const allClasses = await Class.find({ status: true })
+    // Get all classes (we'll filter them in JavaScript to handle recurring schedules)
+    const allClasses = await Class.find()
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
       .exec();
@@ -252,7 +252,6 @@ export const getUpcomingClassesByCategory = async (req, res) => {
 
     // Get all classes for this category (we'll filter by upcoming in JavaScript)
     const allClasses = await Class.find({ 
-      status: true,
       classCategory: classCategory 
     })
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
@@ -566,8 +565,7 @@ export const getStudentUpcomingClasses = async (req, res) => {
 
     // Find all classes where the student is enrolled (we'll filter by upcoming in JavaScript)
     const allClasses = await Class.find({ 
-      students: studentId,
-      status: true
+      students: studentId
     })
     .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
     .exec();
