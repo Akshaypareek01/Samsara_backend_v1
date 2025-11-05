@@ -54,8 +54,17 @@ const createUser = async (userBody) => {
       
       if (user.gender && user.gender.toString().trim() !== '') {
         // Map gender to BodyStatus enum values (Male, Female, Other)
+        // Handle case-insensitive matching
         const genderValue = user.gender.toString().trim();
-        if (['Male', 'Female', 'Other'].includes(genderValue)) {
+        const genderLower = genderValue.toLowerCase();
+        if (genderLower === 'male') {
+          bodyStatusData.gender = 'Male';
+        } else if (genderLower === 'female') {
+          bodyStatusData.gender = 'Female';
+        } else if (genderLower === 'other') {
+          bodyStatusData.gender = 'Other';
+        } else if (['Male', 'Female', 'Other'].includes(genderValue)) {
+          // Already in correct format
           bodyStatusData.gender = genderValue;
         }
       }
