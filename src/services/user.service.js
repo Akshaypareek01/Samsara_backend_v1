@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import pick from '../utils/pick.js';
-import { User } from '../models/index.js';
+import { User, BodyStatus } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
 import { assignTrialPlan, assignLifetimePlan } from './membership.service.js';
@@ -16,6 +16,53 @@ const createUser = async (userBody) => {
   }
 
   const user = await User.create(userBody);
+
+  // Create initial BodyStatus entry if age, gender, height, or weight are provided
+  if (userBody.age || userBody.gender || userBody.height || userBody.weight) {
+    try {
+      const bodyStatusData = {};
+      
+      if (userBody.height) {
+        // Convert height string to BodyStatus format (assume cm if not specified)
+        const heightValue = parseFloat(userBody.height);
+        if (!isNaN(heightValue)) {
+          bodyStatusData.height = { value: heightValue, unit: 'cm' };
+        }
+      }
+      
+      if (userBody.weight) {
+        // Convert weight string to BodyStatus format (assume kg if not specified)
+        const weightValue = parseFloat(userBody.weight);
+        if (!isNaN(weightValue)) {
+          bodyStatusData.weight = { value: weightValue, unit: 'kg' };
+        }
+      }
+      
+      if (userBody.age) {
+        // Convert age string to number
+        const ageValue = parseInt(userBody.age);
+        if (!isNaN(ageValue)) {
+          bodyStatusData.age = ageValue;
+        }
+      }
+      
+      if (userBody.gender) {
+        // Map gender to BodyStatus enum values (Male, Female, Other)
+        const genderValue = userBody.gender;
+        if (['Male', 'Female', 'Other'].includes(genderValue)) {
+          bodyStatusData.gender = genderValue;
+        }
+      }
+      
+      if (Object.keys(bodyStatusData).length > 0) {
+        await BodyStatus.create({ userId: user._id, ...bodyStatusData });
+        console.log(`Created initial BodyStatus entry for user: ${user._id}`);
+      }
+    } catch (error) {
+      console.error(`Failed to create initial BodyStatus entry for user ${user._id}:`, error);
+      // Don't throw error here to avoid failing user creation if BodyStatus creation fails
+    }
+  }
 
   // Create initial trackers for the new user
   try {
