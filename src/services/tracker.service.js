@@ -47,13 +47,26 @@ const updateTrackersFromProfile = async (userId, profileData) => {
   try {
     const updates = [];
 
+    // Helper function to normalize gender to enum values
+    const normalizeGender = (gender) => {
+      if (!gender) return null;
+      const genderValue = gender.toString().trim();
+      const genderLower = genderValue.toLowerCase();
+      if (genderLower === 'male') return 'Male';
+      if (genderLower === 'female') return 'Female';
+      if (genderLower === 'other') return 'Other';
+      if (['Male', 'Female', 'Other'].includes(genderValue)) return genderValue;
+      return null; // Invalid gender value
+    };
+
     // Create new BMI Tracker entry if height, weight, age, or gender is provided
     if (profileData.height || profileData.weight || profileData.age || profileData.gender) {
       const bmiData = {};
       if (profileData.height) bmiData.height = { value: parseFloat(profileData.height), unit: 'cm' };
       if (profileData.weight) bmiData.weight = { value: parseFloat(profileData.weight), unit: 'kg' };
       if (profileData.age) bmiData.age = parseInt(profileData.age);
-      if (profileData.gender) bmiData.gender = profileData.gender;
+      const normalizedGender = normalizeGender(profileData.gender);
+      if (normalizedGender) bmiData.gender = normalizedGender;
       
       updates.push(
         BmiTracker.create({ userId, ...bmiData })
@@ -66,21 +79,22 @@ const updateTrackersFromProfile = async (userId, profileData) => {
       if (profileData.height) fatData.height = { value: parseFloat(profileData.height), unit: 'cm' };
       if (profileData.weight) fatData.weight = { value: parseFloat(profileData.weight), unit: 'kg' };
       if (profileData.age) fatData.age = parseInt(profileData.age);
-      if (profileData.gender) fatData.gender = profileData.gender;
+      const normalizedGender = normalizeGender(profileData.gender);
+      if (normalizedGender) fatData.gender = normalizedGender;
       
       updates.push(
         FatTracker.create({ userId, ...fatData })
       );
     }
 
-    // Create new Body Status entry if height or weight is provided
-     // Create new Body Status entry if height, weight, age, or gender is provided
+    // Create new Body Status entry if height, weight, age, or gender is provided
      if (profileData.height || profileData.weight || profileData.age || profileData.gender) {
       const bodyStatusData = {};
       if (profileData.height) bodyStatusData.height = { value: parseFloat(profileData.height), unit: 'cm' };
       if (profileData.weight) bodyStatusData.weight = { value: parseFloat(profileData.weight), unit: 'kg' };
       if (profileData.age) bodyStatusData.age = parseInt(profileData.age);
-      if (profileData.gender) bodyStatusData.gender = profileData.gender;
+      const normalizedGender = normalizeGender(profileData.gender);
+      if (normalizedGender) bodyStatusData.gender = normalizedGender;
       
       updates.push(
         BodyStatus.create({ userId, ...bodyStatusData })
