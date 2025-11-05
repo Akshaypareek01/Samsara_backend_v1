@@ -65,7 +65,21 @@ const sendRegistrationOTPController = catchAsync(async (req, res) => {
 });
 
 const verifyRegistrationOTPController = catchAsync(async (req, res) => {
-  const { email, otp, name, mobile, role, userCategory, corporate_id, teacherCategory } = req.body;
+  const { 
+    email, 
+    otp, 
+    name, 
+    mobile, 
+    role, 
+    userCategory, 
+    corporate_id, 
+    teacherCategory,
+    // Body data fields
+    age,
+    gender,
+    height,
+    weight
+  } = req.body;
 
   const isValidOTP = await verifyRegistrationOTP(email, otp);
   if (!isValidOTP) {
@@ -94,6 +108,12 @@ const verifyRegistrationOTPController = catchAsync(async (req, res) => {
   } else if (role === 'teacher') {
     userData.teacherCategory = teacherCategory;
   }
+
+  // Add body data if provided
+  if (age) userData.age = age;
+  if (gender) userData.gender = gender;
+  if (height) userData.height = height;
+  if (weight) userData.weight = weight;
 
   const user = await createUser(userData);
   const tokens = await generateAuthTokens(user);

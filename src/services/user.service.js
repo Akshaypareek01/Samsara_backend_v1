@@ -19,10 +19,26 @@ const createUser = async (userBody) => {
 
   // Create initial BodyStatus entry if age, gender, height, or weight are provided
   // Check both userBody and saved user object to ensure we catch all data
+  console.log(`[BodyStatus] Checking user ${user._id} for body data...`);
+  console.log(`[BodyStatus] userBody has:`, {
+    age: userBody.age,
+    gender: userBody.gender,
+    height: userBody.height,
+    weight: userBody.weight
+  });
+  console.log(`[BodyStatus] saved user has:`, {
+    age: user.age,
+    gender: user.gender,
+    height: user.height,
+    weight: user.weight
+  });
+
   const hasBodyData = (user.age && user.age.toString().trim() !== '') ||
                       (user.gender && user.gender.toString().trim() !== '') ||
                       (user.height && user.height.toString().trim() !== '') ||
                       (user.weight && user.weight.toString().trim() !== '');
+  
+  console.log(`[BodyStatus] hasBodyData: ${hasBodyData}`);
   
   if (hasBodyData) {
     try {
@@ -70,13 +86,20 @@ const createUser = async (userBody) => {
       }
       
       if (Object.keys(bodyStatusData).length > 0) {
+        console.log(`[BodyStatus] Creating entry with data:`, JSON.stringify(bodyStatusData, null, 2));
         await BodyStatus.create({ userId: user._id, ...bodyStatusData });
-        console.log(`Created initial BodyStatus entry for user: ${user._id}`, bodyStatusData);
+        console.log(`✅ Created initial BodyStatus entry for user: ${user._id}`, bodyStatusData);
+      } else {
+        console.log(`[BodyStatus] No valid bodyStatusData to create (all fields were invalid or empty)`);
       }
     } catch (error) {
-      console.error(`Failed to create initial BodyStatus entry for user ${user._id}:`, error);
+      console.error(`❌ Failed to create initial BodyStatus entry for user ${user._id}:`, error);
+      console.error(`Error details:`, error.message);
+      console.error(`Error stack:`, error.stack);
       // Don't throw error here to avoid failing user creation if BodyStatus creation fails
     }
+  } else {
+    console.log(`[BodyStatus] Skipping - user ${user._id} has no body data (age, gender, height, weight)`);
   }
 
   // Create initial trackers for the new user
