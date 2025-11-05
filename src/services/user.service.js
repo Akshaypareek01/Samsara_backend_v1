@@ -18,37 +18,43 @@ const createUser = async (userBody) => {
   const user = await User.create(userBody);
 
   // Create initial BodyStatus entry if age, gender, height, or weight are provided
-  if (userBody.age || userBody.gender || userBody.height || userBody.weight) {
+  // Check both userBody and saved user object to ensure we catch all data
+  const hasBodyData = (user.age && user.age.toString().trim() !== '') ||
+                      (user.gender && user.gender.toString().trim() !== '') ||
+                      (user.height && user.height.toString().trim() !== '') ||
+                      (user.weight && user.weight.toString().trim() !== '');
+  
+  if (hasBodyData) {
     try {
       const bodyStatusData = {};
       
-      if (userBody.height) {
+      if (user.height && user.height.toString().trim() !== '') {
         // Convert height string to BodyStatus format (assume cm if not specified)
-        const heightValue = parseFloat(userBody.height);
-        if (!isNaN(heightValue)) {
+        const heightValue = parseFloat(user.height);
+        if (!isNaN(heightValue) && heightValue > 0) {
           bodyStatusData.height = { value: heightValue, unit: 'cm' };
         }
       }
       
-      if (userBody.weight) {
+      if (user.weight && user.weight.toString().trim() !== '') {
         // Convert weight string to BodyStatus format (assume kg if not specified)
-        const weightValue = parseFloat(userBody.weight);
-        if (!isNaN(weightValue)) {
+        const weightValue = parseFloat(user.weight);
+        if (!isNaN(weightValue) && weightValue > 0) {
           bodyStatusData.weight = { value: weightValue, unit: 'kg' };
         }
       }
       
-      if (userBody.age) {
+      if (user.age && user.age.toString().trim() !== '') {
         // Convert age string to number
-        const ageValue = parseInt(userBody.age);
-        if (!isNaN(ageValue)) {
+        const ageValue = parseInt(user.age);
+        if (!isNaN(ageValue) && ageValue > 0 && ageValue <= 120) {
           bodyStatusData.age = ageValue;
         }
       }
       
-      if (userBody.gender) {
+      if (user.gender && user.gender.toString().trim() !== '') {
         // Map gender to BodyStatus enum values (Male, Female, Other)
-        const genderValue = userBody.gender;
+        const genderValue = user.gender.toString().trim();
         if (['Male', 'Female', 'Other'].includes(genderValue)) {
           bodyStatusData.gender = genderValue;
         }
@@ -56,7 +62,7 @@ const createUser = async (userBody) => {
       
       if (Object.keys(bodyStatusData).length > 0) {
         await BodyStatus.create({ userId: user._id, ...bodyStatusData });
-        console.log(`Created initial BodyStatus entry for user: ${user._id}`);
+        console.log(`Created initial BodyStatus entry for user: ${user._id}`, bodyStatusData);
       }
     } catch (error) {
       console.error(`Failed to create initial BodyStatus entry for user ${user._id}:`, error);
