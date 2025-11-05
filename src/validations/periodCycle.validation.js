@@ -1,5 +1,19 @@
 import Joi from 'joi';
 
+const isoDate = Joi.date();
+
+const startNewCycle = {
+  body: Joi.object().keys({
+    date: isoDate.optional(),
+  }),
+};
+
+const completeCycle = {
+  body: Joi.object().keys({
+    date: isoDate.optional(),
+  }),
+};
+
 const updateDailyLog = {
   body: Joi.object().keys({
     date: Joi.date().required(),
@@ -43,6 +57,8 @@ const updateNotes = {
 };
 
 export const periodCycleValidation = {
+  startNewCycle,
+  completeCycle,
   updateDailyLog,
   updateNotes,
 };

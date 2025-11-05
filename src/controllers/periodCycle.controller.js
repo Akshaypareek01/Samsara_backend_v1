@@ -9,11 +9,13 @@ class PeriodCycleController {
   /**
    * Start a new period cycle
    * POST /api/v1/period-cycles/start
+   * Body: { date?: Date } - Optional start date (defaults to current date)
    */
   startNewCycle = catchAsync(async (req, res) => {
     const userId = req.user.id;
+    const { date } = req.body;
     
-    const newCycle = await periodCycleService.startNewCycle(userId);
+    const newCycle = await periodCycleService.startNewCycle(userId, date);
     
     res.status(201).json({
       status: 'success',
@@ -27,12 +29,14 @@ class PeriodCycleController {
   /**
    * Complete an active cycle
    * PUT /api/v1/period-cycles/:cycleId/complete
+   * Body: { date?: Date } - Optional end date (defaults to current date)
    */
   completeCycle = catchAsync(async (req, res) => {
     const { cycleId } = req.params;
     const userId = req.user.id;
+    const { date } = req.body;
     
-    const completedCycle = await periodCycleService.completeCycle(cycleId, userId);
+    const completedCycle = await periodCycleService.completeCycle(cycleId, userId, date);
     
     res.status(200).json({
       status: 'success',

@@ -1,6 +1,7 @@
 import { PeriodCycle } from '../models/period-cycle.model.js';
 import ApiError from '../utils/ApiError.js';
 import catchAsync from '../utils/catchAsync.js';
+import { toDateOnly, diffDays, addDays } from './period/prediction.service.js';
 
 /**
  * Period Cycle Service - Handles all period cycle logic including predictions and history
@@ -8,8 +9,26 @@ import catchAsync from '../utils/catchAsync.js';
 class PeriodCycleService {
   /**
    * Start a new period cycle for a user
+   * @param {string} userId - User ID
+   * @param {Date|string} [date] - Optional start date (defaults to current date)
    */
-  async startNewCycle(userId) {
+  async startNewCycle(userId, date) {
+    const start = toDateOnly(date || new Date());
+    
+    // Close previous open cycle if exists and new start is after it
+    const lastOpen = await PeriodCycle.findOne({ 
+      userId, 
+      cycleEndDate: { $exists: false } 
+    }).sort({ cycleStartDate: -1 });
+    
+    if (lastOpen && start >= lastOpen.cycleStartDate) {
+      // Only auto-close if new start date is on or after the previous cycle start
+      lastOpen.cycleEndDate = start; // auto-close at new start
+      lastOpen.periodDurationDays = Math.max(1, diffDays(lastOpen.cycleEndDate, lastOpen.cycleStartDate) + 1);
+      lastOpen.cycleStatus = 'Completed';
+      await lastOpen.save();
+    }
+    
     // Get user's cycle history for better predictions
     const cycleHistory = await this.getUserCycleHistory(userId, 6);
     
@@ -19,12 +38,12 @@ class PeriodCycleService {
       : 1;
     
     // Calculate predictions based on history
-    const predictions = this.calculateCyclePredictions(cycleHistory);
+    const predictions = this.calculateCyclePredictions(cycleHistory, start);
     
     const newCycle = new PeriodCycle({
       userId,
       cycleNumber: nextCycleNumber,
-      cycleStartDate: new Date(),
+      cycleStartDate: start,
       cycleStatus: 'Active',
       currentPhase: 'Menstruation',
       ...predictions
@@ -35,8 +54,11 @@ class PeriodCycleService {
 
   /**
    * Complete an active cycle (when period ends)
+   * @param {string} cycleId - Cycle ID
+   * @param {string} userId - User ID
+   * @param {Date|string} [date] - Optional end date (defaults to current date)
    */
-  async completeCycle(cycleId, userId) {
+  async completeCycle(cycleId, userId, date) {
     const cycle = await PeriodCycle.findOne({ _id: cycleId, userId });
     if (!cycle) {
       throw new ApiError(404, 'Cycle not found');
@@ -46,16 +68,21 @@ class PeriodCycleService {
       throw new ApiError(400, 'Cycle is already completed');
     }
     
-    const cycleEndDate = new Date();
-    const actualCycleLength = Math.ceil(
-      (cycleEndDate - cycle.cycleStartDate) / (1000 * 60 * 60 * 24)
-    );
+    const cycleEndDate = toDateOnly(date || new Date());
+    
+    // Validate that end date is not before start date
+    if (cycleEndDate < cycle.cycleStartDate) {
+      throw new ApiError(400, 'Cycle end date cannot be before start date');
+    }
+    
+    const actualCycleLength = Math.max(1, diffDays(cycleEndDate, cycle.cycleStartDate) + 1);
     
     // Calculate prediction accuracy
     const predictionAccuracy = this.calculatePredictionAccuracy(cycle, actualCycleLength);
     
     // Update cycle with completion data
     cycle.cycleEndDate = cycleEndDate;
+    cycle.periodDurationDays = actualCycleLength;
     cycle.cycleLengthDays = actualCycleLength;
     cycle.cycleStatus = 'Completed';
     cycle.predictionAccuracy = predictionAccuracy;
@@ -153,17 +180,19 @@ class PeriodCycleService {
 
   /**
    * Calculate cycle predictions based on history
+   * @param {Array} cycleHistory - Array of previous cycles
+   * @param {Date} [cycleStartDate] - Optional cycle start date for predictions (defaults to today)
    */
-  calculateCyclePredictions(cycleHistory) {
+  calculateCyclePredictions(cycleHistory, cycleStartDate = null) {
     if (cycleHistory.length === 0) {
       // Default predictions for new users
-      return this.getDefaultPredictions();
+      return this.getDefaultPredictions(cycleStartDate);
     }
     
     // Calculate average cycle length from completed cycles
     const completedCycles = cycleHistory.filter(c => c.cycleStatus === 'Completed');
     const averageCycleLength = completedCycles.length > 0
-      ? Math.round(completedCycles.reduce((sum, c) => sum + c.cycleLengthDays, 0) / completedCycles.length)
+      ? Math.round(completedCycles.reduce((sum, c) => sum + (c.cycleLengthDays || 0), 0) / completedCycles.length)
       : 28;
     
     // Calculate average period duration
@@ -171,15 +200,9 @@ class PeriodCycleService {
       ? Math.round(completedCycles.reduce((sum, c) => sum + (c.periodDurationDays || 5), 0) / completedCycles.length)
       : 5;
     
-    const today = new Date();
-    const predictedNextPeriodDate = new Date(today.getTime() + (averageCycleLength * 24 * 60 * 60 * 1000));
-    
-    // Ovulation typically occurs 14 days before next period
-    const predictedOvulationDate = new Date(predictedNextPeriodDate.getTime() - (14 * 24 * 60 * 60 * 1000));
-    
-    // Fertile window is 5 days before ovulation + ovulation day + 1 day after
-    const predictedFertileWindowStart = new Date(predictedOvulationDate.getTime() - (5 * 24 * 60 * 60 * 1000));
-    const predictedFertileWindowEnd = new Date(predictedOvulationDate.getTime() + (24 * 60 * 60 * 1000));
+    const startDate = cycleStartDate || new Date();
+    const { predictedNextPeriodDate, predictedOvulationDate, predictedFertileWindowStart, predictedFertileWindowEnd } = 
+      this.predictFromDate(startDate, averageCycleLength, 14);
     
     return {
       predictedNextPeriodDate,
@@ -190,19 +213,36 @@ class PeriodCycleService {
       cycleLengthDays: averageCycleLength
     };
   }
+  
+  /**
+   * Predict cycle dates from a given start date
+   */
+  predictFromDate(startDate, avgCycleDays = 28, lutealDays = 14) {
+    const nextPeriod = addDays(startDate, avgCycleDays);
+    const ovulation = addDays(nextPeriod, -lutealDays);
+    const fertileStart = addDays(ovulation, -5);
+    const fertileEnd = addDays(ovulation, 4);
+    return {
+      predictedNextPeriodDate: nextPeriod,
+      predictedOvulationDate: ovulation,
+      predictedFertileWindowStart: fertileStart,
+      predictedFertileWindowEnd: fertileEnd,
+    };
+  }
 
   /**
    * Get default predictions for new users
+   * @param {Date} [cycleStartDate] - Optional cycle start date (defaults to today)
    */
-  getDefaultPredictions() {
-    const today = new Date();
+  getDefaultPredictions(cycleStartDate = null) {
+    const startDate = cycleStartDate || new Date();
     const defaultCycleLength = 28;
     const defaultPeriodDuration = 5;
     
-    const predictedNextPeriodDate = new Date(today.getTime() + (defaultCycleLength * 24 * 60 * 60 * 1000));
-    const predictedOvulationDate = new Date(predictedNextPeriodDate.getTime() - (14 * 24 * 60 * 60 * 1000));
-    const predictedFertileWindowStart = new Date(predictedOvulationDate.getTime() - (5 * 24 * 60 * 60 * 1000));
-    const predictedFertileWindowEnd = new Date(predictedOvulationDate.getTime() + (24 * 60 * 60 * 1000));
+    const predictedNextPeriodDate = addDays(startDate, defaultCycleLength);
+    const predictedOvulationDate = addDays(predictedNextPeriodDate, -14);
+    const predictedFertileWindowStart = addDays(predictedOvulationDate, -5);
+    const predictedFertileWindowEnd = addDays(predictedOvulationDate, 1);
     
     return {
       predictedNextPeriodDate,
