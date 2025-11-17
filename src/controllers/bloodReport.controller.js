@@ -24,8 +24,8 @@ const getBloodReports = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['status', 'labName', 'bloodGroup', 'startDate', 'endDate']);
   const options = pick(req.query, ['sortBy', 'sortOrder', 'limit', 'page']);
   
-  // If not teacher, only show user's own reports
-  if (req.user.role !== 'teacher') {
+  // If not teacher or admin, only show user's own reports
+  if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
     filter.userId = req.user.id;
   }
   
@@ -40,7 +40,7 @@ const getBloodReport = catchAsync(async (req, res) => {
   const bloodReport = await bloodReportService.getBloodReportById(req.params.bloodReportId);
   
   // Check if user has permission to view this report
-  if (req.user.role !== 'teacher' && bloodReport.userId.toString() !== req.user.id) {
+  if (req.user.role !== 'teacher' && req.user.role !== 'admin' && bloodReport.userId.toString() !== req.user.id) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Not authorized to view this blood report');
   }
   
@@ -48,10 +48,10 @@ const getBloodReport = catchAsync(async (req, res) => {
 });
 
 /**
- * Get blood reports by user id (teacher only)
+ * Get blood reports by user id (teacher or admin only)
  */
 const getBloodReportsByUserId = catchAsync(async (req, res) => {
-  if (req.user.role !== 'teacher') {
+  if (req.user.role !== 'teacher' && req.user.role !== 'admin') {
     throw new ApiError(httpStatus.FORBIDDEN, 'Not authorized to view other users\' blood reports');
   }
   

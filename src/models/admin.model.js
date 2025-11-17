@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import { toJSON, paginate } from './plugins/index.js';
 
 const adminSchema = new mongoose.Schema(
@@ -34,6 +35,18 @@ const adminSchema = new mongoose.Schema(
 // add plugin that converts mongoose to json
 adminSchema.plugin(toJSON);
 adminSchema.plugin(paginate);
+
+// Hash password before saving
+adminSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 12);
+  next();
+});
+
+// Method to check password match
+adminSchema.methods.isPasswordMatch = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
 
 const Admin = mongoose.model('Admin', adminSchema);
 

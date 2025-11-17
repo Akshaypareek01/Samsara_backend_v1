@@ -9,7 +9,27 @@ import { tokenTypes } from '../config/tokens.js';
 import { Token } from '../models/index.js';
 
 /**
- * Generate token
+ * Generate token with user type
+ * @param {ObjectId} userId
+ * @param {Moment} expires
+ * @param {string} type
+ * @param {string} userType - 'user' or 'admin'
+ * @param {string} [secret]
+ * @returns {string}
+ */
+const generateTokenWithType = (userId, expires, type, userType = 'user', secret = config.jwt.secret) => {
+  const payload = {
+    sub: userId,
+    iat: moment().unix(),
+    exp: expires.unix(),
+    type,
+    userType,
+  };
+  return jwt.sign(payload, secret);
+};
+
+/**
+ * Generate token (backward compatibility - defaults to user type)
  * @param {ObjectId} userId
  * @param {Moment} expires
  * @param {string} type
@@ -17,13 +37,7 @@ import { Token } from '../models/index.js';
  * @returns {string}
  */
 const generateToken = (userId, expires, type, secret = config.jwt.secret) => {
-  const payload = {
-    sub: userId,
-    iat: moment().unix(),
-    exp: expires.unix(),
-    type,
-  };
-  return jwt.sign(payload, secret);
+  return generateTokenWithType(userId, expires, type, 'user', secret);
 };
 
 /**
@@ -68,11 +82,36 @@ const verifyToken = async (token, type) => {
  */
 const generateAuthTokens = async (user) => {
   const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
-  const accessToken = generateToken(user.id, accessTokenExpires, tokenTypes.ACCESS);
+  const accessToken = generateTokenWithType(user.id, accessTokenExpires, tokenTypes.ACCESS, 'user');
 
   const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays, 'days');
-  const refreshToken = generateToken(user.id, refreshTokenExpires, tokenTypes.REFRESH);
+  const refreshToken = generateTokenWithType(user.id, refreshTokenExpires, tokenTypes.REFRESH, 'user');
   await saveToken(refreshToken, user.id, refreshTokenExpires, tokenTypes.REFRESH);
+
+  return {
+    access: {
+      token: accessToken,
+      expires: accessTokenExpires.toDate(),
+    },
+    refresh: {
+      token: refreshToken,
+      expires: refreshTokenExpires.toDate(),
+    },
+  };
+};
+
+/**
+ * Generate admin auth tokens
+ * @param {Admin} admin
+ * @returns {Promise<Object>}
+ */
+const generateAdminAuthTokens = async (admin) => {
+  const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
+  const accessToken = generateTokenWithType(admin.id, accessTokenExpires, tokenTypes.ACCESS, 'admin');
+
+  const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays, 'days');
+  const refreshToken = generateTokenWithType(admin.id, refreshTokenExpires, tokenTypes.REFRESH, 'admin');
+  await saveToken(refreshToken, admin.id, refreshTokenExpires, tokenTypes.REFRESH);
 
   return {
     access: {
@@ -114,4 +153,4 @@ const generateVerifyEmailToken = async (user) => {
   return verifyEmailToken;
 };
 
-export { generateToken, saveToken, verifyToken, generateAuthTokens, generateResetPasswordToken, generateVerifyEmailToken };
+export { generateToken, generateTokenWithType, saveToken, verifyToken, generateAuthTokens, generateAdminAuthTokens, generateResetPasswordToken, generateVerifyEmailToken };

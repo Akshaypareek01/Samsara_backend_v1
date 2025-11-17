@@ -1,7 +1,7 @@
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import config from './config.js';
 import { tokenTypes } from './tokens.js';
-import { User } from '../models/index.js';
+import { User, Admin } from '../models/index.js';
 
 const jwtOptions = {
   secretOrKey: config.jwt.secret,
@@ -13,11 +13,25 @@ const jwtVerify = async (payload, done) => {
     if (payload.type !== tokenTypes.ACCESS) {
       throw new Error('Invalid token type');
     }
-    const user = await User.findById(payload.sub);
-    if (!user) {
-      return done(null, false);
+    
+    // Check if token is for admin or user
+    const userType = payload.userType || 'user';
+    
+    if (userType === 'admin') {
+      const admin = await Admin.findById(payload.sub);
+      if (!admin || !admin.status) {
+        return done(null, false);
+      }
+      // Add role to admin object for auth middleware
+      admin.role = 'admin';
+      return done(null, admin);
+    } else {
+      const user = await User.findById(payload.sub);
+      if (!user) {
+        return done(null, false);
+      }
+      return done(null, user);
     }
-    done(null, user);
   } catch (error) {
     done(error, false);
   }
