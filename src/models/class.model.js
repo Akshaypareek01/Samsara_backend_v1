@@ -46,6 +46,7 @@ const classSchema = new mongoose.Schema({
   maxCapacity: { type: Number, required: true },
   schedules: [
     {
+      date: { type: Date },
       days: [{ type: String, enum: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] }],
       startTime: String,
       endTime: String,
@@ -55,6 +56,18 @@ const classSchema = new mongoose.Schema({
   skipIf: [{ type: String }],
   whatYoullGain: [{ type: String }],
   // Add other fields as needed
+});
+
+// Pre-save hook to extract date from schedules and set it to schedule field
+classSchema.pre('save', function(next) {
+  // If schedules array exists and has at least one entry with a date
+  if (this.schedules && this.schedules.length > 0 && this.schedules[0].date) {
+    // Set schedule from the first schedule's date if schedule is not already set
+    if (!this.schedule || this.isModified('schedules')) {
+      this.schedule = new Date(this.schedules[0].date);
+    }
+  }
+  next();
 });
 
 export const Class = mongoose.model('Class', classSchema);
