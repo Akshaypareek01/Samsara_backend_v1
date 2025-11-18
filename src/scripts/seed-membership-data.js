@@ -289,6 +289,22 @@ async function seedMembershipData() {
         createdBy: new mongoose.Types.ObjectId(),
       },
       {
+        code: 'BTS90',
+        name: 'BTS Special Discount',
+        description: '100% off on any plan',
+        discountType: 'percentage',
+        discountValue: 100,
+        minOrderAmount: 0,
+        startDate: today,
+        endDate: nextYear,
+        usageLimit: 1000,
+        usageLimitPerUser: 1,
+        applicablePlans: [], // Applicable to all plans
+        applicableUserCategories: ['Personal', 'Corporate'],
+        isActive: true,
+        createdBy: new mongoose.Types.ObjectId(),
+      },
+      {
         code: 'DIWALI70',
         name: 'Diwali Special Discount',
         description: '70% off on any plan',
