@@ -30,7 +30,8 @@
     "test:user-notification-preferences": "node test-user-notification-preferences.js",
     "get-user-token": "node get-user-token.js",
     "test:whatsapp-webhook": "node test-whatsapp-webhook.js",
-    "test:whatsapp-bot": "node test-whatsapp-bot.js"
+    "test:whatsapp-bot": "node test-whatsapp-bot.js",
+    "seed:membership": "cross-env NODE_ENV=development node src/scripts/seed-membership-data.js"
   },
   "keywords": [
     "node",

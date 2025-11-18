@@ -1,5 +1,5 @@
 import httpStatus from 'http-status';
-import { Membership, MembershipPlan, User } from '../models/index.js';
+import { Membership, MembershipPlan, User, CouponCode } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -255,6 +255,161 @@ const cancelMembership = async (membershipId, reason = null) => {
   return membership;
 };
 
+/**
+ * Assign membership with 100% off coupon code
+ * @param {ObjectId} userId - The user ID
+ * @param {ObjectId} planId - The plan ID
+ * @param {string} couponCode - The coupon code
+ * @returns {Promise<Membership>}
+ */
+const assignMembershipWithCoupon = async (userId, planId, couponCode) => {
+  try {
+    // Validate user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    // Validate plan exists
+    const membershipPlan = await MembershipPlan.findById(planId);
+    if (!membershipPlan) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
+    }
+
+    if (!membershipPlan.isActive) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Membership plan is not active');
+    }
+
+    if (!membershipPlan.isAvailable()) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Membership plan is not currently available');
+    }
+
+    // Find and validate coupon code
+    const couponCodeDoc = await CouponCode.findOne({
+      code: couponCode.toUpperCase(),
+      isActive: true
+    });
+
+    if (!couponCodeDoc) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'Invalid coupon code');
+    }
+
+    // Check if coupon is valid
+    if (!couponCodeDoc.isValid) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Coupon code is expired or inactive');
+    }
+
+    // Check if coupon can be applied to the plan
+    if (!couponCodeDoc.canApplyToPlan(planId)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Coupon code cannot be applied to this plan');
+    }
+
+    // Check if coupon can be applied by user category
+    if (user.userCategory && !couponCodeDoc.canApplyByUserCategory(user.userCategory)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Coupon code cannot be applied to your user category');
+    }
+
+    // Calculate total price
+    const totalPrice = membershipPlan.calculateTotalPrice();
+
+    // Check minimum order amount
+    if (totalPrice < couponCodeDoc.minOrderAmount) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `Minimum order amount of ${couponCodeDoc.minOrderAmount} required for this coupon`
+      );
+    }
+
+    // Calculate discount amount
+    const discountAmount = couponCodeDoc.calculateDiscount(totalPrice);
+    const finalAmount = totalPrice - discountAmount;
+
+    // Check if coupon provides 100% discount
+    const is100PercentOff = finalAmount === 0 || 
+      (couponCodeDoc.discountType === 'percentage' && couponCodeDoc.discountValue === 100) ||
+      (couponCodeDoc.discountType === 'fixed' && discountAmount >= totalPrice);
+
+    if (!is100PercentOff) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        'This coupon does not provide 100% discount. Only 100% off coupons can be used for direct membership assignment.'
+      );
+    }
+
+    // Check per-user usage limit
+    const userCouponUsageCount = await Membership.countDocuments({
+      userId,
+      couponCode: couponCodeDoc._id
+    });
+
+    if (userCouponUsageCount >= couponCodeDoc.usageLimitPerUser) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `You have reached the maximum usage limit (${couponCodeDoc.usageLimitPerUser}) for this coupon code`
+      );
+    }
+
+    // Check if user already has an active membership
+    const existingActiveMembership = await Membership.findOne({
+      userId,
+      status: 'active',
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() }
+    });
+
+    if (existingActiveMembership) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'User already has an active membership');
+    }
+
+    // Calculate end date
+    const startDate = new Date();
+    let endDate;
+
+    // Check if plan has special validity end date in metadata
+    if (membershipPlan.metadata?.specialValidityEndDate) {
+      endDate = new Date(membershipPlan.metadata.specialValidityEndDate);
+    } else {
+      endDate = new Date(startDate.getTime() + membershipPlan.validityDays * 24 * 60 * 60 * 1000);
+    }
+
+    // Create membership record
+    const membership = new Membership({
+      userId,
+      planId: membershipPlan._id,
+      planName: membershipPlan.name,
+      validityDays: membershipPlan.validityDays,
+      status: 'active',
+      startDate,
+      endDate,
+      amountPaid: 0, // Free due to 100% discount
+      originalAmount: totalPrice,
+      discountAmount: totalPrice, // Full discount
+      currency: membershipPlan.currency,
+      couponCode: couponCodeDoc._id,
+      couponCodeString: couponCodeDoc.code,
+      autoRenewal: false,
+      metadata: {
+        assignedAt: new Date(),
+        source: 'coupon_code',
+        couponCode: couponCodeDoc.code,
+        is100PercentOff: true
+      }
+    });
+
+    await membership.save();
+
+    // Increment coupon usage count
+    await couponCodeDoc.incrementUsage();
+
+    console.log(`Membership assigned to user ${userId} with 100% off coupon ${couponCodeDoc.code}`);
+    return membership;
+
+  } catch (error) {
+    console.error(`Failed to assign membership with coupon to user ${userId}:`, error);
+    throw error;
+  }
+};
+
 export {
   assignTrialPlan,
   assignLifetimePlan,
@@ -263,5 +418,6 @@ export {
   getUserMemberships,
   createMembership,
   updateMembership,
-  cancelMembership
+  cancelMembership,
+  assignMembershipWithCoupon
 };

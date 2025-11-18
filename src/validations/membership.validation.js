@@ -28,8 +28,17 @@ const cancelMembership = {
   })
 };
 
+const assignMembershipWithCoupon = {
+  body: Joi.object().keys({
+    userId: Joi.string().required(),
+    planId: Joi.string().required(),
+    couponCode: Joi.string().required()
+  })
+};
+
 export const membershipValidation = {
   createMembership,
   updateMembership,
-  cancelMembership
+  cancelMembership,
+  assignMembershipWithCoupon
 };

@@ -8,7 +8,8 @@ import {
   getUserMemberships,
   createMembership,
   updateMembership,
-  cancelMembership
+  cancelMembership,
+  assignMembershipWithCoupon
 } from '../services/membership.service.js';
 import ApiError from '../utils/ApiError.js';
 
@@ -135,6 +136,25 @@ const cancelMembershipController = catchAsync(async (req, res) => {
   });
 });
 
+/**
+ * Assign membership with 100% off coupon code (admin only)
+ */
+const assignMembershipWithCouponController = catchAsync(async (req, res) => {
+  const { userId, planId, couponCode } = req.body;
+  
+  if (!userId || !planId || !couponCode) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'userId, planId, and couponCode are required');
+  }
+  
+  const membership = await assignMembershipWithCoupon(userId, planId, couponCode);
+  
+  res.status(httpStatus.CREATED).send({
+    success: true,
+    message: 'Membership assigned successfully with 100% off coupon',
+    data: membership
+  });
+});
+
 export {
   getActiveMembershipController,
   getMembershipHistory,
@@ -143,5 +163,6 @@ export {
   assignLifetimePlanController,
   createMembershipController,
   updateMembershipController,
-  cancelMembershipController
+  cancelMembershipController,
+  assignMembershipWithCouponController
 };

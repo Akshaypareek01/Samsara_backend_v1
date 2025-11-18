@@ -1,0 +1,5982 @@
+{
+	"info": {
+		"_postman_id": "1c73781d-a26b-4a4a-b866-28545bd59884",
+		"name": "SW",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21458682",
+		"_collection_link": "https://bold-capsule-224865.postman.co/workspace/Team-Workspace~e1787b13-47bb-4083-8260-10cdcdbc113d/collection/21458682-1c73781d-a26b-4a4a-b866-28545bd59884?action=share&source=collection_link&creator=21458682"
+	},
+	"item": [
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Profile Management",
+					"item": [
+						{
+							"name": "Get Current User Profile",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/users/profile",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"profile"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Current User Profile",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Doe\",\n  \"mobile\": \"+1234567890\",\n  \"gender\": \"male\",\n  \"dob\": \"1990-01-01\",\n  \"age\": \"33\",\n  \"Address\": \"123 Main St\",\n  \"city\": \"New York\",\n  \"pincode\": \"10001\",\n  \"country\": \"USA\",\n  \"height\": \"175cm\",\n  \"weight\": \"70kg\",\n  \"targetWeight\": \"65kg\",\n  \"bodyshape\": \"athletic\",\n  \"weeklyyogaplan\": \"3 times per week\",\n  \"practicetime\": \"morning\",\n  \"focusarea\": [\"flexibility\", \"strength\"],\n  \"goal\": [\"weight loss\", \"stress relief\"],\n  \"health_issues\": [\"back pain\"],\n  \"howyouknowus\": \"social media\",\n  \"PriorExperience\": \"beginner\",\n  \"description\": \"Yoga enthusiast\",\n  \"achievements\": [\"completed 30-day challenge\"],\n  \"userCategory\": \"Personal\",\n  \"teacherCategory\": \"Yoga Trainer\",\n  \"teachingExperience\": \"5 years\",\n  \"expertise\": [\"Hatha Yoga\", \"Vinyasa\"],\n  \"qualification\": [{\n    \"degree\": \"Yoga Certification\",\n    \"institution\": \"Yoga Alliance\",\n    \"year\": \"2020\"\n  }],\n  \"additional_courses\": [{\n    \"course\": \"Advanced Asanas\",\n    \"institution\": \"Yoga Institute\",\n    \"year\": \"2021\"\n  }],\n  \"company_name\": \"{{companyId}}\",\n  \"companyId\": \"corp123\",\n  \"corporate_id\": \"emp456\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/profile",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"profile"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "New Request",
+							"request": {
+								"method": "GET",
+								"header": []
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "User Management (Admin Only)",
+					"item": [
+						{
+							"name": "Create User",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"user\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Users",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/users?role=teacher&sortBy=name:asc&limit=10&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users"
+									],
+									"query": [
+										{
+											"key": "role",
+											"value": "teacher"
+										},
+										{
+											"key": "sortBy",
+											"value": "name:asc"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get User by ID",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update User",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@example.com\",\n  \"password\": \"NewPassword123!\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "User Profile (Public)",
+					"item": [
+						{
+							"name": "Get User Profile",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/profile",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"profile"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Image Management",
+					"item": [
+						{
+							"name": "Upload User Image",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"filename\": \"profile_image.jpg\",\n  \"path\": \"https://example.com/images/profile_image.jpg\",\n  \"key\": \"user_profile_123\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/images",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"images"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get User Images",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/images",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"images"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User Image by Index",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/images/0",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"images",
+										"0"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User Image by Key",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"key\": \"user_profile_123\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/images",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"images"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete User Image by Filename",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"filename\": \"profile_image.jpg\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/images/delete-by-filename",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"images",
+										"delete-by-filename"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Attendance Management",
+					"item": [
+						{
+							"name": "Mark Attendance",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/attendance/{{classId}}",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"attendance",
+										"{{classId}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Achievements & Assessments",
+					"item": [
+						{
+							"name": "Add Achievement",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"achievement\": \"Completed 100 yoga sessions\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/achievements",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"achievements"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Assessment",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"assessmentId\": \"assessment_123\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/assessments",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"assessments"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Submit Assessment Form",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"userId\": \"{{userId}}\",\n  \"classId\": \"class_123\",\n  \"formData\": {\n    \"rating\": 5,\n    \"feedback\": \"Great class!\",\n    \"difficulty\": \"intermediate\",\n    \"wouldRecommend\": true\n  }\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/assessment-form",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"assessment-form"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Notifications",
+					"item": [
+						{
+							"name": "Update Notification Token",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"notificationToken\": \"fcm_token_here\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/{{userId}}/notification-token",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"{{userId}}",
+										"notification-token"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Class Participation",
+					"item": [
+						{
+							"name": "Join Class",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"userId\": \"{{userId}}\",\n  \"classId\": \"class_123\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/join-class",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"join-class"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Leave Class",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"userId\": \"{{userId}}\",\n  \"classId\": \"class_123\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/leave-class",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"leave-class"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Statistics",
+					"item": [
+						{
+							"name": "Get User Stats",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"userId\": \"{{userId}}\",\n  \"days\": 30\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/stats",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"stats"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Weekly Stats",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/users/weekly-stats",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"users",
+										"weekly-stats"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "user-registration-personal",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"akshay96102@gmail.com\",\r\n  \"name\": \"Akshay Pareek\",\r\n  \"role\": \"user\",\r\n  \"userCategory\": \"Personal\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/auth/send-registration-otp",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"auth",
+								"send-registration-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "user-registration-Corporate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"akshay96102@gmail.com\",\r\n  \"name\": \"Akshay Pareek\",\r\n  \"role\": \"user\",\r\n  \"userCategory\": \"Corporate\",\r\n  \"corporate_id\": \"CORP123456\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/auth/send-registration-otp",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"auth",
+								"send-registration-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "teacher-registration",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"abhishek.for.webdev@gmail.com\",\r\n  \"name\": \"Abhishek Anjana\",\r\n  \"role\": \"teacher\",\r\n  \"teacherCategory\": \"Fitness Coach\",\r\n  \"mobile\":\"8107265101\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/auth/send-registration-otp",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"auth",
+								"send-registration-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "verify-registration-otp",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"akshaypareek.work@gmail.com\",\r\n  \"name\": \"Abhishek Anjana\",\r\n  \"role\": \"teacher\",\r\n  \"teacherCategory\": \"Fitness Coach\",\r\n  \"otp\":\"9507\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/auth/verify-registration-otp",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"auth",
+								"verify-registration-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "send-login-otp",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"akshay96102@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/auth/send-login-otp",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"auth",
+								"send-login-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "verify-login-otp",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"abhishekanjana85@gmail.com\",\r\n  \"otp\": \"2853\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/auth/verify-login-otp",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"auth",
+								"verify-login-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "verify-login-otp Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"email\": \"abhishekanjana85@gmail.com\",\r\n  \"otp\": \"2853\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/auth/verify-login-otp",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"auth",
+								"verify-login-otp"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-profile",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/users/profile",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"users",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-profile",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODYwNDNhOGY2ZDdmNzAwNjExOGIwODUiLCJpYXQiOjE3NTExMzkyNDEsImV4cCI6MTc1MTE0MTA0MSwidHlwZSI6ImFjY2VzcyJ9.X6g-nI7LdfOnOT8pjcZrhBpkVDmGGCHMlCZr7IcKoaQ",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"age\": \"31\", \"bodyshape\": \"Mesomorph\", \"focusarea\": [\"Power Yoga\", \"Restorative\", \"Kids Yoga\"], \"gender\": \"male\", \"height\": \"170\", \"weight\": \"65\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/users/profile",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"users",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-profileIamge",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODYyMjVhZGY3MzY2YjM2YTQ4ZmE2NWUiLCJpYXQiOjE3NTI2NTk4ODksImV4cCI6MTc1MjY2MTY4OSwidHlwZSI6ImFjY2VzcyJ9.NSAOJ11kOU6kSfBflxOEtmNx7jtQ4fXoKzZBwj3Ufqo",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"profileImage\":\"https://pub-4471af5ad08f4d59887c139e8f2cd164.r2.dev/1dded4c3-4a50-4296-9790-bb899ae53602.jpg\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/users/profile/image",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"users",
+								"profile",
+								"image"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-all-user-by-role",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/users",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Trackers",
+			"item": [
+				{
+					"name": "Dashboard & Status",
+					"item": [
+						{
+							"name": "Get Dashboard Data",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/dashboard",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"dashboard"
+									]
+								},
+								"description": "Get latest entries from all trackers for dashboard"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Tracker Status",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/status",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"status"
+									]
+								},
+								"description": "Get tracker status for debugging"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "History APIs",
+					"item": [
+						{
+							"name": "Get Weight History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/bmi/history?days=30",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"bmi",
+										"history"
+									],
+									"query": [
+										{
+											"key": "days",
+											"value": "30",
+											"description": "Number of days to fetch (1-365)"
+										}
+									]
+								},
+								"description": "Get weight tracker history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Water History",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODYyMzE0NTUwYmJmNDAwNzMzM2U3ZDUiLCJpYXQiOjE3NTQ0NjY5NDIsImV4cCI6MTc1NDY0Njk0MiwidHlwZSI6ImFjY2VzcyJ9.DK-ZHdpeyXGgM1_hHUECZplikceCQ5wLYNiqP3SApNg",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/water/hydration-status",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"water",
+										"hydration-status"
+									]
+								},
+								"description": "Get water tracker history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Mood History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/mood/history?days=30",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"mood",
+										"history"
+									],
+									"query": [
+										{
+											"key": "days",
+											"value": "30",
+											"description": "Number of days to fetch (1-365)"
+										}
+									]
+								},
+								"description": "Get mood history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Temperature History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/temperature/history?days=30",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"temperature",
+										"history"
+									],
+									"query": [
+										{
+											"key": "days",
+											"value": "30",
+											"description": "Number of days to fetch (1-365)"
+										}
+									]
+								},
+								"description": "Get temperature tracker history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Fat History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/fat/history?days=30",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"fat",
+										"history"
+									],
+									"query": [
+										{
+											"key": "days",
+											"value": "30",
+											"description": "Number of days to fetch (1-365)"
+										}
+									]
+								},
+								"description": "Get fat tracker history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "Get BMI History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/bmi/history",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"bmi",
+										"history"
+									]
+								},
+								"description": "Get BMI tracker history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Body Status History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/body-status/history?days=365",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"body-status",
+										"history"
+									],
+									"query": [
+										{
+											"key": "days",
+											"value": "365",
+											"description": "Number of days to fetch (1-365)"
+										}
+									]
+								},
+								"description": "Get body status history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Step History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/step/history?days=30",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"step",
+										"history"
+									],
+									"query": [
+										{
+											"key": "days",
+											"value": "30",
+											"description": "Number of days to fetch (1-365)"
+										}
+									]
+								},
+								"description": "Get step tracker history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Sleep History",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/sleep/history?days=30",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"sleep",
+										"history"
+									],
+									"query": [
+										{
+											"key": "days",
+											"value": "30",
+											"description": "Number of days to fetch (1-365)"
+										}
+									]
+								},
+								"description": "Get sleep tracker history for specified days"
+							},
+							"response": []
+						},
+						{
+							"name": "get workout history",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/workout/by-type/running",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"workout",
+										"by-type",
+										"running"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Add Tracker Entries",
+					"item": [
+						{
+							"name": "Add Weight Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"currentWeight\": {\n    \"value\": 70.5,\n    \"unit\": \"kg\"\n  },\n  \"goalWeight\": {\n    \"value\": 65.0,\n    \"unit\": \"kg\"\n  },\n  \"startingWeight\": {\n    \"value\": 75.0,\n    \"unit\": \"kg\"\n  },\n  \"notes\": \"Weekly weight check\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/weight",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"weight"
+									]
+								},
+								"description": "Add a new weight tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Water Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"targetGlasses\": 8,\n  \"targetMl\": 2000,\n  \"intakeTimeline\": [\n    {\n      \"amountMl\": 250,\n      \"time\": \"08:00\"\n    },\n    {\n      \"amountMl\": 250,\n      \"time\": \"10:00\"\n    }\n  ],\n  \"totalIntake\": 1500,\n  \"notes\": \"Good hydration today\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/water",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"water"
+									]
+								},
+								"description": "Add a new water tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Mood Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"mood\": \"Happy\",\n  \"note\": \"Had a great workout session\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/mood",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"mood"
+									]
+								},
+								"description": "Add a new mood tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Temperature Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"temperature\": {\n    \"value\": 98.6,\n    \"unit\": \"F\"\n  },\n  \"notes\": \"Normal body temperature\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/temperature",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"temperature"
+									]
+								},
+								"description": "Add a new temperature tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Fat Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"age\": 30,\n  \"gender\": \"Male\",\n  \"height\": {\n    \"value\": 175,\n    \"unit\": \"cm\"\n  },\n  \"weight\": {\n    \"value\": 70,\n    \"unit\": \"kg\"\n  },\n  \"bodyFat\": {\n    \"value\": 15.5,\n    \"unit\": \"%\"\n  },\n  \"goal\": 12.0,\n  \"notes\": \"Monthly body fat measurement\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/fat",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"fat"
+									]
+								},
+								"description": "Add a new fat tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Add BMI Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"age\": 30,\n  \"gender\": \"Male\",\n  \"height\": {\n    \"value\": 175,\n    \"unit\": \"cm\"\n  },\n  \"weight\": {\n    \"value\": 70,\n    \"unit\": \"kg\"\n  },\n  \"notes\": \"Monthly BMI check\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/bmi",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"bmi"
+									]
+								},
+								"description": "Add a new BMI tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Body Status Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"height\": {\n    \"value\": 175,\n    \"unit\": \"cm\"\n  },\n  \"weight\": {\n    \"value\": 70,\n    \"unit\": \"kg\"\n  },\n  \"chest\": {\n    \"value\": 95,\n    \"unit\": \"cm\"\n  },\n  \"waist\": {\n    \"value\": 80,\n    \"unit\": \"cm\"\n  },\n  \"hips\": {\n    \"value\": 95,\n    \"unit\": \"cm\"\n  },\n  \"arms\": {\n    \"value\": 30,\n    \"unit\": \"cm\"\n  },\n  \"thighs\": {\n    \"value\": 55,\n    \"unit\": \"cm\"\n  },\n  \"bodyFat\": {\n    \"value\": 15.5,\n    \"unit\": \"%\"\n  },\n  \"notes\": \"Complete body measurements\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/body-status",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"body-status"
+									]
+								},
+								"description": "Add a new body status tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Step Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"steps\": 8500,\n  \"goal\": 10000,\n  \"distance\": {\n    \"value\": 6.5,\n    \"unit\": \"km\"\n  },\n  \"calories\": 350,\n  \"activeTime\": 45,\n  \"notes\": \"Good walking session\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/step",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"step"
+									]
+								},
+								"description": "Add a new step tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Sleep Entry",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"sleepRate\": 85,\n  \"sleepTime\": 480,\n  \"hoursSlept\": 8,\n  \"bedtime\": \"22:30\",\n  \"wakeUpTime\": \"06:30\",\n  \"goal\": 8,\n  \"notes\": \"Good quality sleep\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/sleep",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"sleep"
+									]
+								},
+								"description": "Add a new sleep tracker entry"
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Update & Delete",
+					"item": [
+						{
+							"name": "Update Tracker Entry",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"currentWeight\": {\n    \"value\": 69.5,\n    \"unit\": \"kg\"\n  },\n  \"notes\": \"Updated weight measurement\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/trackers/weight/{{entryId}}",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"weight",
+										"{{entryId}}"
+									]
+								},
+								"description": "Update a specific tracker entry"
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Tracker Entry",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/trackers/weight/{{entryId}}",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"trackers",
+										"weight",
+										"{{entryId}}"
+									]
+								},
+								"description": "Delete a specific tracker entry"
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Classes",
+			"item": [
+				{
+					"name": "Create Class",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Yoga Basics 7\",\n  \"description\": \"Learn the fundamentals of yoga practice\",\n  \"password\": \"yoga123\",\n  \"meeting_number\": \"123456789\",\n  \"teacher\": \"68da6e443f59f064bd8ce401\",\n  \"status\": true,\n  \"schedule\": \"2025-12-08T00:00:00.000Z\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"level\": [\"Beginner\"],\n  \"image\": \"https://example.com/image.jpg\",\n  \"classType\": \"online\",\n  \"classCategory\": \"yoga class\",\n  \"duration\": 60,\n  \"maxCapacity\": 20,\n  \"schedules\": [\n    {\n      \"days\": [\"Mon\"],\n      \"startTime\": \"09:00\",\n      \"endTime\": \"10:00\"\n    }\n  ],\n  \"perfectFor\": [\"Beginners who want to start their yoga journey\"],\n  \"skipIf\": [\"You have advanced yoga experience\"],\n  \"whatYoullGain\": [\"Basic yoga poses\", \"breathing techniques\", \"mindfulness\"]\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/classes",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Classes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Upcoming Classes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/upcoming",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"upcoming"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Teachers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/teachers",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"teachers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Class by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/:classId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								":classId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Class",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"className\": \"Advanced Yoga\",\n  \"level\": \"Advanced\",\n  \"price\": 750,\n  \"status\": \"active\",\n  \"isPublished\": true\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/classes/:classId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								":classId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Class",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/:classId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								":classId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Predefined Classes",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[]"
+						},
+						"url": {
+							"raw": "{{Base_url}}/classes/add-pre-data",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"add-pre-data"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Teacher to Class",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/:classId/assign-teacher/:teacherId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								":classId",
+								"assign-teacher",
+								":teacherId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								},
+								{
+									"key": "teacherId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Student to Class",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/:classId/add-student/:studentId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								":classId",
+								"add-student",
+								":studentId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								},
+								{
+									"key": "studentId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Student Classes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/student/:studentId/classes",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"student",
+								":studentId",
+								"classes"
+							],
+							"variable": [
+								{
+									"key": "studentId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Student Upcoming Classes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/student/:studentId/classes/upcoming",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"student",
+								":studentId",
+								"classes",
+								"upcoming"
+							],
+							"variable": [
+								{
+									"key": "studentId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Student Enrollment",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/class/:classId/student/:studentId/enrolled",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"class",
+								":classId",
+								"student",
+								":studentId",
+								"enrolled"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								},
+								{
+									"key": "studentId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Student from Class",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/:classId/remove-student/:studentId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								":classId",
+								"remove-student",
+								":studentId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								},
+								{
+									"key": "studentId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Classes by Teacher",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/classes/teacher/:teacherId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"teacher",
+								":teacherId"
+							],
+							"variable": [
+								{
+									"key": "teacherId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "End Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"zoom_token_here\",\n  \"meetingId\": \"meeting_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/classes/end_meeting/:classId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"end_meeting",
+								":classId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "End Meeting All",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"zoom_token_here\",\n  \"meetingId\": \"meeting_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/classes/end_meeting/:classId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"classes",
+								"end_meeting",
+								":classId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "start-class",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Events",
+			"item": [
+				{
+					"name": "Create Event",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventName\": \"Yoga Workshop\",\n  \"eventMode\": \"online\",\n  \"meetingLink\": \"https://zoom.us/j/123456789\",\n  \"meetingPassword\": \"yoga123\",\n  \"eventImage\": \"https://example.com/event.jpg\",\n  \"eventDetails\": \"Join us for an intensive yoga workshop\",\n  \"level\": \"Intermediate\",\n  \"maxSeats\": 50,\n  \"eventDate\": \"2024-02-15\",\n  \"eventTime\": \"14:00\",\n  \"duration\": 120,\n  \"moderator\": \"moderator_id_here\",\n  \"onlineRequirements\": [\n    {\n      \"point\": \"Stable internet connection\",\n      \"order\": 1\n    },\n    {\n      \"point\": \"Yoga mat\",\n      \"order\": 2\n    }\n  ],\n  \"isPaid\": true,\n  \"price\": 1000,\n  \"currency\": \"INR\",\n  \"registrationStartDate\": \"2024-01-01\",\n  \"registrationEndDate\": \"2024-02-10\",\n  \"tags\": [\"yoga\", \"workshop\", \"online\"],\n  \"category\": \"Fitness\",\n  \"highlights\": [\"Expert guidance\", \"Interactive session\"],\n  \"speakers\": [\n    {\n      \"name\": \"John Doe\",\n      \"designation\": \"Senior Yoga Instructor\",\n      \"bio\": \"10+ years of experience\",\n      \"image\": \"https://example.com/speaker.jpg\"\n    }\n  ],\n  \"certificates\": true,\n  \"certificateTemplate\": \"Workshop completion certificate\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/events",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Upcoming Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/upcoming",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"upcoming"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Event by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Predefined Events",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[]"
+						},
+						"url": {
+							"raw": "{{Base_url}}/events/add-pre-data",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"add-pre-data"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Event",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventName\": \"Advanced Yoga Workshop\",\n  \"level\": \"Advanced\",\n  \"price\": 1500,\n  \"status\": \"upcoming\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/events/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Event",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "End Event Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"zoom_token_here\",\n  \"meetingId\": \"meeting_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/events/end_meeting/:classId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"end_meeting",
+								":classId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Register User to Event",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventId\": \"event_id_here\",\n  \"userId\": \"user_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/events/register",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Students for Event",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/students/:eventId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"students",
+								":eventId"
+							],
+							"variable": [
+								{
+									"key": "eventId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Registered Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/user-events/:userId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"user-events",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Upcoming Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/user-events/:userId/upcoming",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"user-events",
+								":userId",
+								"upcoming"
+							],
+							"variable": [
+								{
+									"key": "userId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get teacher event",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/user-events/:userId/upcoming",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"user-events",
+								":userId",
+								"upcoming"
+							],
+							"variable": [
+								{
+									"key": "userId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start-event-meet",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/start_meeting/:eventId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"start_meeting",
+								":eventId"
+							],
+							"variable": [
+								{
+									"key": "eventId",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "check-is-user-enrolled",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/events/enrollment/686a3c6f4ddb095e0c71696a/686225adf7366b36a48fa65e",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"events",
+								"enrollment",
+								"686a3c6f4ddb095e0c71696a",
+								"686225adf7366b36a48fa65e"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Event Applications",
+			"item": [
+				{
+					"name": "Create Event Application",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventId\": \"event_id_here\",\n  \"userId\": \"user_id_here\",\n  \"status\": \"pending\",\n  \"applicationDate\": \"2024-01-15\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/event-applications/apply",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"event-applications",
+								"apply"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Events by User ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/event-applications/events/user/:userId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"event-applications",
+								"events",
+								"user",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Event Applications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/event-applications",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"event-applications"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Event Application by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/event-applications/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"event-applications",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Event Application",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Application approved\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/event-applications/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"event-applications",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Event Application",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/event-applications/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"event-applications",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Custom Sessions",
+			"item": [
+				{
+					"name": "Get All Time Slots",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/time-slots",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"time-slots"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"teacher\": \"teacher_id_here\",\n  \"user\": \"user_id_here\",\n  \"timeSlot\": \"time_slot_id_here\",\n  \"date\": \"2024-02-15\",\n  \"sessionValue\": \"pending\",\n  \"notes\": \"Custom yoga session\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Sessions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Session by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Session",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"date\": \"2024-02-16\",\n  \"notes\": \"Updated session notes\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Session",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Approve Session",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"value\": \"approved\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/approve/:sessionId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"approve",
+								":sessionId"
+							],
+							"variable": [
+								{
+									"key": "sessionId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sessions by User ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/sessions/:userId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"sessions",
+								":userId"
+							],
+							"variable": [
+								{
+									"key": "userId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Upcoming Sessions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/sessions/:userId/upcoming",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"sessions",
+								":userId",
+								"upcoming"
+							],
+							"variable": [
+								{
+									"key": "userId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Session Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/session/:userId/:sessionId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"session",
+								":userId",
+								":sessionId"
+							],
+							"variable": [
+								{
+									"key": "userId"
+								},
+								{
+									"key": "sessionId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Sessions by Teacher ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/teacher/:teacherId/sessions",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"teacher",
+								":teacherId",
+								"sessions"
+							],
+							"variable": [
+								{
+									"key": "teacherId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Time Slot",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"timeRange\": \"09:00-10:00\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/time-slots",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"time-slots"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Time Slot by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/time-slots/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"time-slots",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Time Slot",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"timeRange\": \"10:00-11:00\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/time-slots/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"time-slots",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Time Slot",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/time-slots/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"time-slots",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "End Session Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"zoom_token_here\",\n  \"meetingId\": \"meeting_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/end_meeting/:classId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"end_meeting",
+								":classId"
+							],
+							"variable": [
+								{
+									"key": "classId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start-sesson-meet",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"zoom_token_here\",\n  \"meetingId\": \"meeting_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/custom-sessions/start_meeting/:sessionId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"custom-sessions",
+								"start_meeting",
+								":sessionId"
+							],
+							"variable": [
+								{
+									"key": "sessionId",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meetings",
+			"item": [
+				{
+					"name": "Create Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"topic\": \"Meeting Topic\",\n  \"type\": 2,\n  \"start_time\": \"2024-02-15T10:00:00Z\",\n  \"duration\": 60,\n  \"timezone\": \"UTC\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/meetings",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"meetings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Meeting Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/meetings",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"meetings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Recorded Classes",
+			"item": [
+				{
+					"name": "Get All Recorded Classes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/recorded-classes",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"recorded-classes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Recorded Class by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/recorded-classes/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"recorded-classes",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Recorded Class",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Yoga Basics Recording\",\n  \"description\": \"Recorded yoga class for beginners\",\n  \"videoUrl\": \"https://example.com/video.mp4\",\n  \"duration\": 60,\n  \"teacher\": \"teacher_id_here\",\n  \"category\": \"Yoga\",\n  \"level\": \"Beginner\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/recorded-classes",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"recorded-classes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Recorded Class",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Yoga Basics\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/recorded-classes/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"recorded-classes",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Recorded Class",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/recorded-classes/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"recorded-classes",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Class Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"published\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/recorded-classes/:id/update-status",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"recorded-classes",
+								":id",
+								"update-status"
+							],
+							"variable": [
+								{
+									"key": "id"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Zoom",
+			"item": [
+				{
+					"name": "Fetch Zoom Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"AccessTokenMain\": \"your_access_token_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/zoom/fetchZoomToken",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"zoom",
+								"fetchZoomToken"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get OAuth Token",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/zoom/zoom/oauth-token",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"zoom",
+								"zoom",
+								"oauth-token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Zoom User Info",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"zoom_token_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/zoom/zoomuserInfo",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"zoom",
+								"zoomuserInfo"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Zoom Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"topic\": \"Class Meeting\",\n  \"type\": 2,\n  \"start_time\": \"2024-02-15T10:00:00Z\",\n  \"duration\": 60,\n  \"timezone\": \"UTC\",\n  \"password\": \"class123\",\n  \"settings\": {\n    \"host_video\": true,\n    \"participant_video\": true,\n    \"join_before_host\": false,\n    \"mute_upon_entry\": true,\n    \"watermark\": false,\n    \"use_pmi\": false,\n    \"approval_type\": 0,\n    \"audio\": \"both\",\n    \"auto_recording\": \"none\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/zoom/createZoomMeeting",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"zoom",
+								"createZoomMeeting"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Session Zoom Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"topic\": \"Custom Session\",\n  \"type\": 2,\n  \"start_time\": \"2024-02-15T10:00:00Z\",\n  \"duration\": 60,\n  \"timezone\": \"UTC\",\n  \"password\": \"session123\",\n  \"classId\": \"class_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/zoom/createZoomMeeting-session",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"zoom",
+								"createZoomMeeting-session"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Event Zoom Meeting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"topic\": \"Event Meeting\",\n  \"type\": 2,\n  \"start_time\": \"2024-02-15T10:00:00Z\",\n  \"duration\": 60,\n  \"timezone\": \"UTC\",\n  \"password\": \"event123\",\n  \"classId\": \"event_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/zoom/createZoomMeeting-event",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"zoom",
+								"createZoomMeeting-event"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Meeting Data",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"meetingId\": \"meeting_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/zoom/getMeetingData",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"zoom",
+								"getMeetingData"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Meeting",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"meetingId\": \"meeting_id_here\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/zoom/deleteMeeting",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"zoom",
+								"deleteMeeting"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Assessments",
+			"item": [
+				{
+					"name": "Create Assessment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Yoga Assessment\",\n  \"description\": \"Assessment for yoga beginners\",\n  \"questions\": [\n    {\n      \"question\": \"What is the primary goal of yoga?\",\n      \"type\": \"multiple_choice\",\n      \"options\": [\"Physical fitness\", \"Mental peace\", \"Both\", \"None\"],\n      \"correctAnswer\": 2\n    }\n  ],\n  \"duration\": 30,\n  \"passingScore\": 70,\n  \"category\": \"Yoga\",\n  \"level\": \"Beginner\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/assessments",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"assessments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Assessments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/assessments",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"assessments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessment by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/assessments/:assessmentId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"assessments",
+								":assessmentId"
+							],
+							"variable": [
+								{
+									"key": "assessmentId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Assessment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Yoga Assessment\",\n  \"description\": \"Updated assessment description\",\n  \"passingScore\": 80\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/assessments/:assessmentId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"assessments",
+								":assessmentId"
+							],
+							"variable": [
+								{
+									"key": "assessmentId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Assessment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{Base_url}}/assessments/:assessmentId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"assessments",
+								":assessmentId"
+							],
+							"variable": [
+								{
+									"key": "assessmentId"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Upload",
+			"item": [
+				{
+					"name": "Upload File",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{Base_url}}/upload",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"upload"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Question Master (Admin)",
+			"item": [
+				{
+					"name": "Create Question",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"What is your body type?\",\n  \"options\": [\n    {\n      \"text\": \"Thin and lean\",\n      \"dosha\": \"vata\"\n    },\n    {\n      \"text\": \"Medium build\",\n      \"dosha\": \"pitta\"\n    },\n    {\n      \"text\": \"Large and heavy\",\n      \"dosha\": \"kapha\"\n    }\n  ],\n  \"assessmentType\": \"dosha\",\n  \"order\": 1,\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/question-master/questions",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"questions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Bulk Question",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How is your current body weight or physical build?\",\n    \"options\": [\n      {\n        \"text\": \"I've lost weight or feel weak and thin.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: i've lost weight or feel weak and thin.\"\n      },\n      {\n        \"text\": \"My weight is stable but I feel hot.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: my weight is stable but i feel hot.\"\n      },\n      {\n        \"text\": \"I've gained weight or feel heavy\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: i've gained weight or feel heavy\"\n      }\n    ],\n    \"order\": 1,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How is your digestion and appetite?\",\n    \"options\": [\n      {\n        \"text\": \"Variable - sometimes strong, sometimes absent; often gassy.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: variable - sometimes strong, sometimes absent; often gassy.\"\n      },\n      {\n        \"text\": \"Strong, with frequent hunger and sometimes heartburn.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: strong, with frequent hunger and sometimes heartburn.\"\n      },\n      {\n        \"text\": \"Slow, with heaviness or dull hunger.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: slow, with heaviness or dull hunger.\"\n      }\n    ],\n    \"order\": 2,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How are your bowel movements?\",\n    \"options\": [\n      {\n        \"text\": \"Dry, hard, irregular, or constipated.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: dry, hard, irregular, or constipated.\"\n      },\n      {\n        \"text\": \"Soft, loose, or burning sensation.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: soft, loose, or burning sensation.\"\n      },\n      {\n        \"text\": \"Heavy, sticky, mucus-coated.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: heavy, sticky, mucus-coated.\"\n      }\n    ],\n    \"order\": 3,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How is your energy throughout the day?\",\n    \"options\": [\n      {\n        \"text\": \"Up and down - bursts followed by fatigue.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: up and down - bursts followed by fatigue.\"\n      },\n      {\n        \"text\": \"Good stamina but may overdo and burn out.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: good stamina but may overdo and burn out.\"\n      },\n      {\n        \"text\": \"Low and steady - often feel tired or sleepy.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: low and steady - often feel tired or sleepy.\"\n      }\n    ],\n    \"order\": 4,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How is your sleep?\",\n    \"options\": [\n      {\n        \"text\": \"Light, interrupted, or hard to fall asleep.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: light, interrupted, or hard to fall asleep.\"\n      },\n      {\n        \"text\": \"Moderate but disturbed by dreams or heat.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: moderate but disturbed by dreams or heat.\"\n      },\n      {\n        \"text\": \"Heavy and long - hard to wake up.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: heavy and long - hard to wake up.\"\n      }\n    ],\n    \"order\": 5,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How is your skin and hair lately?\",\n    \"options\": [\n      {\n        \"text\": \"Dry, flaky skin; brittle or frizzy hair.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: dry, flaky skin; brittle or frizzy hair.\"\n      },\n      {\n        \"text\": \"Oily or red skin; hair thinning or premature greying.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: oily or red skin; hair thinning or premature greying.\"\n      },\n      {\n        \"text\": \"Oily skin and scalp; sticky dandruff.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: oily skin and scalp; sticky dandruff.\"\n      }\n    ],\n    \"order\": 6,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How are your emotions and mental state?\",\n    \"options\": [\n      {\n        \"text\": \"Anxious, worried, restless.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: anxious, worried, restless.\"\n      },\n      {\n        \"text\": \"Irritable, impatient, judgmental.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: irritable, impatient, judgmental.\"\n      },\n      {\n        \"text\": \"Unmotivated, dull, resistant to change.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: unmotivated, dull, resistant to change.\"\n      }\n    ],\n    \"order\": 7,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How is your current breathing or respiratory health?\",\n    \"options\": [\n      {\n        \"text\": \"Dry cough, breathlessness, irregular breathing.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: dry cough, breathlessness, irregular breathing.\"\n      },\n      {\n        \"text\": \"Burning in the chest or yellow mucus.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: burning in the chest or yellow mucus.\"\n      },\n      {\n        \"text\": \"Congestion, sinus pressure, white mucus.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: congestion, sinus pressure, white mucus.\"\n      }\n    ],\n    \"order\": 8,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"How do you currently tolerate weather?\",\n    \"options\": [\n      {\n        \"text\": \"I feel cold easily and dislike the wind.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: i feel cold easily and dislike the wind.\"\n      },\n      {\n        \"text\": \"I feel hot  and dislike the hot sun.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: i feel hot  and dislike the hot sun.\"\n      },\n      {\n        \"text\": \"I dislike cloudy, or cold conditions.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: i dislike cloudy, or cold conditions.\"\n      }\n    ],\n    \"order\": 9,\n    \"isActive\": true\n  },\n  {\n    \"assessmentType\": \"Vikriti\",\n    \"questionText\": \"What kind of foods are you craving lately?\",\n    \"options\": [\n      {\n        \"text\": \"Warm, moist, salty or sour foods.\",\n        \"dosha\": \"Vata\",\n        \"description\": \"Indicates Vata imbalance with traits like: warm, moist, salty or sour foods.\"\n      },\n      {\n        \"text\": \"Cool, sweet, or bitter foods.\",\n        \"dosha\": \"Pitta\",\n        \"description\": \"Indicates Pitta imbalance with traits like: cool, sweet, or bitter foods.\"\n      },\n      {\n        \"text\": \"Light, dry, or spicy foods.\",\n        \"dosha\": \"Kapha\",\n        \"description\": \"Indicates Kapha imbalance with traits like: light, dry, or spicy foods.\"\n      }\n    ],\n    \"order\": 10,\n    \"isActive\": true\n  }\n]"
+						},
+						"url": {
+							"raw": "{{Base_url}}/question-master/questions\\bulk",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"questions",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Questions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/question-master/questions?assessmentType=Prakriti",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"questions"
+							],
+							"query": [
+								{
+									"key": "assessmentType",
+									"value": "Prakriti"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Question by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/question-master/questions/:questionId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"questions",
+								":questionId"
+							],
+							"variable": [
+								{
+									"key": "questionId",
+									"value": "QUESTION_ID_HERE",
+									"description": "ID of the question to retrieve"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Question",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": " {\n        \"isActive\": true,\n        \"assessmentType\": \"Prakriti\",\n        \"questionText\": \"Body Mass Index (BMI)\",\n        \"options\": [\n            {\n                \"text\": \">19\",\n                \"dosha\": \"Vata\",\n                \"description\": \"Indicates Vata characteristics such as &lt;19\"\n            },\n            {\n                \"text\": \"19-25\",\n                \"dosha\": \"Pitta\",\n                \"description\": \"Indicates Pitta characteristics such as 19-25\"\n            },\n            {\n                \"text\": \">25\",\n                \"dosha\": \"Kapha\",\n                \"description\": \"Indicates Kapha characteristics such as >25\"\n            }\n        ],\n        \"order\": 2\n    },"
+						},
+						"url": {
+							"raw": "{{Base_url}}/question-master/questions/6877bc9fc924d60062e5beea",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"questions",
+								"6877bc9fc924d60062e5beea"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Question",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/question-master/questions/686d72a4c1a07d15d8511500",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"questions",
+								"686d72a4c1a07d15d8511500"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Toggle Question Status",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/question-master/questions/:questionId/toggle",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"questions",
+								":questionId",
+								"toggle"
+							],
+							"variable": [
+								{
+									"key": "questionId",
+									"value": "QUESTION_ID_HERE",
+									"description": "ID of the question to toggle status"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Assessment (Users)",
+			"item": [
+				{
+					"name": "Start Assessment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"686225adf7366b36a48fa65e\",\n  \"assessmentType\": \"Prakriti\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/dosha",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"dosha"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Submit Answer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"assessmentId\": \"ASSESSMENT_ID_HERE\",\n  \"questionId\": \"QUESTION_ID_HERE\",\n  \"selectedOptionIndex\": 0\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/question-master/assessments/submit-answer",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"assessments",
+								"submit-answer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Calculate Dosha Score",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/question-master/assessments/:assessmentId/calculate",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"assessments",
+								":assessmentId",
+								"calculate"
+							],
+							"variable": [
+								{
+									"key": "assessmentId",
+									"value": "ASSESSMENT_ID_HERE",
+									"description": "ID of the assessment to calculate scores for"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessment Results",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/question-master/assessments?assessmentType=dosha",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"assessments"
+							],
+							"query": [
+								{
+									"key": "assessmentType",
+									"value": "dosha",
+									"description": "Type of assessment (optional)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessment by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/question-master/assessments/:assessmentId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"assessments",
+								":assessmentId"
+							],
+							"variable": [
+								{
+									"key": "assessmentId",
+									"value": "ASSESSMENT_ID_HERE",
+									"description": "ID of the assessment to retrieve"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessment Questions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/dosha/questions/Prakriti",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"dosha",
+								"questions",
+								"Prakriti"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Assessment Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/question-master/assessments/stats",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"question-master",
+								"assessments",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Teacher Availability",
+			"item": [
+				{
+					"name": "Create Availability",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"teacherId\": \"TEACHER_ID_HERE\",\n  \"session\": \"morning\",\n  \"date\": \"2024-01-15\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"10:00\",\n  \"availabilityFor\": \"yoga\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/teacher-availability",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"teacher-availability"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Teacher Availabilities",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/teacher-availability/teacher/:teacherId?date=2024-01-15&status=available",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"teacher-availability",
+								"teacher",
+								":teacherId"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2024-01-15",
+									"description": "Filter by specific date (optional)"
+								},
+								{
+									"key": "status",
+									"value": "available",
+									"description": "Filter by status (optional)"
+								}
+							],
+							"variable": [
+								{
+									"key": "teacherId",
+									"value": "TEACHER_ID_HERE",
+									"description": "ID of the teacher"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Available Slots",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/teacher-availability/available-slots/:teacherId/:date?availabilityFor=yoga",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"teacher-availability",
+								"available-slots",
+								":teacherId",
+								":date"
+							],
+							"query": [
+								{
+									"key": "availabilityFor",
+									"value": "yoga",
+									"description": "Type of availability (optional)"
+								}
+							],
+							"variable": [
+								{
+									"key": "teacherId",
+									"value": "TEACHER_ID_HERE",
+									"description": "ID of the teacher"
+								},
+								{
+									"key": "date",
+									"value": "2024-01-15",
+									"description": "Date to check availability for"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Availability",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"session\": \"afternoon\",\n  \"date\": \"2024-01-15\",\n  \"startTime\": \"14:00\",\n  \"endTime\": \"15:00\",\n  \"availabilityFor\": \"meditation\",\n  \"status\": \"booked\"\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/teacher-availability/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"teacher-availability",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "AVAILABILITY_ID_HERE",
+									"description": "ID of the availability to update"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Availability",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/teacher-availability/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"teacher-availability",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "AVAILABILITY_ID_HERE",
+									"description": "ID of the availability to delete"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Company",
+			"item": [
+				{
+					"name": "Create Company",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Sample Company\",\n  \"email\": \"contact@samplecompany.com\",\n  \"phone\": \"+1234567890\",\n  \"address\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zipCode\": \"10001\",\n    \"country\": \"USA\"\n  },\n  \"website\": \"https://samplecompany.com\",\n  \"description\": \"A sample company for testing\",\n  \"industry\": \"Technology\",\n  \"size\": \"50-100\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/companies",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"companies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Companies",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/companies",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"companies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Company Exists",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/check-company/:companyId",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"check-company",
+								":companyId"
+							],
+							"variable": [
+								{
+									"key": "companyId",
+									"value": "COMPANY_ID_HERE",
+									"description": "Company ID to check existence"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Company by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/companies/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"companies",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "COMPANY_ID_HERE",
+									"description": "ID of the company to retrieve"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Company by ID",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Company Name\",\n  \"email\": \"updated@samplecompany.com\",\n  \"phone\": \"+1234567890\",\n  \"address\": {\n    \"street\": \"456 Updated St\",\n    \"city\": \"Los Angeles\",\n    \"state\": \"CA\",\n    \"zipCode\": \"90210\",\n    \"country\": \"USA\"\n  },\n  \"website\": \"https://updatedcompany.com\",\n  \"description\": \"Updated company description\",\n  \"industry\": \"Healthcare\",\n  \"size\": \"100-500\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{Base_url}}/companies/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"companies",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "COMPANY_ID_HERE",
+									"description": "ID of the company to update"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Company by ID",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{Base_url}}/companies/:id",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"companies",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "COMPANY_ID_HERE",
+									"description": "ID of the company to delete"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Meditaion",
+			"item": [
+				{
+					"name": "Category master",
+					"item": [
+						{
+							"name": "Create Master Category",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Yoga & Wellness\",\n  \"description\": \"Comprehensive yoga and wellness practices\",\n  \"imageUrl\": \"https://example.com/images/yoga.jpg\",\n  \"soundUrl\": \"https://example.com/sounds/meditation.mp3\",\n  \"tags\": [\"yoga\", \"wellness\", \"mindfulness\"],\n  \"order\": 1,\n  \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/master-categories",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"master-categories"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Master Categories",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/master-categories?name=yoga&isActive=true&sortBy=order:asc&limit=10&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"master-categories"
+									],
+									"query": [
+										{
+											"key": "name",
+											"value": "yoga",
+											"description": "Category name filter"
+										},
+										{
+											"key": "isActive",
+											"value": "true",
+											"description": "Active status filter"
+										},
+										{
+											"key": "sortBy",
+											"value": "order:asc",
+											"description": "Sort by order ascending"
+										},
+										{
+											"key": "limit",
+											"value": "10",
+											"description": "Maximum number of categories"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Active Master Categories",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/master-categories/active?sortBy=order:asc&limit=20&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"master-categories",
+										"active"
+									],
+									"query": [
+										{
+											"key": "sortBy",
+											"value": "order:asc",
+											"description": "Sort by order ascending"
+										},
+										{
+											"key": "limit",
+											"value": "20",
+											"description": "Maximum number of categories"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Search Master Categories",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/master-categories/search?searchTerm=wellness&sortBy=name:asc&limit=10&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"master-categories",
+										"search"
+									],
+									"query": [
+										{
+											"key": "searchTerm",
+											"value": "wellness",
+											"description": "Search term (required)"
+										},
+										{
+											"key": "sortBy",
+											"value": "name:asc",
+											"description": "Sort by name ascending"
+										},
+										{
+											"key": "limit",
+											"value": "10",
+											"description": "Maximum number of results"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Category Order",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"orderData\": [\n    {\n      \"id\": \"507f1f77bcf86cd799439011\",\n      \"order\": 1\n    },\n    {\n      \"id\": \"507f1f77bcf86cd799439012\",\n      \"order\": 2\n    },\n    {\n      \"id\": \"507f1f77bcf86cd799439013\",\n      \"order\": 3\n    }\n  ]\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/master-categories/order",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"master-categories",
+										"order"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Master Category by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/master-categories/507f1f77bcf86cd799439011",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"master-categories",
+										"507f1f77bcf86cd799439011"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Master Category",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Updated Yoga & Wellness\",\n  \"description\": \"Updated comprehensive yoga and wellness practices\",\n  \"imageUrl\": \"https://example.com/images/updated-yoga.jpg\",\n  \"soundUrl\": \"https://example.com/sounds/updated-meditation.mp3\",\n  \"tags\": [\"yoga\", \"wellness\", \"mindfulness\", \"updated\"],\n  \"order\": 2,\n  \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/master-categories/507f1f77bcf86cd799439011",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"master-categories",
+										"507f1f77bcf86cd799439011"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Master Category",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/master-categories/507f1f77bcf86cd799439011",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"master-categories",
+										"507f1f77bcf86cd799439011"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Meditaion Api",
+					"item": [
+						{
+							"name": "Create Meditation",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Mindful Breathing\",\n  \"description\": \"A guided meditation focusing on breath awareness\",\n  \"duration\": 15,\n  \"level\": \"Beginner\",\n  \"imageUrl\": \"https://example.com/images/mindful-breathing.jpg\",\n  \"audioUrl\": \"https://example.com/audio/mindful-breathing.mp3\",\n  \"category\": \"507f1f77bcf86cd799439011\",\n  \"tags\": [\"breathing\", \"mindfulness\", \"beginner\"],\n  \"benefits\": \"Reduces stress, improves focus, enhances emotional regulation\",\n  \"howToPractice\": [\n    \"Find a comfortable seated position\",\n    \"Close your eyes gently\",\n    \"Focus on your natural breath\",\n    \"When mind wanders, return to breath\"\n  ],\n  \"focus\": 85,\n  \"mood\": \"calm\",\n  \"recommended\": [\"507f1f77bcf86cd799439012\", \"507f1f77bcf86cd799439013\"],\n  \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/meditations",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Meditations",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/meditations?title=mindful&level=Beginner&mood=calm&category=507f1f77bcf86cd799439011&isActive=true&sortBy=duration:asc&limit=10&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations"
+									],
+									"query": [
+										{
+											"key": "title",
+											"value": "mindful",
+											"description": "Meditation title filter"
+										},
+										{
+											"key": "level",
+											"value": "Beginner",
+											"description": "Meditation level filter"
+										},
+										{
+											"key": "mood",
+											"value": "calm",
+											"description": "Meditation mood filter"
+										},
+										{
+											"key": "category",
+											"value": "507f1f77bcf86cd799439011",
+											"description": "Category ID filter"
+										},
+										{
+											"key": "isActive",
+											"value": "true",
+											"description": "Active status filter"
+										},
+										{
+											"key": "sortBy",
+											"value": "duration:asc",
+											"description": "Sort by duration ascending"
+										},
+										{
+											"key": "limit",
+											"value": "10",
+											"description": "Maximum number of meditations"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Search Meditations",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/meditations/search?searchTerm=breathing&sortBy=title:asc&limit=10&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations",
+										"search"
+									],
+									"query": [
+										{
+											"key": "searchTerm",
+											"value": "breathing",
+											"description": "Search term (required)"
+										},
+										{
+											"key": "sortBy",
+											"value": "title:asc",
+											"description": "Sort by title ascending"
+										},
+										{
+											"key": "limit",
+											"value": "10",
+											"description": "Maximum number of results"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Meditations by Category",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/meditations/category/507f1f77bcf86cd799439011?sortBy=duration:asc&limit=10&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations",
+										"category",
+										"507f1f77bcf86cd799439011"
+									],
+									"query": [
+										{
+											"key": "sortBy",
+											"value": "duration:asc",
+											"description": "Sort by duration ascending"
+										},
+										{
+											"key": "limit",
+											"value": "10",
+											"description": "Maximum number of meditations"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Meditations by Level",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/meditations/level/Beginner?sortBy=title:asc&limit=10&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations",
+										"level",
+										"Beginner"
+									],
+									"query": [
+										{
+											"key": "sortBy",
+											"value": "title:asc",
+											"description": "Sort by title ascending"
+										},
+										{
+											"key": "limit",
+											"value": "10",
+											"description": "Maximum number of meditations"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Meditations by Mood",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/meditations/mood/calm?sortBy=duration:asc&limit=10&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations",
+										"mood",
+										"calm"
+									],
+									"query": [
+										{
+											"key": "sortBy",
+											"value": "duration:asc",
+											"description": "Sort by duration ascending"
+										},
+										{
+											"key": "limit",
+											"value": "10",
+											"description": "Maximum number of meditations"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Meditation by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/meditations/507f1f77bcf86cd799439014",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations",
+										"507f1f77bcf86cd799439014"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Meditation",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Updated Mindful Breathing\",\n  \"description\": \"An enhanced guided meditation focusing on breath awareness\",\n  \"duration\": 20,\n  \"level\": \"Intermediate\",\n  \"imageUrl\": \"https://example.com/images/updated-mindful-breathing.jpg\",\n  \"audioUrl\": \"https://example.com/audio/updated-mindful-breathing.mp3\",\n  \"category\": \"507f1f77bcf86cd799439011\",\n  \"tags\": [\"breathing\", \"mindfulness\", \"intermediate\", \"updated\"],\n  \"benefits\": \"Enhanced stress reduction, improved focus, better emotional regulation\",\n  \"howToPractice\": [\n    \"Find a comfortable seated position\",\n    \"Close your eyes gently\",\n    \"Focus on your natural breath\",\n    \"When mind wanders, return to breath\",\n    \"Practice for 20 minutes daily\"\n  ],\n  \"focus\": 90,\n  \"mood\": \"peaceful\",\n  \"recommended\": [\"507f1f77bcf86cd799439012\", \"507f1f77bcf86cd799439013\", \"507f1f77bcf86cd799439015\"],\n  \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/meditations/507f1f77bcf86cd799439014",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations",
+										"507f1f77bcf86cd799439014"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Meditation",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/meditations/507f1f77bcf86cd799439014",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations",
+										"507f1f77bcf86cd799439014"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Recommended Meditations",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/meditations/507f1f77bcf86cd799439014/recommended?sortBy=duration:asc&limit=5&page=1",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"meditations",
+										"507f1f77bcf86cd799439014",
+										"recommended"
+									],
+									"query": [
+										{
+											"key": "sortBy",
+											"value": "duration:asc",
+											"description": "Sort by duration ascending"
+										},
+										{
+											"key": "limit",
+											"value": "5",
+											"description": "Maximum number of recommendations"
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Page number"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Medication",
+			"item": [
+				{
+					"name": "Medication Tracker",
+					"item": [
+						{
+							"name": "Create Medication Tracker",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"healthConditions\": [\n    {\n      \"name\": \"Hypertension\",\n      \"diagnosedYear\": 2020,\n      \"analysis\": \"High blood pressure requiring daily medication\",\n      \"isActive\": true\n    }\n  ],\n  \"medications\": [\n    {\n      \"type\": \"Prescription\",\n      \"name\": \"Lisinopril\",\n      \"dosage\": \"10mg\",\n      \"instruction\": \"Take once daily in the morning\",\n      \"quantityLeft\": 30,\n      \"frequency\": \"daily\",\n      \"times\": [\"08:00\"],\n      \"isActive\": true,\n      \"schedulePattern\": \"daily\",\n      \"daysOfWeek\": [\"Mon\", \"Tue\", \"Wed\", \"Thu\", \"Fri\", \"Sat\", \"Sun\"]\n    }\n  ]\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/medications/tracker",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"tracker"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Medication Tracker",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZlN2RjMTU1M2VhMDAwNjI0NjE4ZjIiLCJpYXQiOjE3NTIxNzA3MTMsImV4cCI6MTc1MjE3MjUxMywidHlwZSI6ImFjY2VzcyJ9.mAbEePCTC1CrCSmaCEPaX5Jb8OAmP6njv2ezTEOOBeM",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/medications/tracker",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"tracker"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Health Conditions",
+					"item": [
+						{
+							"name": "Add Health Condition",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZlN2RjMTU1M2VhMDAwNjI0NjE4ZjIiLCJpYXQiOjE3NTIxNzA3MTMsImV4cCI6MTc1MjE3MjUxMywidHlwZSI6ImFjY2VzcyJ9.mAbEePCTC1CrCSmaCEPaX5Jb8OAmP6njv2ezTEOOBeM",
+										"type": "text"
+									},
+									{
+										"key": "",
+										"value": "",
+										"type": "text",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \n  \"name\": \"Type 3 Diabetes\",\n  \"diagnosedYear\": 2019,\n  \"level\":\"Low\",\n  \"analysis\": \"Stable\",\n  \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/medications/health-conditions",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"health-conditions"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Health Condition",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Updated Diabetes Type 2\",\n  \"analysis\": \"Updated analysis for diabetes management\",\n  \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/medications/health-conditions/507f1f77bcf86cd799439011",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"health-conditions",
+										"507f1f77bcf86cd799439011"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Health Condition",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/health-conditions/507f1f77bcf86cd799439011",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"health-conditions",
+										"507f1f77bcf86cd799439011"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Medications",
+					"item": [
+						{
+							"name": "Add Medication",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZlN2RjMTU1M2VhMDAwNjI0NjE4ZjIiLCJpYXQiOjE3NTIxNzA3MTMsImV4cCI6MTc1MjE3MjUxMywidHlwZSI6ImFjY2VzcyJ9.mAbEePCTC1CrCSmaCEPaX5Jb8OAmP6njv2ezTEOOBeM",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"category\": \"Supplement\",\n  \"medicineType\": \"Capsule\",\n  \"medicineName\": \"Vitamin D3\",\n  \"dosage\": { \"quantity\": 2000, \"unit\": \"IU\" },\n  \"duration\": { \"startDate\": \"2024-07-10\", \"endDate\": \"2024-08-10\", \"preset\": \"1 month\" },\n  \"frequency\": \"Daily\",\n  \"daysOfWeek\": [\"M\", \"T\", \"W\", \"T\", \"F\", \"S\", \"S\"],\n  \"times\": [ { \"time\": \"09:00\", \"ampm\": \"AM\" } ],\n  \"consumptionInstructions\": [\"After Meals\"],\n  \"additionalNotes\": \"Take with breakfast\",\n  \"reminderNotifications\": true\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/medications/medications",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"medications"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Medication",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"dosage\": \"2000 IU\",\n  \"instruction\": \"Take twice daily with meals\",\n  \"quantityLeft\": 45,\n  \"times\": [\"08:00\", \"18:00\"]\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/medications/medications/507f1f77bcf86cd799439012",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"medications",
+										"507f1f77bcf86cd799439012"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Medication",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/medications/507f1f77bcf86cd799439012",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"medications",
+										"507f1f77bcf86cd799439012"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Refill Medication",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"quantityAdded\": 30,\n  \"notes\": \"Refilled from local pharmacy\"\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/medications/medications/507f1f77bcf86cd799439012/refill",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"medications",
+										"507f1f77bcf86cd799439012",
+										"refill"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Schedule Queries",
+					"item": [
+						{
+							"name": "Get Schedule by Date",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2ODZlN2RjMTU1M2VhMDAwNjI0NjE4ZjIiLCJpYXQiOjE3NTIxNzA3MTMsImV4cCI6MTc1MjE3MjUxMywidHlwZSI6ImFjY2VzcyJ9.mAbEePCTC1CrCSmaCEPaX5Jb8OAmP6njv2ezTEOOBeM",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{Base_url}}/medications/schedules/by-date?date=2024-07-10",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"schedules",
+										"by-date"
+									],
+									"query": [
+										{
+											"key": "date",
+											"value": "2024-07-10",
+											"description": "Date in YYYY-MM-DD format"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Schedule by Date Range",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/schedules/by-date-range?startDate=2024-01-01&endDate=2024-01-31",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"schedules",
+										"by-date-range"
+									],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2024-01-01",
+											"description": "Start date in YYYY-MM-DD format"
+										},
+										{
+											"key": "endDate",
+											"value": "2024-01-31",
+											"description": "End date in YYYY-MM-DD format"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Analytics & Reports",
+					"item": [
+						{
+							"name": "Get Medication History",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/history?days=30&medicationId=507f1f77bcf86cd799439012&type=Prescription",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"history"
+									],
+									"query": [
+										{
+											"key": "days",
+											"value": "30",
+											"description": "Number of days to look back (1-365)"
+										},
+										{
+											"key": "medicationId",
+											"value": "507f1f77bcf86cd799439012",
+											"description": "Specific medication ID (optional)"
+										},
+										{
+											"key": "type",
+											"value": "Prescription",
+											"description": "Medication type filter"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Medication Reminders",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/reminders?date=2024-01-15&includeCompleted=false",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"reminders"
+									],
+									"query": [
+										{
+											"key": "date",
+											"value": "2024-01-15",
+											"description": "Date for reminders (defaults to today)"
+										},
+										{
+											"key": "includeCompleted",
+											"value": "false",
+											"description": "Include completed medications"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Generate Daily Schedule",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/generate-schedule",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"generate-schedule"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Low Stock Medications",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/low-stock",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"low-stock"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Adherence Stats",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/adherence-stats",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"adherence-stats"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Daily Schedules",
+					"item": [
+						{
+							"name": "Create Daily Schedule",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"date\": \"2024-01-15\",\n  \"schedule\": [\n    {\n      \"time\": \"08:00\",\n      \"period\": \"Morning\",\n      \"medications\": [\"Lisinopril\", \"Vitamin D3\"],\n      \"isCompleted\": false\n    },\n    {\n      \"time\": \"18:00\",\n      \"period\": \"Evening\",\n      \"medications\": [\"Vitamin D3\"],\n      \"isCompleted\": false\n    }\n  ]\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/medications/schedules",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"schedules"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Daily Schedule",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"schedule\": [\n    {\n      \"time\": \"08:00\",\n      \"period\": \"Morning\",\n      \"medications\": [\"Lisinopril\", \"Vitamin D3\"],\n      \"isCompleted\": true,\n      \"completedAt\": \"2024-01-15T08:05:00Z\"\n    }\n  ]\n}"
+								},
+								"url": {
+									"raw": "{{Base_url}}/medications/schedules/507f1f77bcf86cd799439013",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"schedules",
+										"507f1f77bcf86cd799439013"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Mark Medication Taken",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{Base_url}}/medications/schedules/507f1f77bcf86cd799439013/mark-taken/08:00",
+									"host": [
+										"{{Base_url}}"
+									],
+									"path": [
+										"medications",
+										"schedules",
+										"507f1f77bcf86cd799439013",
+										"mark-taken",
+										"08:00"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "ADMIN",
+			"item": [
+				{
+					"name": "admin login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n      \"email\":\"admin@samsarawellness.in\",\n      \"password\":\"admin@1234\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{Base_url}}/admin/login",
+							"host": [
+								"{{Base_url}}"
+							],
+							"path": [
+								"admin",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "diet-genration",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"notes\": \"i ahve an issue with curd and vegitables and i am not eating non veg so geive diet accridgnly \"\r\n\r\n\r\n \r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/diet-generation/generate",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"diet-generation",
+						"generate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "diet-genration",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"notes\": \"abhishek.for.webdev@gmail.com\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/diet-generation/status",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"diet-generation",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "diet-genration history",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"notes\": \"abhishek.for.webdev@gmail.com\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/diet-generation/history?page=1&limit=10&status=generated",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"diet-generation",
+						"history"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "limit",
+							"value": "10"
+						},
+						{
+							"key": "status",
+							"value": "generated"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
