@@ -275,6 +275,27 @@
                 // Load language (required for Zoom SDK)
                 ZoomMtg.i18n.load('en-US');
 
+                // Function to hide loading screen
+                const hideLoading = () => {
+                    console.log('🔍 Attempting to hide loading screen...');
+                    const loadingContainer = document.getElementById('loading-container');
+                    if (loadingContainer) {
+                        console.log('🔍 Loading container found, hiding...');
+                        // Add hiding class for smooth transition
+                        loadingContainer.classList.add('hiding');
+                        setTimeout(() => {
+                            loadingContainer.style.display = 'none';
+                            updateDebugStatus('✅ Loading screen HIDDEN');
+                            console.log('✅✅✅ Loading screen HIDDEN successfully');
+                        }, 500);
+                    } else {
+                        console.error('❌ Loading container NOT FOUND!');
+                    }
+                };
+
+                // Track if join callbacks have fired
+                let joinCallbacksFired = false;
+
                 // Initialize Zoom first
                 ZoomMtg.init({
                     leaveUrl: window.location.origin,
@@ -291,6 +312,7 @@
                             sdkKey: sdkKey.substring(0, 10) + '...'
                         });
                         
+                        // Define meeting config with callbacks
                         const meetingConfig = {
                             meetingNumber: meetingNumber,
                             userName: userName,
@@ -299,27 +321,10 @@
                             userEmail: userEmail,
                             passWord: password,
                             success: function(res) {
+                                joinCallbacksFired = true;
                                 updateDebugStatus('✅ JOIN SUCCESS! Hiding loading...');
+                                console.log('✅✅✅ SUCCESS CALLBACK FIRED!');
                                 console.log('✅✅✅ Meeting joined successfully!', res);
-                                console.log('✅✅✅ Join success callback FIRED');
-                                
-                                // Function to hide loading screen
-                                const hideLoading = () => {
-                                    console.log('🔍 Attempting to hide loading screen...');
-                                    const loadingContainer = document.getElementById('loading-container');
-                                    if (loadingContainer) {
-                                        console.log('🔍 Loading container found, hiding...');
-                                        // Add hiding class for smooth transition
-                                        loadingContainer.classList.add('hiding');
-                                        setTimeout(() => {
-                                            loadingContainer.style.display = 'none';
-                                            updateDebugStatus('✅ Loading screen HIDDEN');
-                                            console.log('✅✅✅ Loading screen HIDDEN successfully');
-                                        }, 500);
-                                    } else {
-                                        console.error('❌ Loading container NOT FOUND!');
-                                    }
-                                };
                                 
                                 // Hide loading immediately - meeting is joining
                                 console.log('🚀 Hiding loading screen immediately...');
@@ -372,7 +377,9 @@
                                 }, 8000);
                             },
                             error: function(res) {
+                                joinCallbacksFired = true;
                                 updateDebugStatus('❌ JOIN ERROR - Check console');
+                                console.error('❌❌❌ ERROR CALLBACK FIRED!');
                                 console.error('❌❌❌ ERROR joining meeting:', res);
                                 console.error('❌ Error details:', JSON.stringify(res, null, 2));
                                 
@@ -404,37 +411,12 @@
                         
                         console.log('📞 Calling ZoomMtg.join() now...');
                         
-                        // Track if join callbacks have fired
-                        let joinCallbacksFired = false;
-                        const originalSuccess = meetingConfig.success;
-                        const originalError = meetingConfig.error;
-                        
-                        // Wrap success callback
-                        meetingConfig.success = function(res) {
-                            joinCallbacksFired = true;
-                            console.log('✅✅✅ SUCCESS CALLBACK FIRED!');
-                            originalSuccess(res);
-                        };
-                        
-                        // Wrap error callback
-                        meetingConfig.error = function(res) {
-                            joinCallbacksFired = true;
-                            console.log('❌❌❌ ERROR CALLBACK FIRED!');
-                            originalError(res);
-                        };
-                        
                         // Fallback: If callbacks don't fire within 15 seconds, hide loading anyway
                         setTimeout(() => {
                             if (!joinCallbacksFired) {
                                 console.warn('⚠️ Join callbacks did not fire within 15 seconds, hiding loading screen anyway');
                                 updateDebugStatus('⚠️ Callbacks timeout - hiding loading');
-                                const loadingContainer = document.getElementById('loading-container');
-                                if (loadingContainer) {
-                                    loadingContainer.classList.add('hiding');
-                                    setTimeout(() => {
-                                        loadingContainer.style.display = 'none';
-                                    }, 500);
-                                }
+                                hideLoading();
                             }
                         }, 15000);
                         
