@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Zoom Meeting</title>
+    <link type="text/css" rel="stylesheet" href='https://source.zoom.us/3.1.6/css/bootstrap.css' />
+    <link type="text/css" rel="stylesheet" href='https://source.zoom.us/3.1.6/css/react-select.css' />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+        #loading-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            z-index: 999999;
+            transition: opacity 0.5s ease-out;
+        }
+        #loading-container.hiding {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .spinner {
+            border: 4px solid #333;
+            border-top: 4px solid #2d8cff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: #fff;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        .loading-text.subtitle {
+            font-size: 14px;
+            color: #999;
+            margin-top: 5px;
+        }
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999999;
+            max-width: 400px;
+            display: none !important; /* Hidden from users, only for console debugging */
+        }
+        .error-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #1a1a1a;
+            padding: 20px;
+            text-align: center;
+        }
+        .error-message {
+            color: #ff4444;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .error-details {
+            color: #999;
+            font-size: 14px;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-container">
+        <div class="spinner"></div>
+        <div class="loading-text">Loading Zoom Meeting...</div>
+        <div class="loading-text subtitle" id="loading-status">Please allow camera and microphone access when prompted</div>
+    </div>
+
+    <div id="error-container" class="error-container" style="display: none;">
+        <div class="error-message" id="error-message">Failed to join meeting</div>
+        <div class="error-details" id="error-details"></div>
+    </div>
+
+    <div id="zoom-meeting-container"></div>
+    
+    <!-- Debug info (hidden from users) -->
+    <div id="debug-info" class="debug-info" style="display: none !important;">
+        <div><strong>Debug Status:</strong></div>
+        <div id="debug-status">Initializing...</div>
+    </div>
+
+    <!-- Load Zoom SDK dependencies -->
+    <script src="https://source.zoom.us/3.1.6/lib/vendor/react.min.js"></script>
+    <script src="https://source.zoom.us/3.1.6/lib/vendor/react-dom.min.js"></script>
+    <script src="https://source.zoom.us/3.1.6/lib/vendor/redux.min.js"></script>
+    <script src="https://source.zoom.us/3.1.6/lib/vendor/redux-thunk.min.js"></script>
+    <script src="https://source.zoom.us/3.1.6/lib/vendor/lodash.min.js"></script>
+    
+    <!-- Load Zoom Meeting SDK -->
+    <script src="https://source.zoom.us/3.1.6/zoom-meeting-3.1.6.min.js" 
+            onload="console.log('Zoom SDK loaded'); window.zoomSdkLoaded = true;"
+            onerror="console.error('Failed to load Zoom SDK'); window.zoomSdkError = true;"></script>
+
+    <script>
+        // Debug helper function (only logs to console, doesn't show on screen)
+        const updateDebugStatus = (status) => {
+            // Only log to console, don't show on screen
+            console.log('🔍 DEBUG STATUS:', status);
+            const statusEl = document.getElementById('debug-status');
+            if (statusEl) {
+                statusEl.textContent = status; // Update for console inspection only
+            }
+        };
+        
+        // Wait for DOM and scripts to load
+        window.addEventListener('DOMContentLoaded', async function() {
+            try {
+                updateDebugStatus('DOM loaded, waiting for Zoom SDK...');
+                console.log('DOM loaded, waiting for Zoom SDK...');
+                
+                // Wait for Zoom SDK to load
+                let attempts = 0;
+                const maxAttempts = 50; // 5 seconds max wait
+                while (!window.ZoomMtg && !window.zoomSdkError && attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (window.zoomSdkError || !window.ZoomMtg) {
+                    throw new Error('Zoom Meeting SDK failed to load. Please check your internet connection and try again.');
+                }
+                
+                updateDebugStatus('Zoom SDK ready');
+                console.log('Zoom SDK is ready');
+                // Get query parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                let meetingNumber = urlParams.get('meetingNumber') || urlParams.get('mn');
+                let password = urlParams.get('password') || urlParams.get('pwd') || '';
+                const userName = urlParams.get('userName') || urlParams.get('name') || 'Guest';
+                const userEmail = urlParams.get('email') || urlParams.get('userEmail') || '';
+                const role = parseInt(urlParams.get('role') || '0'); // 0 = participant, 1 = host
+                let accountId = urlParams.get('accountId') || null;
+                const classId = urlParams.get('classId') || null;
+                const sessionId = urlParams.get('sessionId') || null;
+                const eventId = urlParams.get('eventId') || null;
+                // Get base URL - use current origin (handles any port)
+                const apiBaseUrl = urlParams.get('apiBaseUrl') || window.location.origin;
+
+                // Get API base URL (remove /public/join-meeting if present)
+                const baseUrl = apiBaseUrl.replace(/\/v1\/zoom\/join-meeting$/, '').replace(/\/public\/join-meeting$/, '');
+
+                // If classId/sessionId/eventId is provided, fetch meeting details from database
+                if (classId || sessionId || eventId) {
+                    console.log('Fetching meeting details from database...');
+                    const detailsParams = new URLSearchParams();
+                    if (classId) detailsParams.append('classId', classId);
+                    if (sessionId) detailsParams.append('sessionId', sessionId);
+                    if (eventId) detailsParams.append('eventId', eventId);
+
+                    const detailsResponse = await fetch(`${baseUrl}/v1/zoom/getMeetingDetails?${detailsParams.toString()}`);
+                    
+                    if (!detailsResponse.ok) {
+                        const errorData = await detailsResponse.json().catch(() => ({}));
+                        throw new Error(errorData.message || `Failed to fetch meeting details: ${detailsResponse.status}`);
+                    }
+
+                    const detailsData = await detailsResponse.json();
+                    
+                    if (detailsData.status !== 'success') {
+                        throw new Error(detailsData.message || 'Failed to fetch meeting details');
+                    }
+
+                    // Use meeting details from database
+                    meetingNumber = detailsData.data.meetingNumber;
+                    password = detailsData.data.password || '';
+                    accountId = detailsData.data.accountId || accountId;
+
+                    console.log('Meeting details fetched:', {
+                        meetingNumber,
+                        password: password ? '***' : '(none)',
+                        accountId
+                    });
+                }
+
+                // Validate required parameters
+                if (!meetingNumber) {
+                    throw new Error('Meeting number is required. Please provide ?meetingNumber=XXX or ?classId=XXX in the URL.');
+                }
+
+                console.log('Meeting join parameters:', {
+                    meetingNumber,
+                    userName,
+                    userEmail,
+                    role,
+                    accountId,
+                    hasPassword: !!password
+                });
+
+                // Fetch SDK signature from backend
+                const signatureResponse = await fetch(`${baseUrl}/v1/zoom/generateSDKSignature`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        meetingNumber: meetingNumber,
+                        role: role,
+                        accountId: accountId,
+                        classId: classId,
+                        sessionId: sessionId,
+                        eventId: eventId
+                    })
+                });
+
+                if (!signatureResponse.ok) {
+                    const errorData = await signatureResponse.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Failed to generate signature: ${signatureResponse.status}`);
+                }
+
+                const signatureData = await signatureResponse.json();
+                
+                if (signatureData.status !== 'success') {
+                    throw new Error(signatureData.message || 'Failed to generate signature');
+                }
+
+                const { signature, sdkKey } = signatureData.data;
+                console.log('SDK signature generated successfully');
+
+                // ZoomMtg should already be available from the script load
+                const ZoomMtg = window.ZoomMtg;
+                if (!ZoomMtg) {
+                    throw new Error('Zoom Meeting SDK is not available. Please refresh the page.');
+                }
+                
+                console.log('Initializing Zoom SDK...');
+                // Check system requirements
+                console.log('System requirements:', JSON.stringify(ZoomMtg.checkSystemRequirements()));
+                
+                // Set Zoom JS library (optional, defaults to source.zoom.us)
+                ZoomMtg.setZoomJSLib('https://source.zoom.us/3.1.6/lib', '/av');
+                
+                // Pre-load WASM files
+                ZoomMtg.preLoadWasm();
+                
+                // Prepare Web SDK
+                ZoomMtg.prepareWebSDK();
+                
+                // Load language (required for Zoom SDK)
+                ZoomMtg.i18n.load('en-US');
+
+                // Initialize Zoom first
+                ZoomMtg.init({
+                    leaveUrl: window.location.origin,
+                    disableCORP: !window.crossOriginIsolated, // default true
+                    success: function(res) {
+                        console.log('✅ Zoom initialized successfully');
+                        console.log('✅ Init success callback fired, preparing to join...');
+                        
+                        // Configure meeting join parameters
+                        console.log('🔧 Configuring meeting join with:', {
+                            meetingNumber,
+                            userName,
+                            hasPassword: !!password,
+                            sdkKey: sdkKey.substring(0, 10) + '...'
+                        });
+                        
+                        const meetingConfig = {
+                            meetingNumber: meetingNumber,
+                            userName: userName,
+                            signature: signature,
+                            sdkKey: sdkKey,
+                            userEmail: userEmail,
+                            passWord: password,
+                            success: function(res) {
+                                updateDebugStatus('✅ JOIN SUCCESS! Hiding loading...');
+                                console.log('✅✅✅ Meeting joined successfully!', res);
+                                console.log('✅✅✅ Join success callback FIRED');
+                                
+                                // Function to hide loading screen
+                                const hideLoading = () => {
+                                    console.log('🔍 Attempting to hide loading screen...');
+                                    const loadingContainer = document.getElementById('loading-container');
+                                    if (loadingContainer) {
+                                        console.log('🔍 Loading container found, hiding...');
+                                        // Add hiding class for smooth transition
+                                        loadingContainer.classList.add('hiding');
+                                        setTimeout(() => {
+                                            loadingContainer.style.display = 'none';
+                                            updateDebugStatus('✅ Loading screen HIDDEN');
+                                            console.log('✅✅✅ Loading screen HIDDEN successfully');
+                                        }, 500);
+                                    } else {
+                                        console.error('❌ Loading container NOT FOUND!');
+                                    }
+                                };
+                                
+                                // Hide loading immediately - meeting is joining
+                                console.log('🚀 Hiding loading screen immediately...');
+                                hideLoading();
+                                
+                                // Set up meeting event listeners
+                                try {
+                                    // Listen for meeting status changes
+                                    ZoomMtg.inMeetingServiceListener("onMeetingStatus", function (data) {
+                                        console.log("📊 Meeting status changed:", data);
+                                        hideLoading(); // Hide whenever status changes
+                                    });
+                                    
+                                    // Listen for when user joins
+                                    ZoomMtg.inMeetingServiceListener("onUserJoin", function (data) {
+                                        console.log("👤 User joined meeting:", data);
+                                        hideLoading();
+                                    });
+                                    
+                                    // Listen for waiting room
+                                    ZoomMtg.inMeetingServiceListener("onUserIsInWaitingRoom", function (data) {
+                                        console.log("🚪 Waiting room status:", data);
+                                        hideLoading();
+                                    });
+                                    
+                                } catch (e) {
+                                    console.warn("Could not set up meeting listeners:", e);
+                                }
+                                
+                                // Additional fallback: Check for Zoom DOM elements
+                                const checkZoomContent = setInterval(() => {
+                                    const hasZoomContent = document.querySelector('[id^="zmmtg-root"]') || 
+                                                          document.querySelector('.zm-video-container') ||
+                                                          document.querySelector('.zm-client-view') ||
+                                                          document.querySelector('#wc-container') ||
+                                                          document.querySelector('.zm-video-view');
+                                    
+                                    if (hasZoomContent) {
+                                        console.log('✅ Zoom content detected, hiding loading screen');
+                                        hideLoading();
+                                        clearInterval(checkZoomContent);
+                                    }
+                                }, 500);
+                                
+                                // Stop checking after 8 seconds
+                                setTimeout(() => {
+                                    clearInterval(checkZoomContent);
+                                    console.log('⏰ 8 second timeout - hiding loading as fallback');
+                                    hideLoading(); // Final fallback
+                                }, 8000);
+                            },
+                            error: function(res) {
+                                updateDebugStatus('❌ JOIN ERROR - Check console');
+                                console.error('❌❌❌ ERROR joining meeting:', res);
+                                console.error('❌ Error details:', JSON.stringify(res, null, 2));
+                                
+                                let errorMessage = res.reason || res.errorMessage || res.error || 'Unknown error';
+                                
+                                // Handle specific Zoom errors
+                                if (res.errorCode === 1 || errorMessage.includes('recaptcha') || errorMessage.includes('limit')) {
+                                    errorMessage = 'Zoom has temporarily limited access. Please wait a few minutes and try again, or verify reCAPTCHA at https://zoom.us';
+                                }
+                                
+                                console.error('❌ Showing error to user:', errorMessage);
+                                showError('Failed to join meeting', errorMessage);
+                            }
+                        };
+                        
+                        // Join the meeting
+                        console.log('🚀🚀🚀 Attempting to join meeting:', {
+                            meetingNumber: meetingNumber,
+                            userName: userName,
+                            hasPassword: !!password,
+                            signatureLength: signature ? signature.length : 0
+                        });
+                        
+                        // Update loading status
+                        const statusEl = document.getElementById('loading-status');
+                        if (statusEl) {
+                            statusEl.textContent = 'Joining meeting... Please allow camera and microphone access.';
+                        }
+                        
+                        console.log('📞 Calling ZoomMtg.join() now...');
+                        
+                        // Track if join callbacks have fired
+                        let joinCallbacksFired = false;
+                        const originalSuccess = meetingConfig.success;
+                        const originalError = meetingConfig.error;
+                        
+                        // Wrap success callback
+                        meetingConfig.success = function(res) {
+                            joinCallbacksFired = true;
+                            console.log('✅✅✅ SUCCESS CALLBACK FIRED!');
+                            originalSuccess(res);
+                        };
+                        
+                        // Wrap error callback
+                        meetingConfig.error = function(res) {
+                            joinCallbacksFired = true;
+                            console.log('❌❌❌ ERROR CALLBACK FIRED!');
+                            originalError(res);
+                        };
+                        
+                        // Fallback: If callbacks don't fire within 15 seconds, hide loading anyway
+                        setTimeout(() => {
+                            if (!joinCallbacksFired) {
+                                console.warn('⚠️ Join callbacks did not fire within 15 seconds, hiding loading screen anyway');
+                                updateDebugStatus('⚠️ Callbacks timeout - hiding loading');
+                                const loadingContainer = document.getElementById('loading-container');
+                                if (loadingContainer) {
+                                    loadingContainer.classList.add('hiding');
+                                    setTimeout(() => {
+                                        loadingContainer.style.display = 'none';
+                                    }, 500);
+                                }
+                            }
+                        }, 15000);
+                        
+                        try {
+                            ZoomMtg.join(meetingConfig);
+                            console.log('📞 ZoomMtg.join() called successfully');
+                            updateDebugStatus('Join called, waiting for response...');
+                        } catch (error) {
+                            console.error('❌ Exception calling ZoomMtg.join():', error);
+                            showError('Failed to join meeting', error.message);
+                        }
+                    },
+                    error: function(err) {
+                        console.error('❌ Zoom initialization error:', err);
+                        console.error('❌ Init error details:', JSON.stringify(err, null, 2));
+                        showError('Failed to initialize Zoom', err.reason || err.errorMessage || err.error || 'Unknown error');
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Error joining meeting', error.message);
+            }
+        });
+
+        function showError(message, details) {
+            document.getElementById('loading-container').style.display = 'none';
+            document.getElementById('error-container').style.display = 'flex';
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-details').textContent = details || '';
+        }
+    </script>
+</body>
+</html>
+

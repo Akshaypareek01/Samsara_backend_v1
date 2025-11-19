@@ -22,7 +22,62 @@ if (config.env !== 'test') {
 }
 
 // set security HTTP headers
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "'unsafe-eval'", // Required for Zoom SDK
+        "https://source.zoom.us",
+        "https://zoom.us", // Main Zoom domain
+        "https://*.zoom.us" // All Zoom subdomains
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://source.zoom.us",
+        "https://*.zoom.us",
+        "https://us05st1.zoom.us",
+        "https://st1.zoom.us"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https:",
+        "blob:"
+      ],
+      connectSrc: [
+        "'self'",
+        "https://api.zoom.us",
+        "https://*.zoom.us",
+        "wss://*.zoom.us",
+        "https://source.zoom.us",
+        "https://*.cloudfront.net" // For Zoom SDK sourcemaps and resources
+      ],
+      fontSrc: [
+        "'self'",
+        "https://source.zoom.us",
+        "data:"
+      ],
+      frameSrc: [
+        "'self'",
+        "https://*.zoom.us"
+      ],
+      mediaSrc: [
+        "'self'",
+        "blob:",
+        "https://*.zoom.us"
+      ],
+      workerSrc: [
+        "'self'",
+        "blob:"
+      ]
+    }
+  },
+  crossOriginEmbedderPolicy: false // Required for Zoom SDK
+}));
 
 // parse json request body
 app.use(express.json());

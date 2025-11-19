@@ -7,8 +7,13 @@ import crypto from 'crypto';
 import cors from 'cors';
 import KJUR from 'jsrsasign';
 import jwt from 'jsonwebtoken';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { Class, CustomSession, Event } from '../models/index.js';
-import { createZoomMeeting as createZoomMeetingService, endZoomMeeting } from '../services/zoomService.js';
+import { createZoomMeeting as createZoomMeetingService, endZoomMeeting, generateSDKSignature } from '../services/zoomService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const CLIENT_ID = 'USSKQRgqQwGWNLpTjHStQ';
 const CLIENT_SECRET = 'GkZ34TNaLUUsePqd0UkRmtJCM1uKa5mz';
@@ -537,3 +542,195 @@ export const getMeeting = async(req, res, next) => {
         });
     }
 }
+
+/**
+ * Generate SDK signature for joining Zoom meetings
+ * This endpoint generates the signature using the correct SDK key/secret
+ * based on the account that created the meeting
+ */
+export const generateMeetingSDKSignature = async (req, res) => {
+    try {
+        const { meetingNumber, role, accountId, classId, sessionId, eventId } = req.body;
+        
+        // Validate required fields
+        if (!meetingNumber) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Meeting number is required'
+            });
+        }
+
+        // Default role to participant (0) if not provided
+        const userRole = role !== undefined ? role : 0;
+
+        let zoomAccountId = accountId;
+
+        // If accountId not provided, try to look it up from meeting data
+        if (!zoomAccountId) {
+            if (classId) {
+                const classDoc = await Class.findById(classId);
+                if (classDoc && classDoc.zoomAccountUsed) {
+                    zoomAccountId = classDoc.zoomAccountUsed;
+                }
+            } else if (sessionId) {
+                const sessionDoc = await CustomSession.findById(sessionId);
+                if (sessionDoc && sessionDoc.zoomAccountUsed) {
+                    zoomAccountId = sessionDoc.zoomAccountUsed;
+                }
+            } else if (eventId) {
+                const eventDoc = await Event.findById(eventId);
+                if (eventDoc && eventDoc.zoomAccountUsed) {
+                    zoomAccountId = eventDoc.zoomAccountUsed;
+                }
+            }
+
+            // If still not found, try to find by meeting number in any collection
+            if (!zoomAccountId) {
+                const classWithMeeting = await Class.findOne({ meeting_number: meetingNumber.toString() });
+                if (classWithMeeting && classWithMeeting.zoomAccountUsed) {
+                    zoomAccountId = classWithMeeting.zoomAccountUsed;
+                } else {
+                    const sessionWithMeeting = await CustomSession.findOne({ meeting_number: meetingNumber.toString() });
+                    if (sessionWithMeeting && sessionWithMeeting.zoomAccountUsed) {
+                        zoomAccountId = sessionWithMeeting.zoomAccountUsed;
+                    } else {
+                        const eventWithMeeting = await Event.findOne({ meeting_number: meetingNumber.toString() });
+                        if (eventWithMeeting && eventWithMeeting.zoomAccountUsed) {
+                            zoomAccountId = eventWithMeeting.zoomAccountUsed;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If still no account ID found, default to account_1
+        if (!zoomAccountId) {
+            console.warn(`Account ID not found for meeting ${meetingNumber}, defaulting to account_1`);
+            zoomAccountId = 'account_1';
+        }
+
+        // Generate SDK signature using the correct account's credentials
+        const signatureData = generateSDKSignature(meetingNumber, userRole, zoomAccountId);
+
+        res.json({
+            status: 'success',
+            data: {
+                signature: signatureData.signature,
+                sdkKey: signatureData.sdkKey,
+                accountId: signatureData.accountId,
+                meetingNumber: meetingNumber,
+                role: userRole
+            }
+        });
+    } catch (error) {
+        console.error('Error generating SDK signature:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Failed to generate SDK signature'
+        });
+    }
+};
+
+/**
+ * Get meeting details from class/session/event
+ * This endpoint fetches meeting number and password from the database
+ */
+export const getMeetingDetails = async (req, res) => {
+    try {
+        const { classId, sessionId, eventId } = req.query;
+        
+        let meetingData = null;
+        let accountId = null;
+
+        if (classId) {
+            const classDoc = await Class.findById(classId);
+            if (!classDoc) {
+                return res.status(404).json({
+                    status: 'fail',
+                    message: 'Class not found'
+                });
+            }
+            if (!classDoc.meeting_number) {
+                return res.status(400).json({
+                    status: 'fail',
+                    message: 'No meeting created for this class yet'
+                });
+            }
+            meetingData = {
+                meetingNumber: classDoc.meeting_number,
+                password: classDoc.password || '',
+                accountId: classDoc.zoomAccountUsed
+            };
+        } else if (sessionId) {
+            const sessionDoc = await CustomSession.findById(sessionId);
+            if (!sessionDoc) {
+                return res.status(404).json({
+                    status: 'fail',
+                    message: 'Session not found'
+                });
+            }
+            if (!sessionDoc.meeting_number) {
+                return res.status(400).json({
+                    status: 'fail',
+                    message: 'No meeting created for this session yet'
+                });
+            }
+            meetingData = {
+                meetingNumber: sessionDoc.meeting_number,
+                password: sessionDoc.password || '',
+                accountId: sessionDoc.zoomAccountUsed
+            };
+        } else if (eventId) {
+            const eventDoc = await Event.findById(eventId);
+            if (!eventDoc) {
+                return res.status(404).json({
+                    status: 'fail',
+                    message: 'Event not found'
+                });
+            }
+            if (!eventDoc.meeting_number) {
+                return res.status(400).json({
+                    status: 'fail',
+                    message: 'No meeting created for this event yet'
+                });
+            }
+            meetingData = {
+                meetingNumber: eventDoc.meeting_number,
+                password: eventDoc.password || '',
+                accountId: eventDoc.zoomAccountUsed
+            };
+        } else {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'classId, sessionId, or eventId is required'
+            });
+        }
+
+        res.json({
+            status: 'success',
+            data: meetingData
+        });
+    } catch (error) {
+        console.error('Error fetching meeting details:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: error.message || 'Failed to fetch meeting details'
+        });
+    }
+};
+
+/**
+ * Serve the public meeting join page
+ */
+export const serveJoinMeetingPage = async (req, res) => {
+    try {
+        const publicPath = path.join(__dirname, '../../public/join-meeting.html');
+        res.sendFile(publicPath);
+    } catch (error) {
+        console.error('Error serving join meeting page:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Failed to load meeting page'
+        });
+    }
+};

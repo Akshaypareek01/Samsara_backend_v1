@@ -1,4 +1,5 @@
 import axios from 'axios';
+import crypto from 'crypto';
 
 /**
  * Centralized Zoom Service with Multiple Account Support
@@ -13,22 +14,26 @@ const ZOOM_ACCOUNTS = [
     clientSecret: process.env.ZOOM_CLIENT_SECRET_1 || "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ",
     accountId: process.env.ZOOM_ACCOUNT_ID_1 || "C76CruAJSpitbs_UIRb4eQ",
     userId: process.env.ZOOM_USER_ID_1 || "developer@theodin.in",
+    sdkKey: process.env.ZOOM_MEETING_SDK_KEY_1 || "TsFvuPFLTeKf7_bNBWggPA",
+    sdkSecret: process.env.ZOOM_MEETING_SDK_SECRET_1 || "C7Dm4JuZ2QXoN0bM2OYTw5JxZvjPK1y9",
     isActive: true,
     lastUsed: null,
     activeMeetings: 0,
     maxConcurrentMeetings: 100 // Allow multiple meetings per account
   },
-  // {
-  //   id: 'account_2',
-  //   clientId: process.env.ZOOM_CLIENT_ID_2,
-  //   clientSecret: process.env.ZOOM_CLIENT_SECRET_2,
-  //   accountId: process.env.ZOOM_ACCOUNT_ID_2,
-  //   userId: process.env.ZOOM_USER_ID_2,
-  //   isActive: true,
-  //   lastUsed: null,
-  //   activeMeetings: 0,
-  //   maxConcurrentMeetings: 100 // Allow multiple meetings per account
-  // },
+  {
+    id: 'account_2',
+    clientId: process.env.ZOOM_CLIENT_ID_2,
+    clientSecret: process.env.ZOOM_CLIENT_SECRET_2,
+    accountId: process.env.ZOOM_ACCOUNT_ID_2,
+    userId: process.env.ZOOM_USER_ID_2,
+    sdkKey: process.env.ZOOM_MEETING_SDK_KEY_2,
+    sdkSecret: process.env.ZOOM_MEETING_SDK_SECRET_2,
+    isActive: true,
+    lastUsed: null,
+    activeMeetings: 0,
+    maxConcurrentMeetings: 100 // Allow multiple meetings per account
+  },
   // {
   //   id: 'account_3',
   //   clientId: process.env.ZOOM_CLIENT_ID_3,
@@ -523,12 +528,101 @@ export const resetAllAccountStatuses = () => {
   console.log(`All ${validAccounts.length} account statuses reset to active`);
 };
 
+/**
+ * Get account by ID
+ * @param {string} accountId - Account ID (e.g., 'account_1', 'account_2')
+ * @returns {Object|null} Account configuration or null if not found
+ */
+export const getAccountById = (accountId) => {
+  return validAccounts.find(account => account.id === accountId) || null;
+};
+
+/**
+ * Generate SDK signature for joining Zoom meetings
+ * This signature must match the SDK key/secret of the account that created the meeting
+ * @param {string} meetingNumber - Zoom meeting number
+ * @param {number} role - User role (0 = participant, 1 = host)
+ * @param {string} accountId - Account ID that created the meeting (e.g., 'account_1', 'account_2')
+ * @returns {Object} SDK signature and key
+ */
+export const generateSDKSignature = (meetingNumber, role, accountId) => {
+  try {
+    const account = getAccountById(accountId);
+    
+    if (!account) {
+      throw new Error(`Account ${accountId} not found`);
+    }
+
+    if (!account.sdkKey || !account.sdkSecret) {
+      throw new Error(`Account ${accountId} is missing SDK key or secret. Please configure ZOOM_MEETING_SDK_KEY_${accountId.split('_')[1]} and ZOOM_MEETING_SDK_SECRET_${accountId.split('_')[1]} in .env`);
+    }
+
+    // Generate JWT token for SDK signature (Zoom SDK format)
+    const iat = Math.floor(Date.now() / 1000) - 30;
+    const exp = iat + 60 * 60 * 2; // 2 hours expiry
+
+    const header = {
+      alg: 'HS256',
+      typ: 'JWT'
+    };
+
+    // Zoom SDK signature payload includes meeting number and role
+    const payload = {
+      iss: account.sdkKey,
+      exp: exp,
+      iat: iat,
+      aud: 'zoom',
+      appKey: account.sdkKey,
+      tokenExp: exp,
+      mn: meetingNumber.toString(), // Meeting number
+      role: role // 0 = participant, 1 = host
+    };
+
+    // Create JWT signature using base64url encoding
+    const encodedHeader = Buffer.from(JSON.stringify(header))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+    
+    const encodedPayload = Buffer.from(JSON.stringify(payload))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+    
+    const signatureInput = `${encodedHeader}.${encodedPayload}`;
+    const signature = crypto
+      .createHmac('sha256', account.sdkSecret)
+      .update(signatureInput)
+      .digest('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+    
+    const sdkSignature = `${signatureInput}.${signature}`;
+
+    console.log(`Generated SDK signature for account ${accountId}, meeting ${meetingNumber}, role ${role}`);
+
+    return {
+      signature: sdkSignature,
+      sdkKey: account.sdkKey,
+      accountId: account.id
+    };
+  } catch (error) {
+    console.error(`Error generating SDK signature for account ${accountId}:`, error.message);
+    throw error;
+  }
+};
+
 export default {
   createZoomMeeting,
   endZoomMeeting,
   getAccountUsageStats,
   resetAccountStatus,
-  resetAllAccountStatuses
+  resetAllAccountStatuses,
+  getAccountById,
+  generateSDKSignature
 };
 
 // Export for testing purposes
