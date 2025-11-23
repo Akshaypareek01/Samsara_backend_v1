@@ -344,13 +344,20 @@ export const createZoomMeeting = async (meetingData) => {
           host_video: true,
           participant_video: true,
           join_before_host: true,
-          approval_type: 1,
+          approval_type: 2, // 0 = Automatically approve, 1 = Manually approve, 2 = No registration required
           audio: 'both',
           auto_recording: 'local',
           waiting_room: false,
+          enforce_login: false, // Don't require login
+          registrants_email_notification: false,
+          meeting_authentication: false, // Disable authentication requirement
           ...meetingData.settings
         },
       };
+      
+      // Explicitly disable registration - override any account-level defaults
+      // approval_type: 2 means "No registration required"
+      requestBody.settings.approval_type = 2;
 
       // Create the meeting
       const response = await axios.post(

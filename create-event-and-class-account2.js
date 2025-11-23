@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import config from './src/config/config.js';
-import { Event, User } from './src/models/index.js';
+import { Event, Class, User } from './src/models/index.js';
 import { createZoomMeeting, getAccountById } from './src/services/zoomService.js';
 
 dotenv.config();
@@ -75,10 +75,40 @@ const createEvent = async (teacherId, eventName) => {
   }
 };
 
-// Start meeting with specific account
-const startMeetingWithAccount = async (eventDoc, accountId) => {
+// Create a class
+const createClass = async (teacherId, title) => {
   try {
-    console.log(`🚀 Starting Zoom meeting with ${accountId}...`);
+    const classData = {
+      title: title,
+      description: `Test class - ${title}`,
+      teacher: teacherId,
+      schedule: new Date(),
+      startTime: new Date().toTimeString().slice(0, 5),
+      endTime: new Date(Date.now() + 60 * 60 * 1000).toTimeString().slice(0, 5),
+      duration: 60,
+      maxCapacity: 50,
+      classType: 'online',
+      classCategory: 'yoga class',
+      level: ['Beginner'],
+      status: false,
+    };
+
+    const newClass = new Class(classData);
+    await newClass.save();
+    console.log('✅ Class created:', newClass._id);
+    console.log('   Title:', newClass.title);
+    
+    return newClass;
+  } catch (error) {
+    console.error('❌ Error creating class:', error);
+    throw error;
+  }
+};
+
+// Start meeting with specific account
+const startMeetingWithAccount = async (doc, accountId, docType) => {
+  try {
+    console.log(`🚀 Starting Zoom meeting with ${accountId} for ${docType}...`);
     
     // Get the specific account
     const account = getAccountById(accountId);
@@ -87,12 +117,12 @@ const startMeetingWithAccount = async (eventDoc, accountId) => {
     }
     
     const meetingData = {
-      topic: eventDoc.eventName || "Event Meeting",
-      startTime: new Date(eventDoc.startDate || new Date()).toISOString(),
+      topic: docType === 'event' ? (doc.eventName || "Event Meeting") : (doc.title || "Class Meeting"),
+      startTime: new Date(docType === 'event' ? (doc.startDate || new Date()) : (doc.schedule || new Date())).toISOString(),
       duration: 60,
       timezone: 'Asia/Kolkata',
-      password: eventDoc.password || "",
-      agenda: eventDoc.details || "",
+      password: doc.password || "",
+      agenda: docType === 'event' ? (doc.details || "") : (doc.description || ""),
       settings: {
         host_video: true,
         participant_video: true,
@@ -104,12 +134,7 @@ const startMeetingWithAccount = async (eventDoc, accountId) => {
       },
     };
 
-    // Force use of specific account by temporarily disabling others
-    const originalAccounts = account.isActive;
-    account.isActive = true;
-    
     // Create meeting - it will use the specified account due to load balancing
-    // But we need to ensure it uses the right one
     const result = await createZoomMeeting(meetingData);
     
     // Verify which account was actually used
@@ -117,12 +142,12 @@ const startMeetingWithAccount = async (eventDoc, accountId) => {
       console.warn(`⚠️  Warning: Requested ${accountId} but got ${result.accountUsed}`);
     }
 
-    // Update event with meeting info
-    eventDoc.meeting_number = result.meetingId;
-    eventDoc.password = result.password;
-    eventDoc.status = true;
-    eventDoc.zoomAccountUsed = result.accountUsed;
-    await eventDoc.save();
+    // Update document with meeting info
+    doc.meeting_number = result.meetingId;
+    doc.password = result.password;
+    doc.status = true;
+    doc.zoomAccountUsed = result.accountUsed;
+    await doc.save();
 
     console.log(`✅ Zoom meeting created with ${result.accountUsed}:`);
     console.log('   Meeting Number:', result.meetingId);
@@ -142,12 +167,18 @@ const startMeetingWithAccount = async (eventDoc, accountId) => {
 };
 
 // Generate join link
-const generateJoinLink = (baseUrl, eventId, userName = 'Guest', role = 0) => {
+const generateJoinLink = (baseUrl, eventId, classId, userName = 'Guest', role = 0) => {
   const params = new URLSearchParams({
-    eventId: eventId.toString(),
     userName: userName,
     role: role.toString(),
   });
+  
+  if (eventId) {
+    params.append('eventId', eventId.toString());
+  }
+  if (classId) {
+    params.append('classId', classId.toString());
+  }
   
   return `${baseUrl}/v1/zoom/join-meeting?${params.toString()}`;
 };
@@ -155,7 +186,7 @@ const generateJoinLink = (baseUrl, eventId, userName = 'Guest', role = 0) => {
 // Main function
 const main = async () => {
   try {
-    console.log('\n🎯 Creating two events with different accounts...\n');
+    console.log('\n🎯 Creating Event and Class with Account 2 for testing...\n');
     
     // Connect to database
     await connectDB();
@@ -163,62 +194,58 @@ const main = async () => {
     // Get or create teacher
     const teacher = await getOrCreateTeacher();
     
-    // Create first event
-    console.log('\n📋 Creating Event 1 for Account 1...');
-    const event1 = await createEvent(teacher._id, `Test Event - Account 1 - ${new Date().toLocaleString()}`);
+    // Create event with account_2
+    console.log('\n📋 Creating Event for Account 2...');
+    const event = await createEvent(teacher._id, `Test Event - Account 2 - ${new Date().toLocaleString()}`);
+    const eventMeeting = await startMeetingWithAccount(event, 'account_2', 'event');
     
-    // Start meeting - should use account_1 (first available)
-    const meeting1 = await startMeetingWithAccount(event1, 'account_1');
-    
-    // Create second event
-    console.log('\n📋 Creating Event 2 for Account 2...');
-    const event2 = await createEvent(teacher._id, `Test Event - Account 2 - ${new Date().toLocaleString()}`);
-    
-    // Start meeting - should use account_2 (load balancing will pick it)
-    const meeting2 = await startMeetingWithAccount(event2, 'account_2');
+    // Create class with account_2
+    console.log('\n📋 Creating Class for Account 2...');
+    const classDoc = await createClass(teacher._id, `Test Class - Account 2 - ${new Date().toLocaleString()}`);
+    const classMeeting = await startMeetingWithAccount(classDoc, 'account_2', 'class');
     
     // Generate join links
     const baseUrl = process.env.BASE_URL || process.env.FRONTEND_URL || 'http://localhost:8000';
     
-    const event1StudentLink = generateJoinLink(baseUrl, event1._id, 'Student', 0);
-    const event1HostLink = generateJoinLink(baseUrl, event1._id, 'Teacher', 1);
-    const event2StudentLink = generateJoinLink(baseUrl, event2._id, 'Student', 0);
-    const event2HostLink = generateJoinLink(baseUrl, event2._id, 'Teacher', 1);
+    const eventStudentLink = generateJoinLink(baseUrl, event._id, null, 'Student', 0);
+    const eventHostLink = generateJoinLink(baseUrl, event._id, null, 'Teacher', 1);
+    const classStudentLink = generateJoinLink(baseUrl, null, classDoc._id, 'Student', 0);
+    const classHostLink = generateJoinLink(baseUrl, null, classDoc._id, 'Teacher', 1);
     
     // Display results
     console.log('\n' + '='.repeat(70));
-    console.log('📋 MEETING 1 - ACCOUNT 1');
+    console.log('📋 EVENT - ACCOUNT 2');
     console.log('='.repeat(70));
-    console.log('Event ID:', event1._id);
-    console.log('Event Name:', event1.eventName);
-    console.log('Meeting Number:', meeting1.meetingNumber);
-    console.log('Password:', meeting1.password || '(none)');
-    console.log('Account Used:', meeting1.accountUsed);
-    console.log('Zoom Join URL:', meeting1.joinUrl);
+    console.log('Event ID:', event._id);
+    console.log('Event Name:', event.eventName);
+    console.log('Meeting Number:', eventMeeting.meetingNumber);
+    console.log('Password:', eventMeeting.password || '(none)');
+    console.log('Account Used:', eventMeeting.accountUsed);
+    console.log('Zoom Join URL:', eventMeeting.joinUrl);
     console.log('\n🔗 JOIN LINKS:');
-    console.log('Student:', event1StudentLink);
-    console.log('Host:', event1HostLink);
+    console.log('Student:', eventStudentLink);
+    console.log('Host:', eventHostLink);
     
     console.log('\n' + '='.repeat(70));
-    console.log('📋 MEETING 2 - ACCOUNT 2');
+    console.log('📋 CLASS - ACCOUNT 2');
     console.log('='.repeat(70));
-    console.log('Event ID:', event2._id);
-    console.log('Event Name:', event2.eventName);
-    console.log('Meeting Number:', meeting2.meetingNumber);
-    console.log('Password:', meeting2.password || '(none)');
-    console.log('Account Used:', meeting2.accountUsed);
-    console.log('Zoom Join URL:', meeting2.joinUrl);
+    console.log('Class ID:', classDoc._id);
+    console.log('Class Title:', classDoc.title);
+    console.log('Meeting Number:', classMeeting.meetingNumber);
+    console.log('Password:', classMeeting.password || '(none)');
+    console.log('Account Used:', classMeeting.accountUsed);
+    console.log('Zoom Join URL:', classMeeting.joinUrl);
     console.log('\n🔗 JOIN LINKS:');
-    console.log('Student:', event2StudentLink);
-    console.log('Host:', event2HostLink);
+    console.log('Student:', classStudentLink);
+    console.log('Host:', classHostLink);
     console.log('='.repeat(70));
     
-    console.log('\n✅ Both meetings created successfully!\n');
-    console.log('📝 QUICK REFERENCE:');
-    console.log(`\nMeeting 1 (${meeting1.accountUsed}):`);
-    console.log(`  ${event1StudentLink}`);
-    console.log(`\nMeeting 2 (${meeting2.accountUsed}):`);
-    console.log(`  ${event2StudentLink}`);
+    console.log('\n✅ Both Event and Class created successfully with Account 2!\n');
+    console.log('📝 QUICK REFERENCE FOR TESTING:');
+    console.log(`\nEvent (${eventMeeting.accountUsed}) - Student:`);
+    console.log(`  ${eventStudentLink}`);
+    console.log(`\nClass (${classMeeting.accountUsed}) - Student:`);
+    console.log(`  ${classStudentLink}`);
     console.log('');
     
     // Close database connection
@@ -234,4 +261,5 @@ const main = async () => {
 
 // Run the script
 main();
+
 

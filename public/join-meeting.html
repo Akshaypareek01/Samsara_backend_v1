@@ -252,6 +252,11 @@
 
                 const { signature, sdkKey } = signatureData.data;
                 console.log('SDK signature generated successfully');
+                console.log('Account info:', {
+                    accountId: signatureData.data.accountId,
+                    sdkKey: sdkKey.substring(0, 10) + '...',
+                    role: role
+                });
 
                 // ZoomMtg should already be available from the script load
                 const ZoomMtg = window.ZoomMtg;
@@ -274,6 +279,22 @@
                 
                 // Load language (required for Zoom SDK)
                 ZoomMtg.i18n.load('en-US');
+                
+                // Create a global meetingConfig placeholder BEFORE SDK initialization
+                // This ensures SDK's React components can always access it
+                window.meetingConfig = {
+                    meetingNumber: meetingNumber,
+                    userName: userName,
+                    signature: signature,
+                    sdkKey: sdkKey,
+                    userEmail: userEmail,
+                    passWord: password,
+                    role: role,
+                    accountId: signatureData.data.accountId
+                };
+                window.ZoomMeetingConfig = window.meetingConfig;
+                
+                console.log('✅ Pre-initialized window.meetingConfig for SDK access');
 
                 // Function to hide loading screen
                 const hideLoading = () => {
@@ -394,6 +415,16 @@
                                 showError('Failed to join meeting', errorMessage);
                             }
                         };
+                        
+                        // CRITICAL: Update window.meetingConfig with callbacks
+                        // The SDK's React components access this from closures, so it must be on window
+                        Object.assign(window.meetingConfig, meetingConfig);
+                        window.ZoomMeetingConfig = window.meetingConfig;
+                        
+                        console.log('✅ Updated window.meetingConfig with callbacks:', {
+                            hasCallbacks: !!(window.meetingConfig.success && window.meetingConfig.error),
+                            role: role
+                        });
                         
                         // Join the meeting
                         console.log('🚀🚀🚀 Attempting to join meeting:', {
