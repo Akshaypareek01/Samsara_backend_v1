@@ -129,6 +129,43 @@
             onerror="console.error('Failed to load Zoom SDK'); window.zoomSdkError = true;"></script>
 
     <script>
+        // Device detection helper function
+        const isMobileDevice = () => {
+            // Check screen width (mobile typically <= 768px)
+            const isSmallScreen = window.innerWidth <= 768 || window.screen.width <= 768;
+            
+            // Check user agent for mobile devices
+            const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // Check for touch capability (most mobile devices have touch)
+            const hasTouchScreen = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            
+            // Consider it mobile if it's a small screen OR has mobile user agent
+            return isSmallScreen || (isMobileUserAgent && hasTouchScreen);
+        };
+        
+        // Redirect function - called when meeting ends or user leaves
+        const redirectAfterMeeting = () => {
+            // Prevent multiple redirects
+            if (window.redirecting) {
+                return;
+            }
+            window.redirecting = true;
+            
+            if (isMobileDevice()) {
+                // Mobile device - redirect to app deep link
+                console.log('Meeting ended - Mobile device detected, redirecting to samsara://');
+                window.location.href = 'samsara://';
+            } else {
+                // Desktop/large screen - redirect to Classes page
+                console.log('Meeting ended - Desktop device detected, redirecting to Classes page');
+                window.location.href = 'https://main.d21u027aqec24o.amplifyapp.com/Homepage/Classes';
+            }
+        };
+        
+        // Make redirect function globally accessible
+        window.redirectAfterMeeting = redirectAfterMeeting;
+        
         // Debug helper function (only logs to console, doesn't show on screen)
         const updateDebugStatus = (status) => {
             // Only log to console, don't show on screen
@@ -319,7 +356,7 @@
 
                 // Initialize Zoom first
                 ZoomMtg.init({
-                    leaveUrl: window.location.origin,
+                    leaveUrl: isMobileDevice() ? 'samsara://' : 'https://main.d21u027aqec24o.amplifyapp.com/Homepage/Classes',
                     disableCORP: !window.crossOriginIsolated, // default true
                     success: function(res) {
                         console.log('✅ Zoom initialized successfully');
@@ -357,6 +394,28 @@
                                     ZoomMtg.inMeetingServiceListener("onMeetingStatus", function (data) {
                                         console.log("📊 Meeting status changed:", data);
                                         hideLoading(); // Hide whenever status changes
+                                        
+                                        // Check if meeting has ended
+                                        // Meeting status: 0=connecting, 1=in meeting, 2=waiting for host, 3=ended
+                                        if (data.meetingStatus === 3 || data.meetingStatus === 'ENDED' || 
+                                            (data.meetingStatus && data.meetingStatus.toString().includes('ENDED'))) {
+                                            console.log("🏁 Meeting ended, redirecting...");
+                                            setTimeout(() => {
+                                                redirectAfterMeeting();
+                                            }, 1000); // Small delay to ensure cleanup
+                                        }
+                                    });
+                                    
+                                    // Listen for when user leaves
+                                    ZoomMtg.inMeetingServiceListener("onUserLeave", function (data) {
+                                        console.log("👋 User left meeting:", data);
+                                        // Check if it's the current user leaving
+                                        if (data && (data.userId === window.meetingConfig?.userEmail || data.leaveReason)) {
+                                            console.log("👋 Current user left, redirecting...");
+                                            setTimeout(() => {
+                                                redirectAfterMeeting();
+                                            }, 1000);
+                                        }
                                     });
                                     
                                     // Listen for when user joins
@@ -369,6 +428,14 @@
                                     ZoomMtg.inMeetingServiceListener("onUserIsInWaitingRoom", function (data) {
                                         console.log("🚪 Waiting room status:", data);
                                         hideLoading();
+                                    });
+                                    
+                                    // Listen for meeting end event
+                                    ZoomMtg.inMeetingServiceListener("onMeetingEnd", function (data) {
+                                        console.log("🏁 Meeting end event triggered:", data);
+                                        setTimeout(() => {
+                                            redirectAfterMeeting();
+                                        }, 1000);
                                     });
                                     
                                 } catch (e) {
