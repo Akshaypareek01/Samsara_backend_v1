@@ -55,7 +55,8 @@ const PeriodCycleSchema = new mongoose.Schema(
     },
     cycleNumber: { type: Number, required: true }, // Sequential cycle number for this user
     cycleStartDate: { type: Date, required: true, index: true },
-    cycleEndDate: { type: Date },
+    cycleEndDate: { type: Date }, // When cycle ends (when next period starts)
+    periodEndDate: { type: Date }, // When bleeding/period ends (separate from cycle end)
     periodDurationDays: { type: Number },
     cycleLengthDays: { type: Number },
     predictedNextPeriodDate: { type: Date },
@@ -80,6 +81,16 @@ const PeriodCycleSchema = new mongoose.Schema(
     actualFertileWindowEnd: { type: Date },
     cycleNotes: { type: String },
     predictionAccuracy: { type: Number, min: 0, max: 100 }, // How accurate were our predictions
+    // Irregularity tracking
+    varianceFromAverage: { type: Number }, // Days difference from average
+    isOutlier: { type: Boolean, default: false }, // If cycle is extreme outlier
+    // PMS tracking
+    pmsStartDate: { type: Date },
+    pmsEndDate: { type: Date },
+    pmsSymptoms: [{ type: String }],
+    // Flow tracking
+    spottingDays: { type: Number, default: 0 }, // Days with light flow/spotting
+    heavyFlowDays: { type: Number, default: 0 }, // Days with heavy flow
   },
   { timestamps: true }
 );
@@ -91,5 +102,24 @@ PeriodCycleSchema.plugin(paginate);
 PeriodCycleSchema.index({ userId: 1, cycleStartDate: -1 });
 PeriodCycleSchema.index({ userId: 1, cycleStatus: 1 });
 PeriodCycleSchema.index({ userId: 1, cycleNumber: -1 });
+PeriodCycleSchema.index({ userId: 1, predictedNextPeriodDate: 1 }); // For reminders
+PeriodCycleSchema.index({ 'dailyLogs.date': 1 }); // For log queries
+
+// Index for active cycles (unique constraint handled in application logic)
+PeriodCycleSchema.index({ userId: 1, cycleStatus: 1 });
+
+// Validation: Ensure cycleEndDate >= cycleStartDate and periodEndDate >= cycleStartDate
+PeriodCycleSchema.pre('save', function(next) {
+  if (this.cycleEndDate && this.cycleStartDate && this.cycleEndDate < this.cycleStartDate) {
+    return next(new Error('cycleEndDate cannot be before cycleStartDate'));
+  }
+  if (this.periodEndDate && this.cycleStartDate && this.periodEndDate < this.cycleStartDate) {
+    return next(new Error('periodEndDate cannot be before cycleStartDate'));
+  }
+  if (this.periodEndDate && this.cycleEndDate && this.periodEndDate > this.cycleEndDate) {
+    return next(new Error('periodEndDate cannot be after cycleEndDate'));
+  }
+  next();
+});
 
 export const PeriodCycle = mongoose.model('PeriodCycle', PeriodCycleSchema);

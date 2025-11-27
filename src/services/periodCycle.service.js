@@ -102,9 +102,10 @@ class PeriodCycleService {
       throw new ApiError(404, 'Cycle not found');
     }
     
-    if (cycle.cycleStatus !== 'Active') {
-      throw new ApiError(400, 'Cannot update completed cycle');
-    }
+    // Allow logs on completed cycles for historical data entry
+    // if (cycle.cycleStatus !== 'Active') {
+    //   throw new ApiError(400, 'Cannot update completed cycle');
+    // }
     
     const { date, ...logFields } = logData;
     const logDate = new Date(date);
@@ -125,13 +126,15 @@ class PeriodCycleService {
     // Sort daily logs by date
     cycle.dailyLogs.sort((a, b) => a.date - b.date);
     
-    // Update current phase based on symptoms and flow
-    cycle.currentPhase = this.determineCurrentPhase(cycle.dailyLogs, cycle.cycleStartDate);
-    
-    // Check if cycle should be auto-completed (no flow for 3+ days)
-    if (this.shouldAutoCompleteCycle(cycle.dailyLogs)) {
-      await this.completeCycle(cycleId, userId);
-      return await PeriodCycle.findById(cycleId);
+    // Update current phase based on symptoms and flow (only for active cycles)
+    if (cycle.cycleStatus === 'Active') {
+      cycle.currentPhase = this.determineCurrentPhase(cycle.dailyLogs, cycle.cycleStartDate);
+      
+      // Check if cycle should be auto-completed (no flow for 3+ days)
+      if (this.shouldAutoCompleteCycle(cycle.dailyLogs)) {
+        await this.completeCycle(cycleId, userId);
+        return await PeriodCycle.findById(cycleId);
+      }
     }
     
     return await cycle.save();
