@@ -116,17 +116,18 @@
         <div id="debug-status">Initializing...</div>
     </div>
 
-    <!-- Load Zoom SDK dependencies -->
+    <!-- Load Zoom SDK dependencies - Version 3.1.6 (Minimum supported as of Feb 2025) -->
     <script src="https://source.zoom.us/3.1.6/lib/vendor/react.min.js"></script>
     <script src="https://source.zoom.us/3.1.6/lib/vendor/react-dom.min.js"></script>
     <script src="https://source.zoom.us/3.1.6/lib/vendor/redux.min.js"></script>
     <script src="https://source.zoom.us/3.1.6/lib/vendor/redux-thunk.min.js"></script>
     <script src="https://source.zoom.us/3.1.6/lib/vendor/lodash.min.js"></script>
     
-    <!-- Load Zoom Meeting SDK -->
+    <!-- Load Zoom Meeting SDK - Version 3.1.6 (Minimum supported as of Feb 2025)
+         Note: Check https://marketplace.zoom.us/docs/sdk/native-sdks/web for latest version -->
     <script src="https://source.zoom.us/3.1.6/zoom-meeting-3.1.6.min.js" 
-            onload="console.log('Zoom SDK loaded'); window.zoomSdkLoaded = true;"
-            onerror="console.error('Failed to load Zoom SDK'); window.zoomSdkError = true;"></script>
+            onload="console.log('Zoom SDK 3.1.6 loaded successfully'); window.zoomSdkLoaded = true;"
+            onerror="console.error('Failed to load Zoom SDK - check version and CDN availability'); window.zoomSdkError = true;"></script>
 
     <script>
         // Device detection helper function
@@ -302,10 +303,28 @@
                 }
                 
                 console.log('Initializing Zoom SDK...');
-                // Check system requirements
-                console.log('System requirements:', JSON.stringify(ZoomMtg.checkSystemRequirements()));
                 
-                // Set Zoom JS library (optional, defaults to source.zoom.us)
+                // Check for SharedArrayBuffer support (required for gallery view)
+                if (typeof SharedArrayBuffer === 'undefined') {
+                    console.warn('⚠️ SharedArrayBuffer is not available. Gallery view may not work.');
+                    console.warn('⚠️ This usually means CORS headers are not set correctly.');
+                    console.warn('⚠️ Required headers: Cross-Origin-Embedder-Policy: require-corp, Cross-Origin-Opener-Policy: same-origin');
+                } else {
+                    console.log('✅ SharedArrayBuffer is available - Gallery view will work!');
+                }
+                
+                // Check system requirements
+                const systemRequirements = ZoomMtg.checkSystemRequirements();
+                console.log('System requirements:', JSON.stringify(systemRequirements));
+                
+                // Check if gallery view is supported
+                if (systemRequirements.features && systemRequirements.features.includes('GALLERY')) {
+                    console.log('✅ Gallery view is supported by your browser');
+                } else {
+                    console.warn('⚠️ Gallery view may not be fully supported');
+                }
+                
+                // Set Zoom JS library - Version 3.1.6
                 ZoomMtg.setZoomJSLib('https://source.zoom.us/3.1.6/lib', '/av');
                 
                 // Pre-load WASM files
@@ -353,13 +372,25 @@
 
                 // Track if join callbacks have fired
                 let joinCallbacksFired = false;
+                let zoomInitialized = false;
 
-                // Initialize Zoom first
+                // Initialize Zoom SDK - only valid parameters for SDK 3.1.6
+                console.log('🔧 Initializing Zoom SDK with config:', {
+                    leaveUrl: isMobileDevice() ? 'samsara://' : 'https://main.d21u027aqec24o.amplifyapp.com/Homepage/Classes',
+                    disableCORP: !window.crossOriginIsolated,
+                    crossOriginIsolated: window.crossOriginIsolated
+                });
+                
                 ZoomMtg.init({
                     leaveUrl: isMobileDevice() ? 'samsara://' : 'https://main.d21u027aqec24o.amplifyapp.com/Homepage/Classes',
-                    disableCORP: !window.crossOriginIsolated, // default true
+                    disableCORP: !window.crossOriginIsolated, // Required for SharedArrayBuffer support
                     success: function(res) {
+                        zoomInitialized = true;
                         console.log('✅ Zoom initialized successfully');
+                        console.log('✅ Init success response:', res);
+                        console.log('✅ Init success callback fired, preparing to join...');
+                        console.log('✅ Zoom initialized successfully');
+                        console.log('✅ Init success response:', res);
                         console.log('✅ Init success callback fired, preparing to join...');
                         
                         // Configure meeting join parameters
@@ -370,7 +401,7 @@
                             sdkKey: sdkKey.substring(0, 10) + '...'
                         });
                         
-                        // Define meeting config with callbacks
+                        // Define meeting config - only valid parameters for SDK 2.11.0
                         const meetingConfig = {
                             meetingNumber: meetingNumber,
                             userName: userName,
@@ -518,19 +549,45 @@
                             }
                         }, 15000);
                         
+                        // Only join if initialization was successful
+                        if (!zoomInitialized) {
+                            console.error('❌ Cannot join - Zoom SDK not initialized');
+                            showError('Failed to initialize Zoom', 'Zoom SDK initialization failed. Please refresh the page.');
+                            return;
+                        }
+                        
                         try {
+                            console.log('📞 Calling ZoomMtg.join() with config:', {
+                                meetingNumber: meetingNumber,
+                                userName: userName,
+                                hasSignature: !!signature,
+                                hasSdkKey: !!sdkKey,
+                                hasPassword: !!password
+                            });
                             ZoomMtg.join(meetingConfig);
                             console.log('📞 ZoomMtg.join() called successfully');
                             updateDebugStatus('Join called, waiting for response...');
                         } catch (error) {
                             console.error('❌ Exception calling ZoomMtg.join():', error);
-                            showError('Failed to join meeting', error.message);
+                            console.error('❌ Exception stack:', error.stack);
+                            showError('Failed to join meeting', error.message || 'Unknown error occurred');
                         }
                     },
                     error: function(err) {
+                        zoomInitialized = false;
                         console.error('❌ Zoom initialization error:', err);
                         console.error('❌ Init error details:', JSON.stringify(err, null, 2));
-                        showError('Failed to initialize Zoom', err.reason || err.errorMessage || err.error || 'Unknown error');
+                        console.error('❌ Error type:', typeof err);
+                        console.error('❌ Error keys:', Object.keys(err || {}));
+                        
+                        const errorMessage = err?.reason || err?.errorMessage || err?.error || err?.message || JSON.stringify(err) || 'Unknown error';
+                        console.error('❌ Final error message:', errorMessage);
+                        
+                        // Hide loading screen
+                        hideLoading();
+                        
+                        // Show error to user
+                        showError('Failed to initialize Zoom', errorMessage + '. Please check your browser console for more details.');
                     }
                 });
 

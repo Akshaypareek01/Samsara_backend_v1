@@ -331,10 +331,10 @@ export const createZoomMeeting = async (meetingData) => {
       // Get OAuth token
       const zoomToken = await getZoomOAuthToken(selectedAccount);
 
-      // Build meeting request
+      // Build meeting request with latest API features
       const requestBody = {
         topic: meetingData.topic || "Meeting",
-        type: 2,
+        type: 2, // Scheduled meeting
         start_time: meetingData.startTime || new Date().toISOString(),
         duration: meetingData.duration || 60,
         timezone: meetingData.timezone || 'Asia/Kolkata',
@@ -346,28 +346,44 @@ export const createZoomMeeting = async (meetingData) => {
           join_before_host: true,
           approval_type: 2, // 0 = Automatically approve, 1 = Manually approve, 2 = No registration required
           audio: 'both',
-          auto_recording: 'local',
+          auto_recording: meetingData.settings?.auto_recording || 'local',
           waiting_room: false,
-          enforce_login: false, // Don't require login
+          enforce_login: false,
           registrants_email_notification: false,
-          meeting_authentication: false, // Disable authentication requirement
+          meeting_authentication: false,
+          // Latest features
+          allow_multiple_devices: true,
+          breakout_room: false,
+          close_registration: false,
+          contact_name: meetingData.contactName || '',
+          contact_email: meetingData.contactEmail || selectedAccount.userId,
+          // Only include supported countries - remove if account doesn't support dial-in
+          // global_dial_in_countries: ['US'], // Uncomment if dial-in is needed and supported
+          registrants_confirmation_email: false,
+          show_share_button: true,
+          use_pmi: false,
+          watermark: false,
+          // Enable latest features
+          alternative_hosts: meetingData.alternativeHosts || '',
+          alternative_hosts_email_notification: false,
           ...meetingData.settings
         },
       };
       
       // Explicitly disable registration - override any account-level defaults
-      // approval_type: 2 means "No registration required"
       requestBody.settings.approval_type = 2;
 
-      // Create the meeting
+      // Create the meeting using latest REST API v2
       const response = await axios.post(
         `https://api.zoom.us/v2/users/${selectedAccount.userId}/meetings`,
         requestBody,
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${zoomToken}`,
+            'Authorization': `Bearer ${zoomToken}`,
+            'User-Agent': 'Samsara-Zoom-Integration/1.0',
           },
+          timeout: 30000, // 30 second timeout for production
         }
       );
 

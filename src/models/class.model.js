@@ -6,6 +6,16 @@ const classSchema = new mongoose.Schema({
   password: { type: String, required: false },
   meeting_number: { type: String },
   zoomAccountUsed: { type: String }, // Track which Zoom account was used for this meeting
+  zoomJoinUrl: { type: String }, // Store Zoom join URL for quick access
+  zoomStartUrl: { type: String }, // Store Zoom start URL for host
+  zoomMeetingId: { type: String }, // Store Zoom meeting ID (different from meeting number)
+  zoomSettings: {
+    hostVideo: { type: Boolean, default: true },
+    participantVideo: { type: Boolean, default: true },
+    joinBeforeHost: { type: Boolean, default: true },
+    autoRecording: { type: String, enum: ['local', 'cloud', 'none'], default: 'local' },
+    waitingRoom: { type: Boolean, default: false },
+  },
   teacher: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Users',

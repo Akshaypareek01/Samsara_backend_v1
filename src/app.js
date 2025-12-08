@@ -30,6 +30,7 @@ app.use(helmet({
         "'self'",
         "'unsafe-inline'",
         "'unsafe-eval'", // Required for Zoom SDK
+        "blob:", // Required for Zoom SDK Web Workers
         "https://source.zoom.us",
         "https://zoom.us", // Main Zoom domain
         "https://*.zoom.us" // All Zoom subdomains
@@ -72,11 +73,14 @@ app.use(helmet({
       ],
       workerSrc: [
         "'self'",
-        "blob:"
+        "blob:",
+        "https://source.zoom.us",
+        "https://*.zoom.us"
       ]
     }
   },
-  crossOriginEmbedderPolicy: false // Required for Zoom SDK
+  // Note: COEP/COOP set per-route for join-meeting to avoid breaking other routes
+  crossOriginEmbedderPolicy: false // Set per-route for join-meeting only
 }));
 
 // parse json request body

@@ -183,7 +183,7 @@ export const fetchZoomTokenServerOauth = async (req, res) => {
     }
 };
 
-const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassword, zoomAccountUsed) => {
+const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassword, zoomAccountUsed, meetingResult = null) => {
     try {
         // Find the class by ID
         const foundClass = await Class.findById(classId);
@@ -197,10 +197,28 @@ const updateClassMeetingInfo = async (classId, newMeetingNumber, newMeetingPassw
         foundClass.password = newMeetingPassword;
         foundClass.status = true;
         foundClass.zoomAccountUsed = zoomAccountUsed; // Track which account was used
+        
+        // Update with latest meeting data if available
+        if (meetingResult) {
+            foundClass.zoomJoinUrl = meetingResult.joinUrl;
+            foundClass.zoomStartUrl = meetingResult.meetingData?.start_url || meetingResult.joinUrl;
+            foundClass.zoomMeetingId = meetingResult.meetingData?.id || newMeetingNumber;
+            
+            if (meetingResult.meetingData?.settings) {
+                foundClass.zoomSettings = {
+                    hostVideo: meetingResult.meetingData.settings.host_video || true,
+                    participantVideo: meetingResult.meetingData.settings.participant_video || true,
+                    joinBeforeHost: meetingResult.meetingData.settings.join_before_host || true,
+                    autoRecording: meetingResult.meetingData.settings.auto_recording || 'local',
+                    waitingRoom: meetingResult.meetingData.settings.waiting_room || false,
+                };
+            }
+        }
+        
         // Save the updated class
         await foundClass.save();
 
-        console.log("Class meeting information updated successfully", foundClass);
+        console.log("Class meeting information updated successfully with latest features", foundClass);
     } catch (error) {
         console.error("Error updating class meeting information:", error.message);
         throw error; // You can choose to handle or propagate the error as needed
@@ -250,8 +268,8 @@ export const createZoomMeeting = async (req, res) => {
         // Create Zoom meeting using the centralized service
         const result = await createZoomMeetingService(meetingData);
 
-        // Update class meeting info
-        await updateClassMeetingInfo(meetingdata._id, result.meetingId, result.password, result.accountUsed);
+        // Update class meeting info with latest features
+        await updateClassMeetingInfo(meetingdata._id, result.meetingId, result.password, result.accountUsed, result);
         
         res.json({
             status: 'success',
@@ -721,9 +739,15 @@ export const getMeetingDetails = async (req, res) => {
 
 /**
  * Serve the public meeting join page
+ * Sets required CORS headers for SharedArrayBuffer support (gallery view)
  */
 export const serveJoinMeetingPage = async (req, res) => {
     try {
+        // Set required headers for SharedArrayBuffer (gallery view support)
+        // These headers enable SharedArrayBuffer which is required for gallery view
+        res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+        
         const publicPath = path.join(__dirname, '../../public/join-meeting.html');
         res.sendFile(publicPath);
     } catch (error) {
