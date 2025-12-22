@@ -5,6 +5,7 @@ import {
   createPaymentOrder,
   verifyPayment,
   getUserTransactions,
+  getAllTransactions,
   getTransaction,
   getUserMemberships,
   getActiveMembership,
@@ -17,6 +18,7 @@ import {
   verifyPayment as verifyPaymentValidation,
   getTransaction as getTransactionValidation,
   getUserTransactions as getUserTransactionsValidation,
+  getAllTransactions as getAllTransactionsValidation,
   getUserMemberships as getUserMembershipsValidation,
   cancelMembership as cancelMembershipValidation,
   requestRefund as requestRefundValidation,
@@ -34,6 +36,8 @@ router.post('/verify', validate(verifyPaymentValidation), verifyPayment);
 
 // Transaction routes
 router.get('/transactions', validate(getUserTransactionsValidation), getUserTransactions);
+// Admin transaction routes (require admin role) - must come before /:transactionId
+router.get('/transactions/all', auth('admin'), validate(getAllTransactionsValidation), getAllTransactions);
 router.get('/transactions/:transactionId', validate(getTransactionValidation), getTransaction);
 
 // Membership routes

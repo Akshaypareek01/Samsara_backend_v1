@@ -345,9 +345,59 @@ const verifyPayment = catchAsync(async (req, res) => {
  */
 const getUserTransactions = catchAsync(async (req, res) => {
   const userId = req.user.id;
+  const filter = { userId };
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   
-  const result = await Transaction.getUserTransactions(userId, options.limit || 20);
+  // Set default sort if not provided
+  if (!options.sortBy) {
+    options.sortBy = 'createdAt:desc';
+  }
+  
+  // Set populate options for related data
+  options.populate = 'planId,couponCode';
+  
+  const result = await Transaction.paginate(filter, options);
+  res.send(result);
+});
+
+/**
+ * Get all transactions (Admin only)
+ * Supports filtering by userId, status, and date range
+ */
+const getAllTransactions = catchAsync(async (req, res) => {
+  const filter = {};
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  
+  // Filter by userId if provided
+  if (req.query.userId) {
+    filter.userId = req.query.userId;
+  }
+  
+  // Filter by status if provided
+  if (req.query.status) {
+    filter.status = req.query.status;
+  }
+  
+  // Filter by date range if provided
+  if (req.query.startDate || req.query.endDate) {
+    filter.createdAt = {};
+    if (req.query.startDate) {
+      filter.createdAt.$gte = new Date(req.query.startDate);
+    }
+    if (req.query.endDate) {
+      filter.createdAt.$lte = new Date(req.query.endDate);
+    }
+  }
+  
+  // Set default sort if not provided
+  if (!options.sortBy) {
+    options.sortBy = 'createdAt:desc';
+  }
+  
+  // Set populate options for related data
+  options.populate = 'planId,couponCode,userId';
+  
+  const result = await Transaction.paginate(filter, options);
   res.send(result);
 });
 
@@ -531,6 +581,7 @@ export {
   createPaymentOrder,
   verifyPayment,
   getUserTransactions,
+  getAllTransactions,
   getTransaction,
   getUserMemberships,
   getActiveMembership,

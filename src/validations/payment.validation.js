@@ -62,6 +62,18 @@ const processRefund = {
   }),
 };
 
+const getAllTransactions = {
+  query: Joi.object().keys({
+    userId: Joi.string().custom(objectId),
+    status: Joi.string().valid('pending', 'completed', 'failed', 'cancelled', 'refunded'),
+    startDate: Joi.date().iso(),
+    endDate: Joi.date().iso(),
+    sortBy: Joi.string(),
+    limit: Joi.number().integer().min(1).max(100),
+    page: Joi.number().integer().min(1),
+  }),
+};
+
 export {
   createPaymentOrder,
   verifyPayment,
@@ -71,4 +83,5 @@ export {
   cancelMembership,
   requestRefund,
   processRefund,
+  getAllTransactions,
 };
