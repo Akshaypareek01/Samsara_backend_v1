@@ -41,6 +41,7 @@ import notificationPreferencesRoute from './notificationPreferences.route.js';
 import globalConfigRoute from './globalConfig.route.js';
 import whatsappRoute from './whatsapp.route.js';
 import adminRoute from './admin.route.js';
+import adminTrackerRoute from './admin-tracker.route.js';
 
 const router = express.Router();
 
@@ -205,6 +206,10 @@ const defaultRoutes = [
     path: '/admin',
     route: adminRoute,
   },
+  {
+    path: '/admin/trackers',
+    route: adminTrackerRoute,
+  },
 ];
 
 const devRoutes = [
@@ -215,9 +220,15 @@ const devRoutes = [
   },
 ];
 
+console.log('🔧 Registering routes:');
 defaultRoutes.forEach((route) => {
+  console.log(`  - ${route.path}`);
   router.use(route.path, route.route);
 });
+
+console.log('✅ All routes registered!');
+
+// ❌ REMOVED DUPLICATE REGISTRATION - was causing conflicts
 
 /* istanbul ignore next */
 if (config.env === 'development') {
