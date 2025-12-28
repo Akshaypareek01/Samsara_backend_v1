@@ -13,8 +13,6 @@ import {
   CaloriesTarget
 } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
-import { getUtcDayRange } from '../utils/date.utils.js';
-
 
 /**
  * Create initial trackers for a new user
@@ -26,17 +24,18 @@ const createInitialTrackers = async (userId) => {
     // Only create trackers that can be initialized without data
     // Trackers requiring measurements (weight, height, etc.) will be created when user provides data
     const trackers = await Promise.all([
+      WaterTracker.create({ userId }),
       SleepTracker.create({ userId })
     ]);
 
     return {
-      sleepTracker: trackers[0]
+      waterTracker: trackers[0],
+      sleepTracker: trackers[1]
     };
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Failed to create initial trackers');
   }
 };
-
 
 /**
  * Update tracker fields when user profile is updated
@@ -164,8 +163,6 @@ const getWeightById = async (userId, entryId) => {
   return entry;
 };
 
-
-// NOTE: All "today" water logic uses UTC day boundaries intentionally
 /**
  * Get water tracker history
  * @param {ObjectId} userId
@@ -196,7 +193,6 @@ const getWaterById = async (userId, entryId) => {
   return entry;
 };
 
-
 /**
  * Get mood history
  * @param {ObjectId} userId
@@ -212,7 +208,6 @@ const getMoodHistory = async (userId, days = 30) => {
     createdAt: { $gte: startDate }
   }).sort({ createdAt: -1 });
 };
-
 
 /**
  * Get temperature tracker history
@@ -230,7 +225,6 @@ const getTemperatureHistory = async (userId, days = 30) => {
     isActive: true
   }).sort({ measurementDate: -1 });
 };
-
 
 /**
  * Get fat tracker history
@@ -416,21 +410,23 @@ const addWeightEntry = async (userId, weightData) => {
  * @returns {Promise<Object>}
  */
 const addWaterEntry = async (userId, waterData) => {
-  const { start, end } = getUtcDayRange();
-  const today = start;
-
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   
   // Find or create today's water tracker
   let waterTracker = await WaterTracker.findOne({ 
-    userId,
-    date: { $gte: start, $lte: end }
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
   });
 
   if (!waterTracker) {
     // Create new water tracker for today
     waterTracker = await WaterTracker.create({
       userId,
-      date: start,
+      date: today,
       targetMl: 2000, // default target
       targetGlasses: 8,
       intakeTimeline: [],
@@ -518,21 +514,23 @@ const addWaterEntry = async (userId, waterData) => {
  * @param {Object} targetData
  * @returns {Promise<Object>}
  */
-
-
 const updateWaterTarget = async (userId, targetData) => {
-  const { start, end } = getUtcDayRange();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   
   let waterTracker = await WaterTracker.findOne({ 
-    userId,
-    date: { $gte: start, $lte: end }
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
   });
 
   if (!waterTracker) {
     // Create new water tracker for today
     waterTracker = await WaterTracker.create({
       userId,
-      date: start,
+      date: today,
       targetMl: targetData.targetMl || 2000,
       targetGlasses: targetData.targetGlasses || 8,
       intakeTimeline: [],
@@ -566,32 +564,34 @@ const updateWaterTarget = async (userId, targetData) => {
  * @param {ObjectId} userId
  * @returns {Promise<Object>}
  */
-
 const getTodayWaterData = async (userId) => {
-  const { start, end } = getUtcDayRange();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let waterTracker = await WaterTracker.findOne({ 
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
+  });
 
-  const waterTracker = await WaterTracker.findOne({
-    userId,
-    date: { $gte: start, $lte: end }
-  }).sort({ date: -1 });
-
-  // ❌ DO NOT CREATE DATA IN GET
   if (!waterTracker) {
-    return {
+    // Create default water tracker for today
+    waterTracker = await WaterTracker.create({
       userId,
-      date: start,
-      totalIntake: 0,
+      date: today,
       targetMl: 2000,
       targetGlasses: 8,
       intakeTimeline: [],
-      status: 'Dehydrated'
-    };
+      totalIntake: 0,
+      status: 'Dehydrated',
+      weeklySummary: []
+    });
   }
 
   return waterTracker;
 };
-
-
 
 /**
  * Get weekly water summary
@@ -599,9 +599,6 @@ const getTodayWaterData = async (userId) => {
  * @param {number} days - number of days to look back (default 7)
  * @returns {Promise<Object>}
  */
-
-// -----TODO: Normalize to UTC day range (same as getUtcDayRange)-----
-
 const getWeeklyWaterSummary = async (userId, days = 7) => {
   const endDate = new Date();
   endDate.setHours(23, 59, 59, 999);
@@ -1170,49 +1167,62 @@ const deleteTrackerEntry = async (trackerType, entryId) => {
  * @returns {Promise<Object>}
  */
 const getHydrationStatus = async (userId) => {
-  const { start, end } = getUtcDayRange();
-
-  const waterTracker = await WaterTracker.findOne({
-    userId,
-    date: { $gte: start, $lte: end }
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let waterTracker = await WaterTracker.findOne({ 
+    userId, 
+    date: { 
+      $gte: today, 
+      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+    } 
   });
 
   if (!waterTracker) {
-    return {
-      currentIntake: 0,
+    // Create default water tracker for today
+    waterTracker = await WaterTracker.create({
+      userId,
+      date: today,
       targetMl: 2000,
       targetGlasses: 8,
-      percentage: 0,
-      status: 'Dehydrated',
-      remainingMl: 2000,
-      remainingGlasses: 8,
       intakeTimeline: [],
-      date: start
-    };
+      totalIntake: 0,
+      status: 'Dehydrated',
+      weeklySummary: []
+    });
   }
 
+  // Calculate hydration percentage
   const percentage = (waterTracker.totalIntake / waterTracker.targetMl) * 100;
+  
+  // Determine status based on percentage ranges
+  let status;
+  if (percentage >= 100) {
+    status = 'Hydrated';
+  } else if (percentage >= 75) {
+    status = 'Mildly dehydrated';
+  } else {
+    status = 'Dehydrated';
+  }
 
-  let status = 'Dehydrated';
-  if (percentage >= 100) status = 'Hydrated';
-  else if (percentage >= 75) status = 'Mildly dehydrated';
+  // Update status if it has changed
+  if (waterTracker.status !== status) {
+    waterTracker.status = status;
+    await waterTracker.save();
+  }
 
   return {
     currentIntake: waterTracker.totalIntake,
     targetMl: waterTracker.targetMl,
     targetGlasses: waterTracker.targetGlasses,
     percentage: Math.round(percentage * 100) / 100,
-    status,
+    status: status,
     remainingMl: Math.max(0, waterTracker.targetMl - waterTracker.totalIntake),
-    remainingGlasses: Math.max(
-      0,
-      Math.ceil((waterTracker.targetMl - waterTracker.totalIntake) / 250)
-    ),
+    remainingGlasses: Math.max(0, Math.ceil((waterTracker.targetMl - waterTracker.totalIntake) / 250)), // Assuming 250ml per glass
     intakeTimeline: waterTracker.intakeTimeline,
     date: waterTracker.date
   };
 };
-
 
 /**
  * Create or get today's calories target
