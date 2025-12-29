@@ -42,6 +42,8 @@ import globalConfigRoute from './globalConfig.route.js';
 import whatsappRoute from './whatsapp.route.js';
 import adminRoute from './admin.route.js';
 import adminTrackerRoute from './admin-tracker.route.js';
+import adminPeriodRoute from './admin-period.route.js';
+
 
 const router = express.Router();
 
@@ -209,6 +211,10 @@ const defaultRoutes = [
   {
     path: '/admin/trackers',
     route: adminTrackerRoute,
+  },
+  {
+    path: '/admin/period',
+    route: adminPeriodRoute,
   },
 ];
 
