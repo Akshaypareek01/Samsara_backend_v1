@@ -31,6 +31,9 @@
     "get-user-token": "node get-user-token.js",
     "test:whatsapp-webhook": "node test-whatsapp-webhook.js",
     "test:whatsapp-bot": "node test-whatsapp-bot.js",
+    "test:redis": "node test-redis-connection.js",
+    "test:r2": "node test-r2-connection.js",
+    "test:r2-upload": "node test-r2-upload.js",
     "seed:membership": "cross-env NODE_ENV=development node src/scripts/seed-membership-data.js"
   },
   "keywords": [
@@ -68,6 +71,7 @@
     "express-rate-limit": "^5.0.0",
     "helmet": "^4.1.0",
     "http-status": "^1.4.0",
+    "ioredis": "^5.8.2",
     "joi": "^17.3.0",
     "jsonwebtoken": "^8.5.1",
     "jsrsasign": "^11.1.0",
@@ -102,6 +106,7 @@
     "eslint-plugin-prettier": "^3.1.1",
     "eslint-plugin-security": "^1.4.0",
     "faker": "^5.1.0",
+    "form-data": "^4.0.5",
     "husky": "7.0.4",
     "jest": "^26.0.1",
     "lint-staged": "^11.0.0",

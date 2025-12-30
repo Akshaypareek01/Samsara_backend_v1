@@ -126,6 +126,31 @@ const generateAdminAuthTokens = async (admin) => {
 };
 
 /**
+ * Generate company auth tokens
+ * @param {Company} company
+ * @returns {Promise<Object>}
+ */
+const generateCompanyAuthTokens = async (company) => {
+  const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
+  const accessToken = generateTokenWithType(company.id, accessTokenExpires, tokenTypes.ACCESS, 'company');
+
+  const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays, 'days');
+  const refreshToken = generateTokenWithType(company.id, refreshTokenExpires, tokenTypes.REFRESH, 'company');
+  await saveToken(refreshToken, company.id, refreshTokenExpires, tokenTypes.REFRESH);
+
+  return {
+    access: {
+      token: accessToken,
+      expires: accessTokenExpires.toDate(),
+    },
+    refresh: {
+      token: refreshToken,
+      expires: refreshTokenExpires.toDate(),
+    },
+  };
+};
+
+/**
  * Generate reset password token
  * @param {string} email
  * @returns {Promise<string>}
@@ -153,4 +178,4 @@ const generateVerifyEmailToken = async (user) => {
   return verifyEmailToken;
 };
 
-export { generateToken, generateTokenWithType, saveToken, verifyToken, generateAuthTokens, generateAdminAuthTokens, generateResetPasswordToken, generateVerifyEmailToken };
+export { generateToken, generateTokenWithType, saveToken, verifyToken, generateAuthTokens, generateAdminAuthTokens, generateCompanyAuthTokens, generateResetPasswordToken, generateVerifyEmailToken };

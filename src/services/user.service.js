@@ -4,6 +4,8 @@ import { User, BodyStatus } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
 import { assignTrialPlan, assignLifetimePlan } from './membership.service.js';
+import cacheService from './cache.service.js';
+import { CacheKeys, CacheTTL } from '../utils/cacheKeys.js';
 
 /**
  * Create a user
@@ -16,6 +18,8 @@ const createUser = async (userBody) => {
   }
 
   const user = await User.create(userBody);
+  
+  // Note: No need to cache new user immediately, will be cached on first fetch
 
   // Create initial BodyStatus entry if age, gender, height, or weight are provided
   // Check both userBody and saved user object to ensure we catch all data
@@ -155,7 +159,15 @@ const queryUsers = async (filter, options) => {
  * @returns {Promise<User>}
  */
 const getUserById = async (id) => {
-  return User.findById(id);
+  const cacheKey = CacheKeys.user(id);
+  
+  return await cacheService.getOrSet(
+    cacheKey,
+    async () => {
+      return await User.findById(id);
+    },
+    CacheTTL.USER_PROFILE
+  );
 };
 
 /**
@@ -174,7 +186,7 @@ const getUserByEmail = async (email) => {
  * @returns {Promise<User>}
  */
 const updateUserById = async (userId, updateBody) => {
-  const user = await getUserById(userId);
+  const user = await User.findById(userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
@@ -183,6 +195,11 @@ const updateUserById = async (userId, updateBody) => {
   }
   Object.assign(user, updateBody);
   await user.save();
+
+  // Invalidate user caches
+  await cacheService.del(CacheKeys.user(userId));
+  await cacheService.del(CacheKeys.userProfile(userId));
+  await cacheService.del(CacheKeys.userSettings(userId));
 
   // Update tracker fields if relevant profile data was updated
   try {

@@ -5,10 +5,8 @@ const companySchema = new mongoose.Schema(
   {
     companyId: { type: String, unique: true, required: true },
     companyName: { type: String },
-    consultPersonName: { type: String, required: true },
+    companyLogo: { type: String },
     email: { type: String },
-    mobile: { type: String },
-    designation: { type: String },
     domain: { type: String },
     numberOfEmployees: { type: Number },
     gstNumber: { type: String },
@@ -16,6 +14,18 @@ const companySchema = new mongoose.Schema(
     city: { type: String },
     pincode: { type: String },
     country: { type: String },
+    contactPerson1: {
+      name: { type: String },
+      email: { type: String },
+      mobileNumber: { type: String },
+      designation: { type: String }
+    },
+    contactPerson2: {
+      name: { type: String },
+      email: { type: String },
+      mobileNumber: { type: String },
+      designation: { type: String },
+    },
     status: { type: Boolean, default: true },
   },
   {

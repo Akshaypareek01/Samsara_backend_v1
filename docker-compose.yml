@@ -6,10 +6,13 @@ services:
     image: node-app
     environment:
       - MONGODB_URL=mongodb://mongodb:27017/node-boilerplate
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     ports:
       - '3000:3000'
     depends_on:
       - mongodb
+      - redis
     volumes:
       - .:/usr/src/node-app
     networks:
@@ -24,8 +27,24 @@ services:
     networks:
       - node-network
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes
+    networks:
+      - node-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   dbdata:
+  redisdata:
 
 networks:
   node-network:

@@ -1,93 +1,109 @@
-import { Company } from '../models/index.js';
+import httpStatus from 'http-status';
+import catchAsync from '../utils/catchAsync.js';
+import pick from '../utils/pick.js';
+import * as companyService from '../services/company.service.js';
+import { generateCompanyAuthTokens } from '../services/token.service.js';
 
-const generateUniqueId = () => {
-  return Math.random().toString(36).substr(2, 8).toUpperCase();
-};
+/**
+ * Create a new company
+ */
+const createCompany = catchAsync(async (req, res) => {
+  const company = await companyService.createCompany(req.body);
+  res.status(httpStatus.CREATED).send(company);
+});
 
-// Create a new company
-export const createCompany = async (req, res) => {
-  try {
-    let companyId;
-    let isUnique = false;
+/**
+ * Get all companies with pagination and filtering
+ */
+const getAllCompanies = catchAsync(async (req, res) => {
+  const filter = pick(req.query, ['companyName', 'email', 'domain', 'status', 'companyId']);
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  const result = await companyService.queryCompanies(filter, options);
+  res.send(result);
+});
 
-    while (!isUnique) {
-      companyId = generateUniqueId();
-      const existingCompany = await Company.findOne({ companyId });
-      if (!existingCompany) isUnique = true;
-    }
-
-    const company = await Company.create({ ...req.body, companyId });
-    res.status(201).json(company);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-};
-
-export const checkCompanyExists = async (req, res) => {
-  try {
-    const { companyId } = req.params;
-
-    // Check if the company exists
-    const companyExists = await Company.exists({ companyId });
-
-    res.status(200).json({
-      exists: !!companyExists,
-    });
-  } catch (error) {
-    console.error('Error checking company existence:', error);
-    res.status(500).json({
+/**
+ * Get a company by ID
+ */
+const getCompanyById = catchAsync(async (req, res) => {
+  const company = await companyService.getCompanyById(req.params.id);
+  if (!company) {
+    return res.status(httpStatus.NOT_FOUND).json({ 
       status: 'fail',
-      message: 'Internal Server Error',
-      error: error.message,
+      message: 'Company not found' 
     });
   }
-};
+  res.send(company);
+});
 
-// Get all companies
-export const getAllCompanies = async (req, res) => {
-  try {
-    const companies = await Company.find();
-    res.status(200).json(companies);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+/**
+ * Get a company by companyId
+ */
+const getCompanyByCompanyId = catchAsync(async (req, res) => {
+  const company = await companyService.getCompanyByCompanyId(req.params.companyId);
+  if (!company) {
+    return res.status(httpStatus.NOT_FOUND).json({ 
+      status: 'fail',
+      message: 'Company not found' 
+    });
   }
-};
+  res.send(company);
+});
 
-// Get a company by ID
-export const getCompanyById = async (req, res) => {
-  try {
-    const company = await Company.findById(req.params.id);
-    if (!company) {
-      return res.status(404).json({ error: 'Company not found' });
-    }
-    res.status(200).json(company);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-};
+/**
+ * Check if company exists by companyId
+ */
+const checkCompanyExists = catchAsync(async (req, res) => {
+  const { companyId } = req.params;
+  const exists = await companyService.checkCompanyExists(companyId);
+  res.status(httpStatus.OK).json({
+    exists,
+  });
+});
 
-// Update a company by ID
-export const updateCompanyById = async (req, res) => {
-  try {
-    const company = await Company.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!company) {
-      return res.status(404).json({ error: 'Company not found' });
-    }
-    res.status(200).json(company);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-};
+/**
+ * Update a company by ID
+ */
+const updateCompanyById = catchAsync(async (req, res) => {
+  const company = await companyService.updateCompanyById(req.params.id, req.body);
+  res.send(company);
+});
 
-// Delete a company by ID
-export const deleteCompanyById = async (req, res) => {
-  try {
-    const company = await Company.findByIdAndDelete(req.params.id);
-    if (!company) {
-      return res.status(404).json({ error: 'Company not found' });
-    }
-    res.status(204).end();
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+/**
+ * Delete a company by ID
+ */
+const deleteCompanyById = catchAsync(async (req, res) => {
+  await companyService.deleteCompanyById(req.params.id);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+/**
+ * Send login OTP to company email
+ */
+const sendLoginOTP = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const result = await companyService.sendLoginOTPForCompany(email);
+  res.status(httpStatus.OK).send(result);
+});
+
+/**
+ * Verify login OTP and login company
+ */
+const verifyLoginOTP = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+  const company = await companyService.loginCompanyWithOTP(email, otp);
+  const tokens = await generateCompanyAuthTokens(company);
+  res.send({ company, tokens });
+});
+
+export {
+  createCompany,
+  getAllCompanies,
+  getCompanyById,
+  getCompanyByCompanyId,
+  checkCompanyExists,
+  updateCompanyById,
+  deleteCompanyById,
+  sendLoginOTP,
+  verifyLoginOTP,
 };

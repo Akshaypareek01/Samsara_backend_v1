@@ -40,6 +40,11 @@ const envVarsSchema = Joi.object()
     WHATSAPP_VERIFY_TOKEN: Joi.string().description('WhatsApp Webhook Verify Token'),
     WHATSAPP_API_VERSION: Joi.string().default('v22.0').description('WhatsApp API Version'),
     WHATSAPP_BUSINESS_ACCOUNT_ID: Joi.string().description('WhatsApp Business Account ID'),
+    // Redis Configuration
+    REDIS_HOST: Joi.string().default('localhost').description('Redis host'),
+    REDIS_PORT: Joi.number().default(6379).description('Redis port'),
+    REDIS_PASSWORD: Joi.string().allow('').description('Redis password'),
+    REDIS_DB: Joi.number().default(0).description('Redis database number'),
   })
   .unknown();
 
@@ -112,6 +117,12 @@ const config = {
     verifyToken: envVars.WHATSAPP_VERIFY_TOKEN,
     apiVersion: envVars.WHATSAPP_API_VERSION,
     businessAccountId: envVars.WHATSAPP_BUSINESS_ACCOUNT_ID,
+  },
+  redis: {
+    host: envVars.REDIS_HOST,
+    port: envVars.REDIS_PORT,
+    password: envVars.REDIS_PASSWORD || undefined,
+    db: envVars.REDIS_DB,
   },
 };
 
