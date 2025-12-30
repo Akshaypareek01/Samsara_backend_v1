@@ -6,10 +6,9 @@ import * as trainerController from '../../controllers/trainer.controller.js';
 
 const router = express.Router();
 
-// Create a new trainer
+// Create a new trainer (Public - no authentication required)
 router.post(
   '/',
-  auth(),
   validate(trainerValidation.createTrainer),
   trainerController.createTrainer
 );
@@ -71,6 +70,7 @@ router.patch(
 );
 
 export default router;
+
 
 
 

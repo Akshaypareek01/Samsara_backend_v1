@@ -66,7 +66,7 @@ const defaultRoutes = [
     route: trackerRoute,
   },
   {
-    path: '/company',
+    path: '/companies',
     route: companyRoute,
   },
   {

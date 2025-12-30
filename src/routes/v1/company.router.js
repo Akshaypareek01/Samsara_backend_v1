@@ -26,13 +26,18 @@ router.get(
   companyController.checkCompanyExists
 );
 
-// Create a new company
+// Create a new company (public - anyone can register)
 router.post(
   '/',
-  auth(),
   validate(companyValidation.createCompany),
   companyController.createCompany
 );
+
+// Company profile routes (company auth required)
+router
+  .route('/profile')
+  .get(auth(), companyController.getProfile)
+  .patch(auth(), validate(companyValidation.updateProfile), companyController.updateProfile);
 
 // Get all companies with pagination and filtering
 router.get(

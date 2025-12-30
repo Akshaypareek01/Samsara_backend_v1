@@ -155,7 +155,7 @@ const loginCompanyWithOTP = async (email, otp) => {
   return company;
 };
 
-export default {
+export {
   createCompany,
   queryCompanies,
   getCompanyById,

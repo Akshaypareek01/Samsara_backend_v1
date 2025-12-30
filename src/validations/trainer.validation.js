@@ -38,6 +38,7 @@ const createTrainer = {
         Joi.object().keys({
           key: Joi.string().required(),
           path: Joi.string().required(),
+          _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
         })
       )
       .optional(),
@@ -45,6 +46,7 @@ const createTrainer = {
       .keys({
         key: Joi.string().allow(null, ''),
         path: Joi.string().allow(null, ''),
+        _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
       })
       .optional(),
     status: Joi.boolean().optional(),
@@ -85,11 +87,13 @@ const updateTrainer = {
         Joi.object().keys({
           key: Joi.string().required(),
           path: Joi.string().required(),
+          _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
         })
       ),
       profilePhoto: Joi.object().keys({
         key: Joi.string().allow(null, ''),
         path: Joi.string().allow(null, ''),
+        _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
       }),
       status: Joi.boolean(),
     })
@@ -139,6 +143,7 @@ export {
   removeTrainerImage,
   updateTrainerProfilePhoto,
 };
+
 
 
 

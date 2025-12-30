@@ -3,16 +3,16 @@ import { objectId } from './custom.validation.js';
 
 const createCompany = {
   body: Joi.object().keys({
-    companyName: Joi.string().optional(),
-    companyLogo: Joi.string().uri().allow('').optional(),
-    email: Joi.string().email().optional(),
-    domain: Joi.string().optional(),
+    companyName: Joi.string().allow('', null).optional(),
+    companyLogo: Joi.string().uri().allow('', null).optional(),
+    email: Joi.string().email().allow('', null).optional(),
+    domain: Joi.string().allow('', null).optional(),
     numberOfEmployees: Joi.number().integer().min(0).optional(),
-    gstNumber: Joi.string().optional(),
-    address: Joi.string().optional(),
-    city: Joi.string().optional(),
-    pincode: Joi.string().optional(),
-    country: Joi.string().optional(),
+    gstNumber: Joi.string().allow('', null).optional(),
+    address: Joi.string().allow('', null).optional(),
+    city: Joi.string().allow('', null).optional(),
+    pincode: Joi.string().allow('', null).optional(),
+    country: Joi.string().allow('', null).optional(),
     contactPerson1: Joi.object().keys({
       name: Joi.string().optional(),
       email: Joi.string().email().optional(),
@@ -66,27 +66,27 @@ const updateCompany = {
   }),
   body: Joi.object()
     .keys({
-      companyName: Joi.string().optional(),
-      companyLogo: Joi.string().uri().allow('').optional(),
-      email: Joi.string().email().optional(),
-      domain: Joi.string().optional(),
+      companyName: Joi.string().allow('', null).optional(),
+      companyLogo: Joi.string().uri().allow('', null).optional(),
+      email: Joi.string().email().allow('', null).optional(),
+      domain: Joi.string().allow('', null).optional(),
       numberOfEmployees: Joi.number().integer().min(0).optional(),
-      gstNumber: Joi.string().optional(),
-      address: Joi.string().optional(),
-      city: Joi.string().optional(),
-      pincode: Joi.string().optional(),
-      country: Joi.string().optional(),
+      gstNumber: Joi.string().allow('', null).optional(),
+      address: Joi.string().allow('', null).optional(),
+      city: Joi.string().allow('', null).optional(),
+      pincode: Joi.string().allow('', null).optional(),
+      country: Joi.string().allow('', null).optional(),
       contactPerson1: Joi.object().keys({
-        name: Joi.string().optional(),
-        email: Joi.string().email().optional(),
-        mobileNumber: Joi.string().optional(),
-        designation: Joi.string().optional(),
+        name: Joi.string().allow('', null).optional(),
+        email: Joi.string().email().allow('', null).optional(),
+        mobileNumber: Joi.string().allow('', null).optional(),
+        designation: Joi.string().allow('', null).optional(),
       }).optional(),
       contactPerson2: Joi.object().keys({
-        name: Joi.string().optional(),
-        email: Joi.string().email().optional(),
-        mobileNumber: Joi.string().optional(),
-        designation: Joi.string().optional(),
+        name: Joi.string().allow('', null).optional(),
+        email: Joi.string().email().allow('', null).optional(),
+        mobileNumber: Joi.string().allow('', null).optional(),
+        designation: Joi.string().allow('', null).optional(),
       }).optional(),
       status: Joi.boolean().optional(),
     })
@@ -115,6 +115,36 @@ const verifyLoginOTP = {
   }),
 };
 
+const updateProfile = {
+  body: Joi.object()
+    .keys({
+      companyName: Joi.string().allow('', null).optional(),
+      companyLogo: Joi.string().uri().allow('', null).optional(),
+      email: Joi.string().email().allow('', null).optional(),
+      domain: Joi.string().allow('', null).optional(),
+      numberOfEmployees: Joi.number().integer().min(0).optional(),
+      gstNumber: Joi.string().allow('', null).optional(),
+      address: Joi.string().allow('', null).optional(),
+      city: Joi.string().allow('', null).optional(),
+      pincode: Joi.string().allow('', null).optional(),
+      country: Joi.string().allow('', null).optional(),
+      contactPerson1: Joi.object().keys({
+        name: Joi.string().allow('', null).optional(),
+        email: Joi.string().email().allow('', null).optional(),
+        mobileNumber: Joi.string().allow('', null).optional(),
+        designation: Joi.string().allow('', null).optional(),
+      }).optional(),
+      contactPerson2: Joi.object().keys({
+        name: Joi.string().allow('', null).optional(),
+        email: Joi.string().email().allow('', null).optional(),
+        mobileNumber: Joi.string().allow('', null).optional(),
+        designation: Joi.string().allow('', null).optional(),
+      }).optional(),
+      // Note: status cannot be updated by company itself
+    })
+    .min(1),
+};
+
 export {
   createCompany,
   getCompanies,
@@ -125,5 +155,6 @@ export {
   deleteCompany,
   sendLoginOTP,
   verifyLoginOTP,
+  updateProfile,
 };
 

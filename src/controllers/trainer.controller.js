@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
 import pick from '../utils/pick.js';
-import * as trainerService from '../services/trainer.service.js';
+import trainerService from '../services/trainer.service.js';
 
 /**
  * Create a new trainer
@@ -127,6 +127,7 @@ export {
   removeTrainerImage,
   updateTrainerProfilePhoto,
 };
+
 
 
 
