@@ -10,5 +10,8 @@ const login = catchAsync(async (req, res) => {
   res.send({ admin, tokens });
 });
 
+export const getProfile = async (req, res) => {
+  // auth.js always attaches authenticated entity to req.user
+  return res.status(200).json(req.user);
+};
 export { login };
-

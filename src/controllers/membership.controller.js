@@ -60,32 +60,32 @@ const checkTrialPlanUsage = catchAsync(async (req, res) => {
 /**
  * Manually assign trial plan (admin only)
  */
-const assignTrialPlanController = catchAsync(async (req, res) => {
-  const { userId } = req.params;
+// const assignTrialPlanController = catchAsync(async (req, res) => {
+//   const { userId } = req.params;
   
-  const membership = await assignTrialPlan(userId);
+//   const membership = await assignTrialPlan(userId);
   
-  res.status(httpStatus.CREATED).send({
-    success: true,
-    message: 'Trial plan assigned successfully',
-    data: membership
-  });
-});
+//   res.status(httpStatus.CREATED).send({
+//     success: true,
+//     message: 'Trial plan assigned successfully',
+//     data: membership
+//   });
+// });
 
 /**
  * Manually assign lifetime plan to teacher (admin only)
  */
-const assignLifetimePlanController = catchAsync(async (req, res) => {
-  const { userId } = req.params;
+// const assignLifetimePlanController = catchAsync(async (req, res) => {
+//   const { userId } = req.params;
   
-  const membership = await assignLifetimePlan(userId);
+//   const membership = await assignLifetimePlan(userId);
   
-  res.status(httpStatus.CREATED).send({
-    success: true,
-    message: 'Lifetime plan assigned successfully',
-    data: membership
-  });
-});
+//   res.status(httpStatus.CREATED).send({
+//     success: true,
+//     message: 'Lifetime plan assigned successfully',
+//     data: membership
+//   });
+// });
 
 /**
  * Create a new membership
@@ -139,30 +139,30 @@ const cancelMembershipController = catchAsync(async (req, res) => {
 /**
  * Assign membership with 100% off coupon code (admin only)
  */
-const assignMembershipWithCouponController = catchAsync(async (req, res) => {
-  const { userId, planId, couponCode } = req.body;
+// const assignMembershipWithCouponController = catchAsync(async (req, res) => {
+//   const { userId, planId, couponCode } = req.body;
   
-  if (!userId || !planId || !couponCode) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'userId, planId, and couponCode are required');
-  }
+//   if (!userId || !planId || !couponCode) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, 'userId, planId, and couponCode are required');
+//   }
   
-  const membership = await assignMembershipWithCoupon(userId, planId, couponCode);
+//   const membership = await assignMembershipWithCoupon(userId, planId, couponCode);
   
-  res.status(httpStatus.CREATED).send({
-    success: true,
-    message: 'Membership assigned successfully with 100% off coupon',
-    data: membership
-  });
-});
+//   res.status(httpStatus.CREATED).send({
+//     success: true,
+//     message: 'Membership assigned successfully with 100% off coupon',
+//     data: membership
+//   });
+// });
 
 export {
   getActiveMembershipController,
   getMembershipHistory,
   checkTrialPlanUsage,
-  assignTrialPlanController,
-  assignLifetimePlanController,
+  // assignTrialPlanController,
+  // assignLifetimePlanController,
   createMembershipController,
   updateMembershipController,
   cancelMembershipController,
-  assignMembershipWithCouponController
+  // assignMembershipWithCouponController
 };

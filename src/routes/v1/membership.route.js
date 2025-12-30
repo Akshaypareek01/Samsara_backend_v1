@@ -5,12 +5,12 @@ import {
   getActiveMembershipController,
   getMembershipHistory,
   checkTrialPlanUsage,
-  assignTrialPlanController,
-  assignLifetimePlanController,
+  // assignTrialPlanController,
+  // assignLifetimePlanController,
   createMembershipController,
   updateMembershipController,
   cancelMembershipController,
-  assignMembershipWithCouponController
+  // assignMembershipWithCouponController
 } from '../../controllers/membership.controller.js';
 import { membershipValidation } from '../../validations/membership.validation.js';
 
@@ -36,12 +36,12 @@ router.patch('/:membershipId/cancel', auth(), validate(membershipValidation.canc
 
 // Admin routes
 // Manually assign trial plan (admin only)
-router.post('/assign-trial/:userId', auth(), assignTrialPlanController);
+// router.post('/assign-trial/:userId', auth(), assignTrialPlanController);
 
 // Manually assign lifetime plan to teacher (admin only)
-router.post('/assign-lifetime/:userId', auth(), assignLifetimePlanController);
+// router.post('/assign-lifetime/:userId', auth(), assignLifetimePlanController);
 
 // Assign membership with 100% off coupon code (admin only)
-router.post('/assign-with-coupon', auth(), validate(membershipValidation.assignMembershipWithCoupon), assignMembershipWithCouponController);
+// router.post('/assign-with-coupon', auth(), validate(membershipValidation.assignMembershipWithCoupon), assignMembershipWithCouponController);
 
 export default router;

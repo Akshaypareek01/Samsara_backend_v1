@@ -16,7 +16,16 @@ import {
  * Get dashboard data (latest entries from all trackers)
  */
 const getDashboardData = catchAsync(async (req, res) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/5f6679be-04c6-4efb-aaf8-56fa2fb8e96c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/controllers/tracker.controller.js:18',message:'getDashboardData called',data:{userId:req.user?.id,reqUrl:req.originalUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'initial-test',hypothesisId:'hypothesis-4'})}).catch(()=>{});
+  // #endregion
+
   const data = await trackerService.getDashboardData(req.user.id);
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/5f6679be-04c6-4efb-aaf8-56fa2fb8e96c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/controllers/tracker.controller.js:25',message:'getDashboardData response',data:{userId:req.user?.id,hasWaterData:!!data?.water,waterIntake:data?.water?.totalIntake,waterStatus:data?.water?.status},timestamp:Date.now(),sessionId:'debug-session',runId:'initial-test',hypothesisId:'hypothesis-4'})}).catch(()=>{});
+  // #endregion
+
   res.send(data);
 });
 
@@ -324,7 +333,16 @@ const updateWaterTarget = catchAsync(async (req, res) => {
  * Get today's water data
  */
 const getTodayWaterData = catchAsync(async (req, res) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/5f6679be-04c6-4efb-aaf8-56fa2fb8e96c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/controllers/tracker.controller.js:326',message:'getTodayWaterData called',data:{userId:req.user?.id,reqUrl:req.originalUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'initial-test',hypothesisId:'hypothesis-1'})}).catch(()=>{});
+  // #endregion
+
   const data = await trackerService.getTodayWaterData(req.user.id);
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/5f6679be-04c6-4efb-aaf8-56fa2fb8e96c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/controllers/tracker.controller.js:333',message:'getTodayWaterData response',data:{userId:req.user?.id,hasData:!!data,totalIntake:data?.totalIntake,status:data?.status},timestamp:Date.now(),sessionId:'debug-session',runId:'initial-test',hypothesisId:'hypothesis-1'})}).catch(()=>{});
+  // #endregion
+
   res.send(data);
 });
 
@@ -351,7 +369,16 @@ const deleteWaterIntake = catchAsync(async (req, res) => {
  * Get hydration status
  */
 const getHydrationStatus = catchAsync(async (req, res) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/5f6679be-04c6-4efb-aaf8-56fa2fb8e96c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/controllers/tracker.controller.js:353',message:'getHydrationStatus called',data:{userId:req.user?.id,reqUrl:req.originalUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'initial-test',hypothesisId:'hypothesis-1'})}).catch(()=>{});
+  // #endregion
+
   const status = await trackerService.getHydrationStatus(req.user.id);
+
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/5f6679be-04c6-4efb-aaf8-56fa2fb8e96c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/controllers/tracker.controller.js:360',message:'getHydrationStatus response',data:{userId:req.user?.id,currentIntake:status?.currentIntake,percentage:status?.percentage,status:status?.status},timestamp:Date.now(),sessionId:'debug-session',runId:'initial-test',hypothesisId:'hypothesis-1'})}).catch(()=>{});
+  // #endregion
+
   res.send(status);
 });
 
