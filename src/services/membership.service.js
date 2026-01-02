@@ -336,19 +336,6 @@ const assignMembershipWithCoupon = async (userId, planId, couponCode) => {
       );
     }
 
-    // Check per-user usage limit
-    const userCouponUsageCount = await Membership.countDocuments({
-      userId,
-      couponCode: couponCodeDoc._id
-    });
-
-    if (userCouponUsageCount >= couponCodeDoc.usageLimitPerUser) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        `You have reached the maximum usage limit (${couponCodeDoc.usageLimitPerUser}) for this coupon code`
-      );
-    }
-
     // Check if user already has an active membership
     const existingActiveMembership = await Membership.findOne({
       userId,
@@ -359,6 +346,22 @@ const assignMembershipWithCoupon = async (userId, planId, couponCode) => {
 
     if (existingActiveMembership) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'User already has an active membership');
+    }
+
+    // Check per-user usage limit (only count active memberships)
+    // This allows reusing the coupon if previous membership is cancelled/expired
+    const activeCouponUsageCount = await Membership.countDocuments({
+      userId,
+      couponCode: couponCodeDoc._id,
+      status: 'active',
+      endDate: { $gte: new Date() }
+    });
+
+    if (activeCouponUsageCount >= couponCodeDoc.usageLimitPerUser) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        `You have reached the maximum usage limit (${couponCodeDoc.usageLimitPerUser}) for this coupon code`
+      );
     }
 
     // Calculate end date
