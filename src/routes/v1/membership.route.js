@@ -12,6 +12,7 @@ import {
   cancelMembershipController,
   // assignMembershipWithCouponController
 } from '../../controllers/membership.controller.js';
+import { assignWithCoupon } from '../../controllers/admin-membership.controller.js';
 import { membershipValidation } from '../../validations/membership.validation.js';
 
 const router = express.Router();
@@ -42,6 +43,6 @@ router.patch('/:membershipId/cancel', auth(), validate(membershipValidation.canc
 // router.post('/assign-lifetime/:userId', auth(), assignLifetimePlanController);
 
 // Assign membership with 100% off coupon code (admin only)
-// router.post('/assign-with-coupon', auth(), validate(membershipValidation.assignMembershipWithCoupon), assignMembershipWithCouponController);
+router.post('/assign-with-coupon', auth(), validate(membershipValidation.assignMembershipWithCoupon), assignWithCoupon);
 
 export default router;
