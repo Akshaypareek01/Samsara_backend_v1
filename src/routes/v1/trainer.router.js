@@ -21,6 +21,21 @@ router.get(
   trainerController.getAllTrainers
 );
 
+// Get current trainer profile (must be before /:id route)
+router.get(
+  '/me',
+  auth(),
+  trainerController.getMe
+);
+
+// Update current trainer profile (must be before /:id route)
+router.patch(
+  '/me',
+  auth(),
+  validate(trainerValidation.updateMe),
+  trainerController.updateMe
+);
+
 // Get a trainer by ID
 router.get(
   '/:id',

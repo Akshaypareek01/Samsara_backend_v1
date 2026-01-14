@@ -36,6 +36,24 @@ const getTrainerById = async (id) => {
 };
 
 /**
+ * Get trainer by email
+ * @param {string} email
+ * @returns {Promise<Trainer>}
+ */
+const getTrainerByEmail = async (email) => {
+  return Trainer.findOne({ email });
+};
+
+/**
+ * Get trainer by mobile
+ * @param {string} mobile
+ * @returns {Promise<Trainer>}
+ */
+const getTrainerByMobile = async (mobile) => {
+  return Trainer.findOne({ mobile }).select('+password');
+};
+
+/**
  * Update trainer by id
  * @param {ObjectId} id
  * @param {Object} updateBody
@@ -120,6 +138,8 @@ export default {
   createTrainer,
   queryTrainers,
   getTrainerById,
+  getTrainerByEmail,
+  getTrainerByMobile,
   updateTrainerById,
   deleteTrainerById,
   addTrainerImage,

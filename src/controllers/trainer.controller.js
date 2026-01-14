@@ -22,6 +22,35 @@ const getAllTrainers = catchAsync(async (req, res) => {
 });
 
 /**
+ * Get current trainer profile
+ */
+const getMe = catchAsync(async (req, res) => {
+  const trainer = await trainerService.getTrainerById(req.user.id);
+  if (!trainer) {
+    return res.status(httpStatus.NOT_FOUND).json({
+      status: 'fail',
+      message: 'Trainer not found',
+    });
+  }
+  res.send(trainer);
+});
+
+/**
+ * Update current trainer profile
+ */
+const updateMe = catchAsync(async (req, res) => {
+  const updateBody = req.body;
+  const trainerId = req.user.id;
+
+  // Don't allow updating email or mobile through this endpoint
+  delete updateBody.email;
+  delete updateBody.mobile;
+
+  const trainer = await trainerService.updateTrainerById(trainerId, updateBody);
+  res.send(trainer);
+});
+
+/**
  * Get a trainer by ID
  */
 const getTrainerById = catchAsync(async (req, res) => {
@@ -120,6 +149,8 @@ const updateTrainerProfilePhoto = catchAsync(async (req, res) => {
 export {
   createTrainer,
   getAllTrainers,
+  getMe,
+  updateMe,
   getTrainerById,
   updateTrainerById,
   deleteTrainerById,

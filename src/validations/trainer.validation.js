@@ -58,6 +58,11 @@ const typeOfTrainingEnum = [
 
 const createTrainer = {
   body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    mobile: Joi.string()
+      .required()
+      .pattern(/^[0-9]{10}$/)
+      .message('Mobile number must be exactly 10 digits'),
     name: Joi.string().required().trim(),
     title: Joi.string().required().trim(),
     bio: Joi.string().required().max(2000).trim(),
@@ -113,6 +118,31 @@ const getTrainer = {
   params: Joi.object().keys({
     id: Joi.string().custom(objectId).required(),
   }),
+};
+
+const updateMe = {
+  body: Joi.object()
+    .keys({
+      name: Joi.string().trim(),
+      title: Joi.string().trim(),
+      bio: Joi.string().max(2000).trim(),
+      specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
+      typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
+      images: Joi.array().items(
+        Joi.object().keys({
+          key: Joi.string().required(),
+          path: Joi.string().required(),
+          _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
+        })
+      ),
+      profilePhoto: Joi.object().keys({
+        key: Joi.string().allow(null, ''),
+        path: Joi.string().allow(null, ''),
+        _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
+      }),
+      status: Joi.boolean(),
+    })
+    .min(1),
 };
 
 const updateTrainer = {
@@ -180,6 +210,7 @@ export {
   createTrainer,
   getTrainers,
   getTrainer,
+  updateMe,
   updateTrainer,
   deleteTrainer,
   addTrainerImage,

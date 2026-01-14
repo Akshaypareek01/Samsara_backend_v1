@@ -151,6 +151,31 @@ const generateCompanyAuthTokens = async (company) => {
 };
 
 /**
+ * Generate trainer auth tokens
+ * @param {Trainer} trainer
+ * @returns {Promise<Object>}
+ */
+const generateTrainerAuthTokens = async (trainer) => {
+  const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
+  const accessToken = generateTokenWithType(trainer.id, accessTokenExpires, tokenTypes.ACCESS, 'trainer');
+
+  const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays, 'days');
+  const refreshToken = generateTokenWithType(trainer.id, refreshTokenExpires, tokenTypes.REFRESH, 'trainer');
+  await saveToken(refreshToken, trainer.id, refreshTokenExpires, tokenTypes.REFRESH);
+
+  return {
+    access: {
+      token: accessToken,
+      expires: accessTokenExpires.toDate(),
+    },
+    refresh: {
+      token: refreshToken,
+      expires: refreshTokenExpires.toDate(),
+    },
+  };
+};
+
+/**
  * Generate reset password token
  * @param {string} email
  * @returns {Promise<string>}
@@ -178,4 +203,4 @@ const generateVerifyEmailToken = async (user) => {
   return verifyEmailToken;
 };
 
-export { generateToken, generateTokenWithType, saveToken, verifyToken, generateAuthTokens, generateAdminAuthTokens, generateCompanyAuthTokens, generateResetPasswordToken, generateVerifyEmailToken };
+export { generateToken, generateTokenWithType, saveToken, verifyToken, generateAuthTokens, generateAdminAuthTokens, generateCompanyAuthTokens, generateTrainerAuthTokens, generateResetPasswordToken, generateVerifyEmailToken };

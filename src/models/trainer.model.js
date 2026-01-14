@@ -1,8 +1,29 @@
 import mongoose from 'mongoose';
+import validator from 'validator';
 import { toJSON, paginate } from './plugins/index.js';
 
 const trainerSchema = new mongoose.Schema(
   {
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      validate: [validator.isEmail, 'Please provide a valid email'],
+      trim: true,
+    },
+    mobile: {
+      type: String,
+      required: [true, 'Mobile number is required'],
+      unique: true,
+      trim: true,
+      validate: {
+        validator: function (v) {
+          return /^[0-9]{10}$/.test(v);
+        },
+        message: 'Mobile number must be 10 digits',
+      },
+    },
     name: {
       type: String,
       required: [true, 'Trainer name is required'],
@@ -123,6 +144,28 @@ const trainerSchema = new mongoose.Schema(
 // add plugin that converts mongoose to json
 trainerSchema.plugin(toJSON);
 trainerSchema.plugin(paginate);
+
+/**
+ * Check if email is taken
+ * @param {string} email - The trainer's email
+ * @param {ObjectId} [excludeTrainerId] - The id of the trainer to be excluded
+ * @returns {Promise<boolean>}
+ */
+trainerSchema.statics.isEmailTaken = async function (email, excludeTrainerId) {
+  const trainer = await this.findOne({ email, _id: { $ne: excludeTrainerId } });
+  return !!trainer;
+};
+
+/**
+ * Check if mobile is taken
+ * @param {string} mobile - The trainer's mobile number
+ * @param {ObjectId} [excludeTrainerId] - The id of the trainer to be excluded
+ * @returns {Promise<boolean>}
+ */
+trainerSchema.statics.isMobileTaken = async function (mobile, excludeTrainerId) {
+  const trainer = await this.findOne({ mobile, _id: { $ne: excludeTrainerId } });
+  return !!trainer;
+};
 
 const Trainer = mongoose.model('Trainer', trainerSchema);
 

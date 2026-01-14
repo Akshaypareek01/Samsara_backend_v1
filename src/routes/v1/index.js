@@ -42,6 +42,7 @@ import globalConfigRoute from './globalConfig.route.js';
 import whatsappRoute from './whatsapp.route.js';
 import adminRoute from './admin.route.js';
 import trainerRoute from './trainer.router.js';
+import trainerAuthRoute from './trainerAuth.route.js';
 import adminTrackerRoute from './admin-tracker.route.js';
 import adminPeriodRoute from './admin-period.route.js';
 import adminMembershipRoute from './admin-membership.route.js';
@@ -212,6 +213,10 @@ const defaultRoutes = [
   {
     path: '/trainers',
     route: trainerRoute,
+  },
+  {
+    path: '/trainer-auth',
+    route: trainerAuthRoute,
   },
   {
     path: '/admin/trackers',
