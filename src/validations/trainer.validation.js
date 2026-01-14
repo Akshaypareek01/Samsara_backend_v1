@@ -1,26 +1,59 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
 
-const specialistInEnum = [
-  'Mental Health',
-  'Fitness',
-  'Yoga',
-  'Pilates',
-  'Strength Training',
-  'Cardio',
-  'Weight Loss',
-  'Weight Gain',
-  'Nutrition',
-  'Ayurveda',
-  'Meditation',
-  'Wellness',
-  'Rehabilitation',
-  'Sports Training',
-  'Dance Fitness',
-  'HIIT',
-  'CrossFit',
-  'Bodybuilding',
-  'General Training',
+const specialistInEnum = ['Employees', 'Mid Level Managers', 'Leadership', 'GenZ'];
+
+const typeOfTrainingEnum = [
+  // Employees
+  'Masterclass for Employee Wellbeing',
+  'Emotional Intelligence Skill Workshop',
+  'Mindfulness at Work',
+  'Resilience during Change & Uncertainty',
+  'The Mental Health Toolkit: Daily Self-Care for Working Professionals',
+  'Managing Anxiety at Work: Coping with High-Pressure Moments',
+  'Work-Life Balance and Digital Wellbeing',
+  'Stress Management and Emotional Resilience',
+  'Peer Support & Mental Health Champions Program',
+  'Building Psychological Safety at Work',
+  'Enhancing Collaboration through Emotional Intelligence',
+  // Mid-Level Managers
+  "Myndwell's Emerging Leader Series",
+  'Emerging Leader Skill Assessment',
+  'Weekly Sessions',
+  'Continuous Learning Support',
+  'Personalized One-on-One Sessions',
+  'Post-Intervention Assessment',
+  'Mastering Managerial Effectiveness',
+  'Understanding Stress and Burnout',
+  'Impactful Communication: Fostering Genuine Connections',
+  'Boosting Team Performance & Upholding Organizational Culture',
+  'Cultivating Leadership Excellence in Managers',
+  "Navigating Performance Appraisal Dynamics: A Manager's Guide",
+  'Manager Sensitization Program',
+  'How to Have Difficult Conversations: A Guide for Leaders',
+  'Feedback Mastery: Enhancing Communication and Performance',
+  'Leading with Empathy: Mental Health Leadership Training',
+  'Creating a Mentally Healthy Environment: A Culture of Psychological Safety',
+  'Preventing Burnout: A Leadership Lens',
+  'Emotional Intelligence for Managers',
+  // Leadership
+  'Strategic Leadership in Evolving Workplaces',
+  'Building Inclusive Leadership Practices',
+  'Leading Change with Emotional Intelligence',
+  'Resilient Leadership: Thriving Through Disruption',
+  'Fostering a Culture of Innovation and Growth',
+  'Mentoring and Coaching for High-Performance Teams',
+  'Leadership Agility: Adapting to Uncertainty',
+  'Mental Health Leadership: Supporting Workforce Wellbeing',
+  // GenZ
+  'From Campus to Corporate: The Real-World Starter Pack',
+  'Emotional Intelligence 2.0: Thriving Beyond IQ',
+  'The Resilience Playbook: Fail Fast, Rise Faster',
+  'Unstoppable Confidence: Owning Your Story at Work',
+  'Digital Detox for Digital Natives: Reclaiming Focus & Energy',
+  'Collaborate & Conquer: Cracking Multigenerational Workplaces',
+  'EQ in Action: Empathy as Your Superpower',
+  'Thriving as a Fresher: Adapting to the Corporate World',
 ];
 
 const createTrainer = {
@@ -28,11 +61,22 @@ const createTrainer = {
     name: Joi.string().required().trim(),
     title: Joi.string().required().trim(),
     bio: Joi.string().required().max(2000).trim(),
-    specialistIn: Joi.string()
+    specialistIn: Joi.array()
+      .items(Joi.string().valid(...specialistInEnum))
+      .min(1)
       .required()
-      .valid(...specialistInEnum),
-    typeOfTraining: Joi.string().required().trim(),
-    duration: Joi.string().required().trim(),
+      .messages({
+        'array.min': 'At least one specialty is required',
+        'any.required': 'Specialist field is required',
+      }),
+    typeOfTraining: Joi.array()
+      .items(Joi.string().valid(...typeOfTrainingEnum))
+      .min(1)
+      .required()
+      .messages({
+        'array.min': 'At least one type of training is required',
+        'any.required': 'Type of training is required',
+      }),
     images: Joi.array()
       .items(
         Joi.object().keys({
@@ -56,8 +100,8 @@ const createTrainer = {
 const getTrainers = {
   query: Joi.object().keys({
     name: Joi.string(),
-    specialistIn: Joi.string().valid(...specialistInEnum),
-    typeOfTraining: Joi.string(),
+    specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
+    typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
     status: Joi.boolean(),
     sortBy: Joi.string(),
     limit: Joi.number().integer().min(1),
@@ -80,9 +124,8 @@ const updateTrainer = {
       name: Joi.string().trim(),
       title: Joi.string().trim(),
       bio: Joi.string().max(2000).trim(),
-      specialistIn: Joi.string().valid(...specialistInEnum),
-      typeOfTraining: Joi.string().trim(),
-      duration: Joi.string().trim(),
+      specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
+      typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
       images: Joi.array().items(
         Joi.object().keys({
           key: Joi.string().required(),

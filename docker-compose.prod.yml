@@ -8,9 +8,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
-      - redis
-
-  redis:
+      - redis  redis:
     image: redis:7-alpine
     ports:
       - '6379:6379'
@@ -21,7 +19,5 @@ services:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
-      retries: 5
-
-volumes:
+      retries: 5volumes:
   redisdata:
