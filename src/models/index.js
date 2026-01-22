@@ -44,6 +44,7 @@ import BloodReport from './bloodReport.model.js';
 import NotificationPreferences from './notificationPreferences.model.js';
 import { WhatsAppConversation } from './whatsapp-conversation.model.js';
 import Trainer from './trainer.model.js';
+import Booking from './booking.model.js';
 
 export {
   Token,
@@ -93,6 +94,7 @@ export {
   BloodReport,
   NotificationPreferences,
   WhatsAppConversation,
-  Trainer
+  Trainer,
+  Booking
 };
 
