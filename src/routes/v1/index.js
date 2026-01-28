@@ -47,6 +47,7 @@ import adminTrackerRoute from './admin-tracker.route.js';
 import adminPeriodRoute from './admin-period.route.js';
 import adminMembershipRoute from './admin-membership.route.js';
 import bookingRoute from './booking.router.js';
+import roleRoute from './role.route.js';
 
 const router = express.Router();
 
@@ -234,6 +235,10 @@ const defaultRoutes = [
   {
     path: '/bookings',
     route: bookingRoute,
+  },
+  {
+    path: '/roles',
+    route: roleRoute,
   },
 ];
 

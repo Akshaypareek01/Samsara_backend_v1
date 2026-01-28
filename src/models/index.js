@@ -45,6 +45,7 @@ import NotificationPreferences from './notificationPreferences.model.js';
 import { WhatsAppConversation } from './whatsapp-conversation.model.js';
 import Trainer from './trainer.model.js';
 import Booking from './booking.model.js';
+import Role from './role.model.js';
 
 export {
   Token,
@@ -95,6 +96,7 @@ export {
   NotificationPreferences,
   WhatsAppConversation,
   Trainer,
-  Booking
+  Booking,
+  Role
 };
 

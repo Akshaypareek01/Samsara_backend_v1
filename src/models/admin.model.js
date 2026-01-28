@@ -16,11 +16,17 @@ const adminSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      private: true, // ⬅️ Hide from JSON response
     },
     email: {
       type: String,
       required: true,
       unique: true,
+    },
+    role: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Role',
+      required: false,
     },
     status: {
       type: Boolean,

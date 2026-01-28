@@ -13,17 +13,18 @@ const jwtVerify = async (payload, done) => {
     if (payload.type !== tokenTypes.ACCESS) {
       throw new Error('Invalid token type');
     }
-    
+
     // Check if token is for admin, company, trainer, or user
     const userType = payload.userType || 'user';
-    
+
     if (userType === 'admin') {
-      const admin = await Admin.findById(payload.sub);
+      const admin = await Admin.findById(payload.sub).populate('role');
       if (!admin || !admin.status) {
         return done(null, false);
       }
-      // Add role to admin object for auth middleware
-      admin.role = 'admin';
+      if (!admin.role) {
+        admin.role = 'admin';
+      }
       return done(null, admin);
     } else if (userType === 'company') {
       const company = await Company.findById(payload.sub);
