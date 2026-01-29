@@ -45,6 +45,7 @@ const envVarsSchema = Joi.object()
     REDIS_PORT: Joi.number().default(6379).description('Redis port'),
     REDIS_PASSWORD: Joi.string().allow('').description('Redis password'),
     REDIS_DB: Joi.number().default(0).description('Redis database number'),
+    APPLE_SHARED_SECRET: Joi.string().description('Apple In-App Purchase Shared Secret'),
   })
   .unknown();
 
@@ -87,8 +88,8 @@ const config = {
       socketTimeout: (envVars.SMTP_TIMEOUT || 7) * 1000,
     },
     // Fallback SMTP (legacy SMTP) - only if different from primary
-    fallbackSmtp: (envVars.SES_SMTP_ENDPOINT && envVars.SMTP_HOST && 
-                   envVars.SES_SMTP_ENDPOINT !== envVars.SMTP_HOST) ? {
+    fallbackSmtp: (envVars.SES_SMTP_ENDPOINT && envVars.SMTP_HOST &&
+      envVars.SES_SMTP_ENDPOINT !== envVars.SMTP_HOST) ? {
       host: envVars.SMTP_HOST,
       port: envVars.SMTP_PORT,
       secure: false,
@@ -123,6 +124,9 @@ const config = {
     port: envVars.REDIS_PORT,
     password: envVars.REDIS_PASSWORD || undefined,
     db: envVars.REDIS_DB,
+  },
+  apple: {
+    sharedSecret: envVars.APPLE_SHARED_SECRET,
   },
 };
 

@@ -31,6 +31,7 @@ const createMembershipPlan = {
       maxDiscountAmount: Joi.number().min(0).allow(null).default(null)
     }).default({}),
     razorpayPlanId: Joi.string().allow('', null),
+    appleProductId: Joi.string().allow('', null),
     metadata: Joi.object().default({}),
   }),
 };
@@ -64,9 +65,9 @@ const updateMembershipPlan = {
       currency: Joi.string().valid('INR', 'USD', 'EUR'),
       validityDays: Joi.number().min(0).max(3650),
       features: Joi.array().items(Joi.string().trim()).min(1),
-          planType: Joi.string().valid('basic', 'premium', 'enterprise', 'trial', 'limited-time'),
-    maxUsers: Joi.number().min(1),
-          availableFrom: Joi.date(),
+      planType: Joi.string().valid('basic', 'premium', 'enterprise', 'trial', 'limited-time'),
+      maxUsers: Joi.number().min(1),
+      availableFrom: Joi.date(),
       availableUntil: Joi.date().allow(null),
       taxConfig: Joi.object({
         gst: Joi.object({
@@ -86,6 +87,7 @@ const updateMembershipPlan = {
         maxDiscountAmount: Joi.number().min(0).allow(null)
       }),
       razorpayPlanId: Joi.string().allow('', null),
+      appleProductId: Joi.string().allow('', null),
       isActive: Joi.boolean(),
       metadata: Joi.object(),
     })

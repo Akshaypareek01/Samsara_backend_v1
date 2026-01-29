@@ -9,8 +9,13 @@ import razorpayService from '../services/razorpay.service.js';
  * Create payment order
  */
 const createPaymentOrder = catchAsync(async (req, res) => {
-  const { planId, couponCode } = req.body;
+  const { planId, couponCode, platform } = req.body;
   const userId = req.user.id;
+
+  // Safety Check: Block Razorpay for iOS
+  if (platform === 'ios') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Razorpay not allowed for iOS. Use Apple verify-receipt API.');
+  }
 
   // Get user details
   const user = await User.findById(userId);
@@ -46,9 +51,9 @@ const createPaymentOrder = catchAsync(async (req, res) => {
 
   // Apply coupon code if provided
   if (couponCode) {
-    couponCodeDoc = await CouponCode.findOne({ 
+    couponCodeDoc = await CouponCode.findOne({
       code: couponCode.toUpperCase(),
-      isActive: true 
+      isActive: true
     });
 
     if (!couponCodeDoc) {
@@ -69,7 +74,7 @@ const createPaymentOrder = catchAsync(async (req, res) => {
 
     if (finalAmount < couponCodeDoc.minOrderAmount) {
       throw new ApiError(
-        httpStatus.BAD_REQUEST, 
+        httpStatus.BAD_REQUEST,
         `Minimum order amount of ${couponCodeDoc.minOrderAmount} required for this coupon`
       );
     }
@@ -128,6 +133,8 @@ const createPaymentOrder = catchAsync(async (req, res) => {
       razorpayPaymentId: null,
       razorpaySignature: null,
       status: 'active',
+      platform: platform || 'web',
+      paymentProvider: 'free',
       metadata: {
         transactionId: transaction._id,
         paymentMethod: 'free_coupon',
@@ -204,6 +211,8 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     couponCode: couponCodeDoc?._id || null,
     couponCodeString: couponCode || null,
     status: 'pending',
+    platform: platform || 'web',
+    paymentMethod: 'razorpay',
     metadata: {
       userEmail: user.email,
       userName: user.name,
@@ -232,8 +241,13 @@ const createPaymentOrder = catchAsync(async (req, res) => {
  * Verify payment and create membership
  */
 const verifyPayment = catchAsync(async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, platform } = req.body;
   const userId = req.user.id;
+
+  // Safety Check: Block Razorpay for iOS
+  if (platform === 'ios') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Razorpay not allowed for iOS. Use Apple verify-receipt API.');
+  }
 
   // Get transaction
   const transaction = await Transaction.getByRazorpayOrderId(razorpay_order_id);
@@ -313,6 +327,8 @@ const verifyPayment = catchAsync(async (req, res) => {
     razorpayPaymentId: razorpay_payment_id,
     razorpaySignature: razorpay_signature,
     status: 'active',
+    platform: platform || transaction.platform || 'web',
+    paymentProvider: 'razorpay',
     metadata: {
       transactionId: transaction._id,
       paymentMethod: paymentDetails.method,
@@ -347,15 +363,15 @@ const getUserTransactions = catchAsync(async (req, res) => {
   const userId = req.user.id;
   const filter = { userId };
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  
+
   // Set default sort if not provided
   if (!options.sortBy) {
     options.sortBy = 'createdAt:desc';
   }
-  
+
   // Set populate options for related data
   options.populate = 'planId,couponCode';
-  
+
   const result = await Transaction.paginate(filter, options);
   res.send(result);
 });
@@ -367,17 +383,17 @@ const getUserTransactions = catchAsync(async (req, res) => {
 const getAllTransactions = catchAsync(async (req, res) => {
   const filter = {};
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  
+
   // Filter by userId if provided
   if (req.query.userId) {
     filter.userId = req.query.userId;
   }
-  
+
   // Filter by status if provided
   if (req.query.status) {
     filter.status = req.query.status;
   }
-  
+
   // Filter by date range if provided
   if (req.query.startDate || req.query.endDate) {
     filter.createdAt = {};
@@ -388,15 +404,15 @@ const getAllTransactions = catchAsync(async (req, res) => {
       filter.createdAt.$lte = new Date(req.query.endDate);
     }
   }
-  
+
   // Set default sort if not provided
   if (!options.sortBy) {
     options.sortBy = 'createdAt:desc';
   }
-  
+
   // Set populate options for related data
   options.populate = 'planId,couponCode,userId';
-  
+
   const result = await Transaction.paginate(filter, options);
   res.send(result);
 });
@@ -429,7 +445,7 @@ const getTransaction = catchAsync(async (req, res) => {
 const getUserMemberships = catchAsync(async (req, res) => {
   const userId = req.user.id;
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  
+
   const result = await Membership.getUserMemberships(userId, options.limit || 10);
   res.send(result);
 });
@@ -439,9 +455,9 @@ const getUserMemberships = catchAsync(async (req, res) => {
  */
 const getActiveMembership = catchAsync(async (req, res) => {
   const userId = req.user.id;
-  
+
   const membership = await Membership.getActiveMembership(userId);
-  
+
   if (!membership) {
     throw new ApiError(httpStatus.NOT_FOUND, 'No active membership found');
   }
@@ -508,7 +524,7 @@ const requestRefund = catchAsync(async (req, res) => {
 
   // Calculate refund amount
   const refundAmount = membership.calculateRefund();
-  
+
   if (refundAmount <= 0) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'No refund amount available');
   }

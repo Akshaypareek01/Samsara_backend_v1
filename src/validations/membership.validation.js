@@ -36,9 +36,17 @@ const assignMembershipWithCoupon = {
   })
 };
 
+const verifyIosReceipt = {
+  body: Joi.object().keys({
+    productId: Joi.string().required(),
+    receiptData: Joi.string().required()
+  })
+};
+
 export const membershipValidation = {
   createMembership,
   updateMembership,
   cancelMembership,
-  assignMembershipWithCoupon
+  assignMembershipWithCoupon,
+  verifyIosReceipt
 };

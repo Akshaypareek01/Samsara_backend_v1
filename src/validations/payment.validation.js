@@ -5,6 +5,7 @@ const createPaymentOrder = {
   body: Joi.object().keys({
     planId: Joi.string().required().custom(objectId),
     couponCode: Joi.string().trim().uppercase().allow('', null),
+    platform: Joi.string().valid('ios', 'android', 'web', 'admin', 'other').default('web'),
   }),
 };
 
@@ -13,6 +14,7 @@ const verifyPayment = {
     razorpay_order_id: Joi.string().required(),
     razorpay_payment_id: Joi.string().required(),
     razorpay_signature: Joi.string().required(),
+    platform: Joi.string().valid('ios', 'android', 'web', 'admin', 'other').default('web'),
   }),
 };
 

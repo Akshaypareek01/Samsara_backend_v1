@@ -1,15 +1,16 @@
 import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
-import { 
-  assignTrialPlan, 
+import {
+  assignTrialPlan,
   assignLifetimePlan,
-  hasUsedTrialPlan, 
-  getActiveMembership, 
+  hasUsedTrialPlan,
+  getActiveMembership,
   getUserMemberships,
   createMembership,
   updateMembership,
   cancelMembership,
-  assignMembershipWithCoupon
+  assignMembershipWithCoupon,
+  processAppleSubscription
 } from '../services/membership.service.js';
 import ApiError from '../utils/ApiError.js';
 
@@ -18,7 +19,7 @@ import ApiError from '../utils/ApiError.js';
  */
 const getActiveMembershipController = catchAsync(async (req, res) => {
   const membership = await getActiveMembership(req.user.id);
-  
+
   if (!membership) {
     throw new ApiError(httpStatus.NOT_FOUND, 'No active membership found');
   }
@@ -35,7 +36,7 @@ const getActiveMembershipController = catchAsync(async (req, res) => {
 const getMembershipHistory = catchAsync(async (req, res) => {
   const { limit = 10 } = req.query;
   const memberships = await getUserMemberships(req.user.id, parseInt(limit));
-  
+
   res.send({
     success: true,
     data: memberships
@@ -47,7 +48,7 @@ const getMembershipHistory = catchAsync(async (req, res) => {
  */
 const checkTrialPlanUsage = catchAsync(async (req, res) => {
   const hasUsed = await hasUsedTrialPlan(req.user.id);
-  
+
   res.send({
     success: true,
     data: {
@@ -62,9 +63,9 @@ const checkTrialPlanUsage = catchAsync(async (req, res) => {
  */
 // const assignTrialPlanController = catchAsync(async (req, res) => {
 //   const { userId } = req.params;
-  
+
 //   const membership = await assignTrialPlan(userId);
-  
+
 //   res.status(httpStatus.CREATED).send({
 //     success: true,
 //     message: 'Trial plan assigned successfully',
@@ -77,9 +78,9 @@ const checkTrialPlanUsage = catchAsync(async (req, res) => {
  */
 // const assignLifetimePlanController = catchAsync(async (req, res) => {
 //   const { userId } = req.params;
-  
+
 //   const membership = await assignLifetimePlan(userId);
-  
+
 //   res.status(httpStatus.CREATED).send({
 //     success: true,
 //     message: 'Lifetime plan assigned successfully',
@@ -95,9 +96,9 @@ const createMembershipController = catchAsync(async (req, res) => {
     ...req.body,
     userId: req.user.id
   };
-  
+
   const membership = await createMembership(membershipData);
-  
+
   res.status(httpStatus.CREATED).send({
     success: true,
     message: 'Membership created successfully',
@@ -110,9 +111,9 @@ const createMembershipController = catchAsync(async (req, res) => {
  */
 const updateMembershipController = catchAsync(async (req, res) => {
   const { membershipId } = req.params;
-  
+
   const membership = await updateMembership(membershipId, req.body);
-  
+
   res.send({
     success: true,
     message: 'Membership updated successfully',
@@ -126,9 +127,9 @@ const updateMembershipController = catchAsync(async (req, res) => {
 const cancelMembershipController = catchAsync(async (req, res) => {
   const { membershipId } = req.params;
   const { reason } = req.body;
-  
+
   const membership = await cancelMembership(membershipId, reason);
-  
+
   res.send({
     success: true,
     message: 'Membership cancelled successfully',
@@ -141,19 +142,35 @@ const cancelMembershipController = catchAsync(async (req, res) => {
  */
 // const assignMembershipWithCouponController = catchAsync(async (req, res) => {
 //   const { userId, planId, couponCode } = req.body;
-  
+
 //   if (!userId || !planId || !couponCode) {
 //     throw new ApiError(httpStatus.BAD_REQUEST, 'userId, planId, and couponCode are required');
 //   }
-  
+
 //   const membership = await assignMembershipWithCoupon(userId, planId, couponCode);
-  
+
 //   res.status(httpStatus.CREATED).send({
 //     success: true,
 //     message: 'Membership assigned successfully with 100% off coupon',
 //     data: membership
 //   });
 // });
+
+/**
+ * Verify iOS Receipt and Create Membership
+ */
+const verifyIosReceiptController = catchAsync(async (req, res) => {
+  const { productId, receiptData } = req.body;
+  const userId = req.user.id;
+
+  const membership = await processAppleSubscription(userId, productId, receiptData);
+
+  res.status(httpStatus.OK).send({
+    success: true,
+    message: 'iOS Subscription verified and membership created successfully',
+    data: membership
+  });
+});
 
 export {
   getActiveMembershipController,
@@ -164,5 +181,6 @@ export {
   createMembershipController,
   updateMembershipController,
   cancelMembershipController,
+  verifyIosReceiptController,
   // assignMembershipWithCouponController
 };

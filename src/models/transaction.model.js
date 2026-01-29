@@ -54,8 +54,13 @@ const transactionSchema = new mongoose.Schema(
     // Payment method
     paymentMethod: {
       type: String,
-      enum: ['razorpay', 'card', 'netbanking', 'wallet', 'upi'],
+      enum: ['razorpay', 'card', 'netbanking', 'wallet', 'upi', 'apple', 'google', 'free_coupon'],
       default: 'razorpay',
+    },
+    platform: {
+      type: String,
+      enum: ['ios', 'android', 'web', 'admin', 'other'],
+      default: 'web',
     },
     // Coupon details
     couponCode: {
@@ -136,25 +141,26 @@ transactionSchema.index({ transactionId: 1 });
 transactionSchema.index({ razorpayOrderId: 1 });
 transactionSchema.index({ razorpayPaymentId: 1 });
 transactionSchema.index({ status: 1 });
+transactionSchema.index({ platform: 1 });
 transactionSchema.index({ createdAt: -1 });
 
 // Virtual to check if transaction is successful
-transactionSchema.virtual('isSuccessful').get(function() {
+transactionSchema.virtual('isSuccessful').get(function () {
   return this.status === 'completed';
 });
 
 // Virtual to check if transaction is pending
-transactionSchema.virtual('isPending').get(function() {
+transactionSchema.virtual('isPending').get(function () {
   return this.status === 'pending';
 });
 
 // Virtual to check if transaction failed
-transactionSchema.virtual('isFailed').get(function() {
+transactionSchema.virtual('isFailed').get(function () {
   return this.status === 'failed';
 });
 
 // Method to mark transaction as completed
-transactionSchema.methods.markCompleted = function(paymentId, signature) {
+transactionSchema.methods.markCompleted = function (paymentId, signature) {
   this.status = 'completed';
   this.razorpayPaymentId = paymentId;
   this.razorpaySignature = signature;
@@ -163,7 +169,7 @@ transactionSchema.methods.markCompleted = function(paymentId, signature) {
 };
 
 // Method to mark transaction as failed
-transactionSchema.methods.markFailed = function(errorDetails) {
+transactionSchema.methods.markFailed = function (errorDetails) {
   this.status = 'failed';
   this.errorDetails = errorDetails;
   this.failedAt = new Date();
@@ -171,13 +177,13 @@ transactionSchema.methods.markFailed = function(errorDetails) {
 };
 
 // Method to mark transaction as cancelled
-transactionSchema.methods.markCancelled = function() {
+transactionSchema.methods.markCancelled = function () {
   this.status = 'cancelled';
   return this.save();
 };
 
 // Method to process refund
-transactionSchema.methods.processRefund = function(refundId, refundAmount) {
+transactionSchema.methods.processRefund = function (refundId, refundAmount) {
   this.refundId = refundId;
   this.refundAmount = refundAmount;
   this.refundStatus = 'processed';
@@ -187,7 +193,7 @@ transactionSchema.methods.processRefund = function(refundId, refundAmount) {
 };
 
 // Static method to get user transactions
-transactionSchema.statics.getUserTransactions = function(userId, limit = 20) {
+transactionSchema.statics.getUserTransactions = function (userId, limit = 20) {
   return this.find({ userId })
     .populate('planId')
     .populate('couponCode')
@@ -196,33 +202,33 @@ transactionSchema.statics.getUserTransactions = function(userId, limit = 20) {
 };
 
 // Static method to get transaction by Razorpay order ID
-transactionSchema.statics.getByRazorpayOrderId = function(orderId) {
+transactionSchema.statics.getByRazorpayOrderId = function (orderId) {
   return this.findOne({ razorpayOrderId: orderId });
 };
 
 // Static method to get transaction by Razorpay payment ID
-transactionSchema.statics.getByRazorpayPaymentId = function(paymentId) {
+transactionSchema.statics.getByRazorpayPaymentId = function (paymentId) {
   return this.findOne({ razorpayPaymentId: paymentId });
 };
 
 // Static method to get successful transactions for a user
-transactionSchema.statics.getSuccessfulTransactions = function(userId) {
-  return this.find({ 
-    userId, 
-    status: 'completed' 
+transactionSchema.statics.getSuccessfulTransactions = function (userId) {
+  return this.find({
+    userId,
+    status: 'completed'
   }).populate('planId').sort({ createdAt: -1 });
 };
 
 // Static method to get failed transactions
-transactionSchema.statics.getFailedTransactions = function(userId) {
-  return this.find({ 
-    userId, 
-    status: 'failed' 
+transactionSchema.statics.getFailedTransactions = function (userId) {
+  return this.find({
+    userId,
+    status: 'failed'
   }).sort({ createdAt: -1 });
 };
 
 // Pre-save middleware to generate transaction ID if not provided
-transactionSchema.pre('save', function(next) {
+transactionSchema.pre('save', function (next) {
   if (!this.transactionId) {
     this.transactionId = `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }

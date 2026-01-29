@@ -74,6 +74,25 @@ const membershipSchema = new mongoose.Schema(
       type: String,
       sparse: true,
     },
+    // Platform and provider details
+    platform: {
+      type: String,
+      enum: ['ios', 'android', 'web', 'admin', 'other'],
+      default: 'web',
+    },
+    paymentProvider: {
+      type: String,
+      enum: ['razorpay', 'apple', 'google', 'free', 'manual'],
+      default: 'razorpay',
+    },
+    transactionId: {
+      type: String,
+      sparse: true,
+    },
+    appleReceiptData: {
+      type: String,
+      sparse: true,
+    },
     // Auto-renewal settings
     autoRenewal: {
       type: Boolean,
@@ -118,20 +137,22 @@ membershipSchema.index({ userId: 1 });
 membershipSchema.index({ status: 1 });
 membershipSchema.index({ startDate: 1, endDate: 1 });
 membershipSchema.index({ razorpayPaymentId: 1 });
+membershipSchema.index({ transactionId: 1 });
+membershipSchema.index({ platform: 1 });
 
 // Virtual to check if membership is active
-membershipSchema.virtual('isActive').get(function() {
+membershipSchema.virtual('isActive').get(function () {
   const now = new Date();
   return this.status === 'active' && now >= this.startDate && now <= this.endDate;
 });
 
 // Virtual to check if membership is expired
-membershipSchema.virtual('isExpired').get(function() {
+membershipSchema.virtual('isExpired').get(function () {
   return new Date() > this.endDate;
 });
 
 // Virtual to get days remaining
-membershipSchema.virtual('daysRemaining').get(function() {
+membershipSchema.virtual('daysRemaining').get(function () {
   if (this.isExpired) return 0;
   const now = new Date();
   const diffTime = this.endDate - now;
@@ -141,22 +162,22 @@ membershipSchema.virtual('daysRemaining').get(function() {
 // Method to update status based on dates
 membershipSchema.methods.updateStatus = function () {
   const now = new Date();
-  
+
   if (this.status === 'cancelled') {
     return; // Don't change cancelled memberships
   }
-  
+
   if (now > this.endDate) {
     this.status = 'expired';
   } else if (now >= this.startDate && now <= this.endDate) {
     this.status = 'active';
   }
-  
+
   return this.save();
 };
 
 // Method to cancel membership
-membershipSchema.methods.cancel = function(reason = null) {
+membershipSchema.methods.cancel = function (reason = null) {
   this.status = 'cancelled';
   this.cancelledAt = new Date();
   this.cancellationReason = reason;
@@ -164,19 +185,19 @@ membershipSchema.methods.cancel = function(reason = null) {
 };
 
 // Method to calculate refund amount
-membershipSchema.methods.calculateRefund = function() {
+membershipSchema.methods.calculateRefund = function () {
   if (this.status !== 'cancelled') return 0;
-  
+
   const now = new Date();
   const totalDays = Math.ceil((this.endDate - this.startDate) / (1000 * 60 * 60 * 24));
   const usedDays = Math.ceil((now - this.startDate) / (1000 * 60 * 60 * 24));
   const remainingDays = Math.max(0, totalDays - usedDays);
-  
+
   return Math.round((this.amountPaid * remainingDays) / totalDays);
 };
 
 // Static method to get active memberships for a user
-membershipSchema.statics.getActiveMembership = function(userId) {
+membershipSchema.statics.getActiveMembership = function (userId) {
   return this.findOne({
     userId,
     status: 'active',
@@ -186,7 +207,7 @@ membershipSchema.statics.getActiveMembership = function(userId) {
 };
 
 // Static method to get user's membership history
-membershipSchema.statics.getUserMemberships = function(userId, limit = 10) {
+membershipSchema.statics.getUserMemberships = function (userId, limit = 10) {
   return this.find({ userId })
     .populate('planId')
     .populate('couponCode')
@@ -195,15 +216,15 @@ membershipSchema.statics.getUserMemberships = function(userId, limit = 10) {
 };
 
 // Pre-save middleware
-membershipSchema.pre('save', function(next) {
+membershipSchema.pre('save', function (next) {
   // Auto-calculate end date if not provided
   if (!this.endDate && this.startDate && this.validityDays) {
     this.endDate = new Date(this.startDate.getTime() + this.validityDays * 24 * 60 * 60 * 1000);
   }
-  
+
   // Update status based on dates (without saving)
   const now = new Date();
-  
+
   if (this.status !== 'cancelled') {
     if (now > this.endDate) {
       this.status = 'expired';
@@ -211,7 +232,7 @@ membershipSchema.pre('save', function(next) {
       this.status = 'active';
     }
   }
-  
+
   next();
 });
 

@@ -1,6 +1,114 @@
 import httpStatus from 'http-status';
-import { Membership, MembershipPlan, User, CouponCode } from '../models/index.js';
+import axios from 'axios';
+import { Membership, MembershipPlan, User, CouponCode, Transaction } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
+import config from '../config/config.js';
+
+/**
+ * Verify Apple Receipt with Apple Servers
+ * @param {string} receiptData - Base64 encoded receipt data
+ * @returns {Promise<Object>} Apple verification response
+ */
+const verifyAppleReceipt = async (receiptData) => {
+  const payload = {
+    'receipt-data': receiptData,
+    password: config.apple.sharedSecret,
+  };
+
+  try {
+    // Try production environment first
+    let response = await axios.post('https://buy.itunes.apple.com/verifyReceipt', payload);
+
+    // If sandbox receipt sent to prod (status 21007), retry with sandbox environment
+    if (response.data.status === 21007) {
+      response = await axios.post('https://sandbox.itunes.apple.com/verifyReceipt', payload);
+    }
+
+    if (response.data.status !== 0) {
+      console.error('Apple receipt verification failed with status:', response.data.status);
+      throw new ApiError(httpStatus.BAD_REQUEST, `Apple receipt verification failed: ${response.data.status}`);
+    }
+
+    return response.data;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    console.error('Apple receipt verification error:', error.message);
+    throw new ApiError(httpStatus.BAD_REQUEST, `Failed to verify Apple receipt: ${error.message}`);
+  }
+};
+
+/**
+ * Process iOS subscription receipt
+ * @param {Object} data - Verification request data
+ * @returns {Promise<Membership>} New or updated membership
+ */
+const processAppleSubscription = async (userId, productId, receiptData) => {
+  // 1. Validate Product ID against Plan table
+  const plan = await MembershipPlan.findOne({
+    appleProductId: productId,
+    isActive: true,
+  });
+
+  if (!plan) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid Apple product ID or plan not active');
+  }
+
+  // 2. Verify Receipt with Apple
+  const appleResponse = await verifyAppleReceipt(receiptData);
+
+  // 3. Extract Subscription Expiry (CRITICAL)
+  // Apple returns multiple transactions, always take the latest expiry
+  const transactions = appleResponse.latest_receipt_info || appleResponse.receipt.in_app;
+  if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'No transaction information found in Apple receipt');
+  }
+
+  const latest = transactions.sort((a, b) => b.expires_date_ms - a.expires_date_ms)[0];
+  const expiryDate = new Date(Number(latest.expires_date_ms));
+  const startDate = new Date(Number(latest.purchase_date_ms));
+
+  // 4. Create Transaction record
+  await Transaction.create({
+    userId,
+    planId: plan._id,
+    planName: plan.name,
+    transactionId: latest.transaction_id,
+    orderId: latest.original_transaction_id,
+    amount: plan.basePrice, // Approximate for reporting
+    currency: plan.currency,
+    status: 'completed',
+    paymentMethod: 'apple',
+    platform: 'ios',
+    metadata: {
+      appleProductId: productId,
+      originalTransactionId: latest.original_transaction_id,
+      purchaseDate: latest.purchase_date,
+      expiryDate: latest.expires_date,
+    }
+  });
+
+  // 5. Create / Update Membership Record
+  const membership = await Membership.findOneAndUpdate(
+    { userId, planId: plan._id },
+    {
+      userId,
+      planId: plan._id,
+      planName: plan.name,
+      validityDays: plan.validityDays,
+      platform: 'ios',
+      paymentProvider: 'apple',
+      transactionId: latest.transaction_id,
+      startDate,
+      endDate: expiryDate,
+      status: 'active',
+      appleReceiptData: receiptData,
+    },
+    { upsert: true, new: true }
+  );
+
+  console.info(`Apple subscription verified for user: ${userId}, productId: ${productId}, expiry: ${expiryDate}`);
+  return membership;
+};
 
 /**
  * Assign trial plan to a new user
@@ -21,9 +129,9 @@ const assignTrialPlan = async (userId) => {
     }
 
     // Find the trial plan
-    const trialPlan = await MembershipPlan.findOne({ 
+    const trialPlan = await MembershipPlan.findOne({
       name: 'Trial Plan',
-      isActive: true 
+      isActive: true
     });
 
     if (!trialPlan) {
@@ -66,7 +174,7 @@ const assignTrialPlan = async (userId) => {
 
     // Update user to track trial plan usage
     await User.findByIdAndUpdate(userId, {
-      $set: { 
+      $set: {
         'metadata.trialPlanUsed': true,
         'metadata.trialPlanAssignedAt': new Date()
       }
@@ -100,9 +208,9 @@ const assignLifetimePlan = async (userId) => {
     }
 
     // Find the lifetime plan
-    const lifetimePlan = await MembershipPlan.findOne({ 
+    const lifetimePlan = await MembershipPlan.findOne({
       name: 'Lifetime Plan',
-      isActive: true 
+      isActive: true
     });
 
     if (!lifetimePlan) {
@@ -146,7 +254,7 @@ const assignLifetimePlan = async (userId) => {
 
     // Update user to track lifetime plan usage
     await User.findByIdAndUpdate(userId, {
-      $set: { 
+      $set: {
         'metadata.lifetimePlanUsed': true,
         'metadata.lifetimePlanAssignedAt': new Date()
       }
@@ -171,7 +279,7 @@ const hasUsedTrialPlan = async (userId) => {
     userId,
     planName: 'Trial Plan'
   });
-  
+
   return !!trialMembership;
 };
 
@@ -325,7 +433,7 @@ const assignMembershipWithCoupon = async (userId, planId, couponCode) => {
     const finalAmount = totalPrice - discountAmount;
 
     // Check if coupon provides 100% discount
-    const is100PercentOff = finalAmount === 0 || 
+    const is100PercentOff = finalAmount === 0 ||
       (couponCodeDoc.discountType === 'percentage' && couponCodeDoc.discountValue === 100) ||
       (couponCodeDoc.discountType === 'fixed' && discountAmount >= totalPrice);
 
@@ -422,5 +530,7 @@ export {
   createMembership,
   updateMembership,
   cancelMembership,
-  assignMembershipWithCoupon
+  assignMembershipWithCoupon,
+  verifyAppleReceipt,
+  processAppleSubscription,
 };

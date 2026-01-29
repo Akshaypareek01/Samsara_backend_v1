@@ -114,6 +114,11 @@ const membershipPlanSchema = new mongoose.Schema(
       type: String,
       sparse: true,
     },
+    // Apple Product ID for in-app purchases
+    appleProductId: {
+      type: String,
+      sparse: true,
+    },
     // Plan metadata
     metadata: {
       type: mongoose.Schema.Types.Mixed,
@@ -132,47 +137,47 @@ membershipPlanSchema.index({ planType: 1 });
 membershipPlanSchema.index({ availableFrom: 1, availableUntil: 1 });
 
 // Virtual for formatted base price
-membershipPlanSchema.virtual('formattedBasePrice').get(function() {
+membershipPlanSchema.virtual('formattedBasePrice').get(function () {
   return `${this.currency} ${this.basePrice}`;
 });
 
 // Virtual for total price including taxes
-membershipPlanSchema.virtual('totalPrice').get(function() {
+membershipPlanSchema.virtual('totalPrice').get(function () {
   return this.calculateTotalPrice();
 });
 
 // Virtual for formatted total price
-membershipPlanSchema.virtual('formattedTotalPrice').get(function() {
+membershipPlanSchema.virtual('formattedTotalPrice').get(function () {
   return `${this.currency} ${this.calculateTotalPrice()}`;
 });
 
 // Method to check if plan is available for purchase
-membershipPlanSchema.methods.isAvailable = function() {
+membershipPlanSchema.methods.isAvailable = function () {
   const now = new Date();
-  return this.isActive && 
-         now >= this.availableFrom && 
-         (this.availableUntil === null || now <= this.availableUntil);
+  return this.isActive &&
+    now >= this.availableFrom &&
+    (this.availableUntil === null || now <= this.availableUntil);
 };
 
 // Virtual to check if plan is currently purchasable
-membershipPlanSchema.virtual('isPurchasable').get(function() {
+membershipPlanSchema.virtual('isPurchasable').get(function () {
   return this.isAvailable();
 });
 
 // Virtual to check if plan has expired (no longer available for purchase)
-membershipPlanSchema.virtual('isExpired').get(function() {
+membershipPlanSchema.virtual('isExpired').get(function () {
   const now = new Date();
   return this.availableUntil !== null && now > this.availableUntil;
 });
 
 // Virtual to check if plan is not yet available
-membershipPlanSchema.virtual('isNotYetAvailable').get(function() {
+membershipPlanSchema.virtual('isNotYetAvailable').get(function () {
   const now = new Date();
   return now < this.availableFrom;
 });
 
 // Method to get the effective end date for a membership created from this plan
-membershipPlanSchema.methods.getMembershipEndDate = function(purchaseDate = new Date()) {
+membershipPlanSchema.methods.getMembershipEndDate = function (purchaseDate = new Date()) {
   // Check if this plan has a special fixed end date
   if (this.metadata && this.metadata.specialValidityEndDate) {
     return new Date(this.metadata.specialValidityEndDate);
@@ -183,15 +188,15 @@ membershipPlanSchema.methods.getMembershipEndDate = function(purchaseDate = new 
 };
 
 // Method to get the actual validity days for a membership created from this plan
-membershipPlanSchema.methods.getActualValidityDays = function(purchaseDate = new Date()) {
+membershipPlanSchema.methods.getActualValidityDays = function (purchaseDate = new Date()) {
   const endDate = this.getMembershipEndDate(purchaseDate);
   return Math.ceil((endDate - purchaseDate) / (1000 * 60 * 60 * 24));
 };
 
 // Method to calculate total price including all taxes
-membershipPlanSchema.methods.calculateTotalPrice = function() {
+membershipPlanSchema.methods.calculateTotalPrice = function () {
   let totalPrice = this.basePrice;
-  
+
   // Add GST
   if (this.taxConfig.gst.rate > 0) {
     if (this.taxConfig.gst.type === 'percentage') {
@@ -200,7 +205,7 @@ membershipPlanSchema.methods.calculateTotalPrice = function() {
       totalPrice += this.taxConfig.gst.amount;
     }
   }
-  
+
   // Add other taxes
   if (this.taxConfig.otherTaxes && this.taxConfig.otherTaxes.length > 0) {
     this.taxConfig.otherTaxes.forEach(tax => {
@@ -213,14 +218,14 @@ membershipPlanSchema.methods.calculateTotalPrice = function() {
       }
     });
   }
-  
+
   return Math.round(totalPrice * 100) / 100; // Round to 2 decimal places
 };
 
 // Method to calculate detailed pricing breakdown
-membershipPlanSchema.methods.calculatePricingBreakdown = function(discountAmount = 0, couponCode = null) {
+membershipPlanSchema.methods.calculatePricingBreakdown = function (discountAmount = 0, couponCode = null) {
   const basePrice = this.basePrice;
-  
+
   // Calculate taxes
   let gstAmount = 0;
   if (this.taxConfig.gst.rate > 0) {
@@ -230,7 +235,7 @@ membershipPlanSchema.methods.calculatePricingBreakdown = function(discountAmount
       gstAmount = this.taxConfig.gst.amount;
     }
   }
-  
+
   let otherTaxesAmount = 0;
   const otherTaxes = [];
   if (this.taxConfig.otherTaxes && this.taxConfig.otherTaxes.length > 0) {
@@ -252,10 +257,10 @@ membershipPlanSchema.methods.calculatePricingBreakdown = function(discountAmount
       }
     });
   }
-  
+
   const subtotal = basePrice + gstAmount + otherTaxesAmount;
   const finalAmount = Math.max(0, subtotal - discountAmount);
-  
+
   return {
     basePrice: Math.round(basePrice * 100) / 100,
     taxes: {
@@ -277,19 +282,19 @@ membershipPlanSchema.methods.calculatePricingBreakdown = function(discountAmount
 };
 
 // Method to calculate discount amount with plan-specific limits
-membershipPlanSchema.methods.calculateDiscountAmount = function(couponDiscountAmount, totalOrderAmount = null) {
+membershipPlanSchema.methods.calculateDiscountAmount = function (couponDiscountAmount, totalOrderAmount = null) {
   let finalDiscountAmount = couponDiscountAmount;
-  
+
   // Apply plan-specific discount limits
   if (this.discountConfig.maxDiscountAmount !== null) {
     finalDiscountAmount = Math.min(finalDiscountAmount, this.discountConfig.maxDiscountAmount);
   }
-  
+
   // Apply percentage limit based on total order amount (including taxes) instead of base price
   const orderAmount = totalOrderAmount || this.calculateTotalPrice();
   const maxPercentageDiscount = (orderAmount * this.discountConfig.maxDiscountPercentage) / 100;
   finalDiscountAmount = Math.min(finalDiscountAmount, maxPercentageDiscount);
-  
+
   return Math.round(finalDiscountAmount * 100) / 100;
 };
 

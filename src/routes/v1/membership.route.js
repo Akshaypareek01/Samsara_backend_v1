@@ -10,6 +10,7 @@ import {
   createMembershipController,
   updateMembershipController,
   cancelMembershipController,
+  verifyIosReceiptController,
   // assignMembershipWithCouponController
 } from '../../controllers/membership.controller.js';
 import { assignWithCoupon } from '../../controllers/admin-membership.controller.js';
@@ -28,6 +29,9 @@ router.get('/trial-status', auth(), checkTrialPlanUsage);
 
 // Create new membership
 router.post('/', auth(), validate(membershipValidation.createMembership), createMembershipController);
+
+// Verify iOS receipt
+router.post('/verify-receipt', auth(), validate(membershipValidation.verifyIosReceipt), verifyIosReceiptController);
 
 // Update membership
 router.patch('/:membershipId', auth(), validate(membershipValidation.updateMembership), updateMembershipController);
