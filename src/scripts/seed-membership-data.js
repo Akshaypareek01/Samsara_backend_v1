@@ -95,7 +95,7 @@ async function seedMembershipData() {
       },
       {
         name: 'Beta Launch Plan',
-        description: 'Special year-end membership - Purchase by Sep 31, 2025, Valid until Dec 30, 2025',
+        description: 'Special year-end membership - Purchase by Feb 1, 2026, Valid until Dec 30, 2025',
         basePrice: 12000,
         currency: 'INR',
         validityDays: 90, // Special case - will be calculated based on end date
@@ -114,8 +114,8 @@ async function seedMembershipData() {
         planType: 'limited-time',
         maxUsers: 1,
         isActive: true,
-        availableFrom: new Date('2025-10-01'),
-        availableUntil: new Date('2026-01-31T23:59:59.000Z'), // Can purchase until Sep 31, 2025
+        availableFrom: new Date('2026-02-01'),
+        availableUntil: new Date('2028-01-31T23:59:59.000Z'), // Can purchase until Sep 31, 2025
         taxConfig: {
           gst: {
             rate: 5,
@@ -128,8 +128,8 @@ async function seedMembershipData() {
           maxDiscountAmount: null // Allow unlimited discount for 100% coupons
         },
         metadata: {
-          specialValidityEndDate: new Date('2026-01-31T23:59:59.000Z'), // All memberships expire on Dec 30, 2025
-          description: 'This plan can be purchased until September 31, 2025. All memberships from this plan will expire on December 30, 2025, regardless of purchase date.'
+          specialValidityEndDate: new Date('2026-06-31T23:59:59.000Z'), // All memberships expire on Dec 30, 2025
+          description: 'This plan can be purchased until September 31, 2028. All memberships from this plan will expire on December 30, 2025, regardless of purchase date.'
         }
       }
     ];

@@ -229,7 +229,7 @@ const deleteWaterIntake = {
 
 const createWorkoutTracker = {
   body: Joi.object().keys({
-    workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym').required(),
+    workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing').required(),
     intensity: Joi.string().valid('Low', 'Medium', 'High').required(),
     distance: Joi.object({
       value: Joi.number().min(0),
@@ -246,7 +246,7 @@ const createWorkoutTracker = {
 
 const addWorkoutEntry = {
   body: Joi.object().keys({
-    workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym').required(),
+    workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing').required(),
     intensity: Joi.string().valid('Low', 'Medium', 'High').required(),
     distance: Joi.object({
       value: Joi.number().min(0),
@@ -263,7 +263,7 @@ const addWorkoutEntry = {
 
 const getWorkoutByType = {
   query: Joi.object().keys({
-    workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym'),
+    workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing'),
     days: Joi.number().integer().min(1).max(365).default(30),
   }),
 };
@@ -281,7 +281,7 @@ const updateWorkoutEntry = {
   }),
   body: Joi.object()
     .keys({
-      workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym'),
+      workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing'),
       intensity: Joi.string().valid('Low', 'Medium', 'High'),
       distance: Joi.object({
         value: Joi.number().min(0),

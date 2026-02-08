@@ -5,7 +5,7 @@ const WorkoutEntrySchema = new mongoose.Schema(
   {
     workoutType: {
       type: String,
-      enum: ['Running', 'Yoga', 'Swimming', 'Cycling', 'Gym'],
+      enum: ['Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing'],
       required: true,
     },
     intensity: {
@@ -23,8 +23,6 @@ const WorkoutEntrySchema = new mongoose.Schema(
     },
     calories: {
       type: Number,
-      min: 0,
-      required: true,
     },
     date: {
       type: Date,
@@ -53,7 +51,7 @@ const WorkoutTypeSummarySchema = new mongoose.Schema(
   {
     workoutType: {
       type: String,
-      enum: ['Running', 'Yoga', 'Swimming', 'Cycling', 'Gym'],
+      enum: ['Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing'],
       required: true,
     },
     totalTime: { type: Number, required: true }, // in hours

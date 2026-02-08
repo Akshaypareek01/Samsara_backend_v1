@@ -25,7 +25,7 @@ For iOS devices, you **MUST NOT** use Razorpay. Instead, allow the user to purch
 - **Body**:
 ```json
 {
-  "productId": "com.samsara.wellness.monthly",
+  "productId": "com.samsara.wellness.plan",
   "receiptData": "BASE64_ENCODED_RECEIPT_STRING"
 }
 ```
@@ -88,8 +88,8 @@ The Razorpay flow is now restricted to `web` and `android` platforms. If you sen
 
 ## 5. Apple Product IDs Listing
 Use these IDs to register your products in App Store Connect:
-- **Trial Plan**: `com.samsara.wellness.monthly`
-- **Lifetime Plan**: `com.samsara.wellness.monthly`
-- **Beta Launch Plan**: `com.samsara.wellness.monthly`
+- **Trial Plan**: `com.samsara.wellness.plan`
+- **Lifetime Plan**: `com.samsara.wellness.plan`
+- **Beta Launch Plan**: `com.samsara.wellness.plan`
 
 *(Note: Currently all are set to the same ID as per your requirement; update them in the Admin Panel if different tiers are needed)*
