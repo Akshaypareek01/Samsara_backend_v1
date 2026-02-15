@@ -28,6 +28,9 @@ const createEvent = {
     eventTime: Joi.string()
       .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
       .required(),
+    endTime: Joi.string()
+      .pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+      .optional(),
     duration: Joi.number().integer().min(15).max(480).required(),
     moderator: Joi.string().custom(objectId).required(),
     offlineRequirements: Joi.when('eventMode', {
@@ -132,6 +135,7 @@ const updateEvent = {
       maxSeats: Joi.number().integer().min(1).max(1000),
       eventDate: Joi.date().min('now'),
       eventTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
+      endTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/),
       duration: Joi.number().integer().min(15).max(480),
       moderator: Joi.string().custom(objectId),
       offlineRequirements: Joi.array()

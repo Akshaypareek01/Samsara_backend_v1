@@ -49,6 +49,10 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    endTime: {
+      type: String,
+      required: false,
+    },
     eventmode: {
       type: String,
       required: false,

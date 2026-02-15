@@ -453,6 +453,7 @@ const preDefineEvents = [
       "location": "Virtual",
       "startDate": "2025-07-12",
       "startTime": "06:30",
+      "endTime": "07:30",
       "type": "free",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -466,6 +467,7 @@ const preDefineEvents = [
       "location": "Mumbai",
       "startDate": "2025-07-15",
       "startTime": "18:00",
+      "endTime": "19:00",
       "type": "paid",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -479,6 +481,7 @@ const preDefineEvents = [
       "location": "Virtual",
       "startDate": "2025-07-20",
       "startTime": "19:00",
+      "endTime": "20:00",
       "type": "free",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -492,6 +495,7 @@ const preDefineEvents = [
       "location": "Jaipur",
       "startDate": "2025-07-20",
       "startTime": "17:30",
+      "endTime": "18:30",
       "type": "free",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -505,6 +509,7 @@ const preDefineEvents = [
       "location": "Goa",
       "startDate": "2025-07-01",
       "startTime": "20:00",
+      "endTime": "21:00",
       "type": "paid",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -518,6 +523,7 @@ const preDefineEvents = [
       "location": "Virtual",
       "startDate": "2025-07-15",
       "startTime": "10:00",
+      "endTime": "11:00",
       "type": "free",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -531,6 +537,7 @@ const preDefineEvents = [
       "location": "Bangalore",
       "startDate": "2025-08-05",
       "startTime": "07:00",
+      "endTime": "08:00",
       "type": "paid",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -544,6 +551,7 @@ const preDefineEvents = [
       "location": "Delhi",
       "startDate": "2025-08-20",
       "startTime": "19:30",
+      "endTime": "20:30",
       "type": "paid",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -557,6 +565,7 @@ const preDefineEvents = [
       "location": "Virtual",
       "startDate": "2025-09-10",
       "startTime": "06:00",
+      "endTime": "07:00",
       "type": "free",
       "teacher": "6868f7814d18790474561a8d"
     },
@@ -570,6 +579,7 @@ const preDefineEvents = [
       "location": "Goa",
       "startDate": "2025-09-25",
       "startTime": "08:00",
+      "endTime": "09:00",
       "type": "paid",
       "teacher": "6868f7814d18790474561a8d"
     }
