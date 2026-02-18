@@ -52,6 +52,13 @@ const createUser = catchAsync(async (req, res) => {
 const getUsers = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['name', 'role']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  if (req.query.search && req.query.search.trim()) {
+    const term = req.query.search.trim();
+    filter.$or = [
+      { name: { $regex: term, $options: 'i' } },
+      { email: { $regex: term, $options: 'i' } },
+    ];
+  }
   const result = await userService.queryUsers(filter, options);
   res.send(result);
 });
