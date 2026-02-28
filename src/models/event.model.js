@@ -61,6 +61,8 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    latitude: { type: Number, required: false },
+    longitude: { type: Number, required: false },
     details: {
       type: String,
       required: false,

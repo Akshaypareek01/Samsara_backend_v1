@@ -45,6 +45,8 @@ const createClass = {
     enrollmentEndDate: Joi.date().min(Joi.ref('enrollmentStartDate')),
     classStartDate: Joi.date(),
     classEndDate: Joi.date().min(Joi.ref('classStartDate')),
+    latitude: Joi.number().min(-90).max(90).optional(),
+    longitude: Joi.number().min(-180).max(180).optional(),
   }),
 };
 
@@ -65,6 +67,8 @@ const getClasses = {
     sortBy: Joi.string(),
     limit: Joi.number().integer(),
     page: Joi.number().integer(),
+    latitude: Joi.number().min(-90).max(90),
+    longitude: Joi.number().min(-180).max(180),
   }),
 };
 
@@ -117,6 +121,8 @@ const updateClass = {
       enrollmentEndDate: Joi.date().min(Joi.ref('enrollmentStartDate')),
       classStartDate: Joi.date(),
       classEndDate: Joi.date().min(Joi.ref('classStartDate')),
+      latitude: Joi.number().min(-90).max(90),
+      longitude: Joi.number().min(-180).max(180),
     })
     .min(1),
 };

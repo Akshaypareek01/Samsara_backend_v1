@@ -65,7 +65,8 @@ const classSchema = new mongoose.Schema({
   perfectFor: [{ type: String }],
   skipIf: [{ type: String }],
   whatYoullGain: [{ type: String }],
-  // Add other fields as needed
+  latitude: { type: Number, required: false },
+  longitude: { type: Number, required: false },
 });
 
 // Pre-save hook to extract date from schedules and set it to schedule field

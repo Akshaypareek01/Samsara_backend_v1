@@ -85,6 +85,8 @@ const createEvent = {
       then: Joi.string().trim().optional(),
       otherwise: Joi.string().optional(),
     }),
+    latitude: Joi.number().min(-90).max(90).optional(),
+    longitude: Joi.number().min(-180).max(180).optional(),
   }),
 };
 
@@ -109,6 +111,8 @@ const getEvents = {
     sortBy: Joi.string(),
     limit: Joi.number().integer(),
     page: Joi.number().integer(),
+    latitude: Joi.number().min(-90).max(90),
+    longitude: Joi.number().min(-180).max(180),
   }),
 };
 
@@ -173,6 +177,8 @@ const updateEvent = {
       ),
       certificates: Joi.boolean(),
       certificateTemplate: Joi.string().trim(),
+      latitude: Joi.number().min(-90).max(90),
+      longitude: Joi.number().min(-180).max(180),
     })
     .min(1),
 };
