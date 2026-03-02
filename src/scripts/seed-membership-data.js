@@ -22,9 +22,233 @@ async function seedMembershipData() {
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
     const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
 
+    /**
+     * Basic Access Plan – shared features (from product spec)
+     * Categories: Daily Access, Classes & Events, Ayurveda & Assessment,
+     * Health Tracking Tools, Condition-Based AI Diet Plans
+     */
+    const basicAccessPlanFeatures = [
+      'One Yoga Class per day',
+      'One Meditation Class per day',
+      'Weekend Online Wellness Events',
+      'Pre-Recorded Guided Meditation',
+      'Meditation Music Library',
+      'Personal Dosha Analysis',
+      'PCOS/PCOD Assessment',
+      'Thyroid Assessment',
+      'Menopause Assessment',
+      'Health Tracker',
+      'Body Tracker',
+      'Period Tracker',
+      'Mood Tracker',
+      'PCOS/PCOD Diet & Nutrition Plan',
+      'Thyroid Diet & Nutrition Plan',
+      'Menopause Diet & Nutrition Plan',
+    ];
+
+    /**
+     * Premium Access Plan – shared features (from product spec)
+     * Same categories as Basic + unlimited daily access + 12 Personal Training/year
+     */
+    const premiumAccessPlanFeatures = [
+      'Unlimited Yoga Classes',
+      'Unlimited Meditation Classes',
+      '12 Personal Training (per year)',
+      'Weekend Online Wellness Events',
+      'Pre-Recorded Guided Meditation',
+      'Meditation Music Library',
+      'Personal Dosha Analysis',
+      'PCOS/PCOD Assessment',
+      'Thyroid Assessment',
+      'Menopause Assessment',
+      'Health Tracker',
+      'Body Tracker',
+      'Period Tracker',
+      'Mood Tracker',
+      'PCOS/PCOD Diet & Nutrition Plan',
+      'Thyroid Diet & Nutrition Plan',
+      'Menopause Diet & Nutrition Plan',
+    ];
+
+    const taxConfigBasic = {
+      gst: { rate: 0, type: 'percentage' },
+      otherTaxes: [],
+    };
+
     // Create sample membership plans
     const membershipPlans = [
-    
+      // --- Basic Access Plan (4 billing tiers) ---
+      {
+        name: 'Basic Access – Monthly Plan',
+        description: 'Basic Access Plan billed monthly. Cancel anytime.',
+        basePrice: 3999,
+        currency: 'INR',
+        validityDays: 30,
+        features: basicAccessPlanFeatures,
+        planType: 'basic',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          billingCycle: 'monthly',
+          cancelAnytime: true,
+          accessTier: 'Basic Access',
+        },
+      },
+      {
+        name: 'Basic Access – Quarterly Plan',
+        description: 'Basic Access Plan – Save 10%. Effective ₹3,599/month.',
+        basePrice: 10797,
+        currency: 'INR',
+        validityDays: 90,
+        features: basicAccessPlanFeatures,
+        planType: 'basic',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          billingCycle: 'quarterly',
+          discountPercentage: 10,
+          originalPrice: 11997,
+          effectiveMonthlyPrice: 3599,
+          savingsOverPeriod: 1200,
+          savingsPeriodLabel: '3 months',
+          accessTier: 'Basic Access',
+        },
+      },
+      {
+        name: 'Basic Access – Half-Yearly Plan',
+        description: 'Basic Access Plan – Save 20%. Effective ₹3,199/month.',
+        basePrice: 19194,
+        currency: 'INR',
+        validityDays: 180,
+        features: basicAccessPlanFeatures,
+        planType: 'basic',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          billingCycle: 'half-yearly',
+          discountPercentage: 20,
+          originalPrice: 23994,
+          effectiveMonthlyPrice: 3199,
+          savingsOverPeriod: 4800,
+          savingsPeriodLabel: '6 months',
+          accessTier: 'Basic Access',
+        },
+      },
+      {
+        name: 'Basic Access – Yearly Plan',
+        description: 'Basic Access Plan – Save 35%. Best Value. Effective ₹2,599/month.',
+        basePrice: 31188,
+        currency: 'INR',
+        validityDays: 365,
+        features: basicAccessPlanFeatures,
+        planType: 'basic',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          billingCycle: 'yearly',
+          discountPercentage: 35,
+          originalPrice: 47988,
+          effectiveMonthlyPrice: 2599,
+          savingsOverPeriod: 16800,
+          savingsPeriodLabel: 'per year',
+          bestValue: true,
+          accessTier: 'Basic Access',
+        },
+      },
+      // --- Premium Access Plan (4 billing tiers) ---
+      {
+        name: 'Premium Access – Monthly Plan',
+        description: 'Premium Access Plan billed monthly. Premium features included.',
+        basePrice: 4999,
+        currency: 'INR',
+        validityDays: 30,
+        features: premiumAccessPlanFeatures,
+        planType: 'premium',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          billingCycle: 'monthly',
+          accessTier: 'Premium Access',
+        },
+      },
+      {
+        name: 'Premium Access – Quarterly Plan',
+        description: 'Premium Access Plan – Save 10%. Effective ₹4,499/month.',
+        basePrice: 13497,
+        currency: 'INR',
+        validityDays: 90,
+        features: premiumAccessPlanFeatures,
+        planType: 'premium',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          billingCycle: 'quarterly',
+          discountPercentage: 10,
+          originalPrice: 14997,
+          effectiveMonthlyPrice: 4499,
+          savingsOverPeriod: 1500,
+          savingsPeriodLabel: '3 months',
+          accessTier: 'Premium Access',
+        },
+      },
+      {
+        name: 'Premium Access – Half-Yearly Plan',
+        description: 'Premium Access Plan – Save 20%. Effective ₹3,999/month.',
+        basePrice: 23994,
+        currency: 'INR',
+        validityDays: 180,
+        features: premiumAccessPlanFeatures,
+        planType: 'premium',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          billingCycle: 'half-yearly',
+          discountPercentage: 20,
+          originalPrice: 29994,
+          effectiveMonthlyPrice: 3999,
+          savingsOverPeriod: 6000,
+          savingsPeriodLabel: '6 months',
+          accessTier: 'Premium Access',
+        },
+      },
+      {
+        name: 'Premium Access – Yearly Plan',
+        description: 'Premium Access Plan – Save 35%. Best Value. Effective ₹3,249/month.',
+        basePrice: 38988,
+        currency: 'INR',
+        validityDays: 365,
+        features: premiumAccessPlanFeatures,
+        planType: 'premium',
+        maxUsers: 1,
+        isActive: true,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          billingCycle: 'yearly',
+          discountPercentage: 35,
+          originalPrice: 59988,
+          effectiveMonthlyPrice: 3249,
+          savingsOverPeriod: 21000,
+          savingsPeriodLabel: 'per year',
+          bestValue: true,
+          accessTier: 'Premium Access',
+        },
+      },
+      // --- Legacy / special plans ---
       {
         name: 'Trial Plan',
         description: '7-day trial plan to experience the platform',
@@ -151,7 +375,7 @@ async function seedMembershipData() {
         endDate: nextYear,
         usageLimit: 10000,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[0]._id], // Trial Plan
+        applicablePlans: [createdPlans[8]._id], // Trial Plan
         applicableUserCategories: ['Personal'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(),
@@ -168,7 +392,7 @@ async function seedMembershipData() {
         endDate: nextYear,
         usageLimit: 5000,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[1]._id], // Beta Launch Plan
+        applicablePlans: [createdPlans[10]._id], // Beta Launch Plan
         applicableUserCategories: ['Personal'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(),
@@ -185,7 +409,7 @@ async function seedMembershipData() {
         endDate: nextYear,
         usageLimit: 2000,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[1]._id], // Beta Launch Plan
+        applicablePlans: [createdPlans[10]._id], // Beta Launch Plan
         applicableUserCategories: ['Personal', 'Corporate'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(),
