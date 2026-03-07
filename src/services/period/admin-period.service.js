@@ -1,12 +1,12 @@
-import httpStatus from 'http-status';
-import ApiError from '../../utils/ApiError.js';
 import {
   PeriodCycle,
   PeriodSettings
 } from '../../models/index.js';
 import { 
   predictFromLastEnhanced,
-  averageCycleLength
+  averageCycleLength,
+  toDateOnly,
+  diffDays,
 } from './prediction.service.js';
 
 
@@ -16,7 +16,7 @@ import {
  */
 const getUserPeriodOverview = async (userId) => {
   const settings = await PeriodSettings.findOne({ userId });
-  const cycles = await PeriodCycle.find({ userId }).sort({ startDate: -1 });
+  const cycles = await PeriodCycle.find({ userId }).sort({ cycleStartDate: -1 });
 
   if (!settings || cycles.length === 0) {
     return { hasData: false };
@@ -24,67 +24,42 @@ const getUserPeriodOverview = async (userId) => {
 
   const latestCycle = cycles[0];
 
-  const avgCycleLength =
-  settings.averageCycleLength ||
-  averageCycleLength(cycles);
-
-const prediction = predictFromLastEnhanced(
-  latestCycle.startDate,
-  avgCycleLength
-);
-
-const nextPredictedPeriod = prediction?.predictedNextPeriodDate ?? null;
-
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const cycleDay =
-    Math.floor(
-      (today.getTime() - new Date(latestCycle.startDate).getTime()) /
-        (1000 * 60 * 60 * 24)
-    ) + 1;
-
   const avgCycleDays = averageCycleLength(
-    cycles.map(c => ({ cycleLengthDays: c.cycleLength })),
-    settings.averageCycleLength || 28
+    cycles.map(c => ({ cycleLengthDays: c.cycleLengthDays })),
+    settings.defaultCycleLengthDays || 28
   );
 
   const predictions = predictFromLastEnhanced(
-    latestCycle.startDate,
+    latestCycle.cycleStartDate,
     avgCycleDays,
     14,
-    { pregnancyMode: settings.pregnancyMode }
+    {
+      pmsDaysBefore: settings.pmsDaysBeforePeriod || 5,
+      pregnancyMode: settings.pregnancyModeEnabled || false,
+    }
   );
+
+  const today = toDateOnly(new Date());
+  const cycleDay = diffDays(today, latestCycle.cycleStartDate) + 1;
 
 return {
   hasData: true,
   totalCycles: cycles.length,
-
-  // regularity comes directly from cycle
   isIrregular: latestCycle.regularity === 'Irregular',
-
-  pregnancyMode: settings?.pregnancyMode ?? false,
-
+  pregnancyMode: settings?.pregnancyModeEnabled ?? false,
   lastPeriodStart: latestCycle.cycleStartDate ?? null,
-
-  nextPredictedPeriod: latestCycle.predictedNextPeriodDate ?? null,
-
+  nextPredictedPeriod: predictions?.predictedNextPeriodDate ?? latestCycle.predictedNextPeriodDate ?? null,
   currentPhase: latestCycle.currentPhase ?? null,
-
+  currentCycleDay: cycleDay,
   cycles: cycles.map(cycle => ({
     _id: cycle._id,
     startDate: cycle.cycleStartDate ?? null,
     endDate: cycle.periodEndDate ?? null,
     cycleLengthDays: cycle.cycleLengthDays ?? null,
-    periodDurationDays: cycle.periodDurationDays ?? null
-  }))
+    periodDurationDays: cycle.periodDurationDays ?? null,
+  })),
 };
-
-
-
 };
-
 
 /**
  * Get full cycle history for admin
@@ -101,8 +76,6 @@ const getUserPeriodCycles = async (userId) => {
     currentPhase: cycle.currentPhase ?? null
   }));
 };
-
-
 
 export {
   getUserPeriodOverview,

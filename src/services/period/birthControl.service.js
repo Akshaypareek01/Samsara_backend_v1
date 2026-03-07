@@ -22,16 +22,26 @@ export const markPillTaken = async (userId, date = new Date()) => {
   }
   const day = new Date(date);
   bc.pillsTakenDates = bc.pillsTakenDates || [];
+
   const exists = bc.pillsTakenDates.find((d) => new Date(d).toDateString() === day.toDateString());
   if (!exists) bc.pillsTakenDates.push(day);
-  // naive next-pill time logic: keep same time
-  const nextTime = bc.nextPillTime || '21:00';
-  bc.nextPillTime = nextTime;
-  // pack status approximation
+
+  // Keep only the most recent pack's worth of dates (max pillPackLength + pillFreeDays, default 35)
+  const maxDates = (bc.pillPackLength || 28) + (bc.pillFreeDays || 7);
+  if (bc.pillsTakenDates.length > maxDates) {
+    bc.pillsTakenDates = bc.pillsTakenDates
+      .sort((a, b) => new Date(a) - new Date(b))
+      .slice(-maxDates);
+  }
+
+  bc.nextPillTime = bc.nextPillTime || '21:00';
+
   if (bc.pillPackStartDate && bc.pillPackLength) {
     const diff = Math.floor((day - new Date(bc.pillPackStartDate)) / (24 * 60 * 60 * 1000));
-    const inBreak = diff >= bc.pillPackLength - bc.pillFreeDays;
-    bc.pillPackStatus = inBreak ? 'Break' : 'Active';
+    const totalDays = bc.pillPackLength;
+    const dayInCycle = ((diff % totalDays) + totalDays) % totalDays;
+    const activeDays = totalDays - (bc.pillFreeDays || 0);
+    bc.pillPackStatus = dayInCycle >= activeDays ? 'Break' : 'Active';
   } else {
     bc.pillPackStatus = 'Unknown';
   }

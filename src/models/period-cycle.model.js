@@ -32,6 +32,20 @@ const DailyLogSchema = new mongoose.Schema(
       amount: { type: String },
       notableChanges: [{ type: String }],
     },
+    mood: {
+      type: String,
+      enum: ['Happy', 'Calm', 'Sad', 'Anxious', 'Irritable', 'Energetic', 'Tired', 'Sensitive', 'PMS'],
+    },
+    basalBodyTemperature: { type: Number, min: 35, max: 42 }, // Celsius (BBT for ovulation tracking)
+    sleepHours: { type: Number, min: 0, max: 24 },
+    sleepQuality: {
+      type: String,
+      enum: ['Poor', 'Fair', 'Good', 'Excellent'],
+    },
+    skinCondition: {
+      type: String,
+      enum: ['Clear', 'Mild Acne', 'Moderate Acne', 'Oily', 'Dry'],
+    },
     sexualActivity: {
       hadSex: { type: Boolean },
       protected: { type: Boolean },
@@ -100,13 +114,10 @@ PeriodCycleSchema.plugin(paginate);
 
 // Compound indexes for efficient queries
 PeriodCycleSchema.index({ userId: 1, cycleStartDate: -1 });
-PeriodCycleSchema.index({ userId: 1, cycleStatus: 1 });
+PeriodCycleSchema.index({ userId: 1, cycleStatus: 1 }); // also covers active-cycle lookups
 PeriodCycleSchema.index({ userId: 1, cycleNumber: -1 });
 PeriodCycleSchema.index({ userId: 1, predictedNextPeriodDate: 1 }); // For reminders
 PeriodCycleSchema.index({ 'dailyLogs.date': 1 }); // For log queries
-
-// Index for active cycles (unique constraint handled in application logic)
-PeriodCycleSchema.index({ userId: 1, cycleStatus: 1 });
 
 // Validation: Ensure cycleEndDate >= cycleStartDate and periodEndDate >= cycleStartDate
 PeriodCycleSchema.pre('save', function(next) {

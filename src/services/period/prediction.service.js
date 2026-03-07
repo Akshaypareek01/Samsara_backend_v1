@@ -47,26 +47,6 @@ export const determinePhase = (today, cycleStartDate, periodDurationDays = 5, ov
   return 'Luteal';
 };
 
-export const buildMonthMap = (year, monthIndex, periodRanges = [], fertileRange = {}, ovulationDate) => {
-  // monthIndex: 0-11
-  const first = new Date(Date.UTC(year, monthIndex, 1));
-  const last = new Date(Date.UTC(year, monthIndex + 1, 0));
-  const days = [];
-  for (let d = first; d <= last; d = addDays(d, 1)) {
-    const isPeriod = periodRanges.some(
-      ({ start, end }) => toDateOnly(d) >= toDateOnly(start) && toDateOnly(d) <= toDateOnly(end)
-    );
-    const isFertile =
-      fertileRange.start &&
-      fertileRange.end &&
-      toDateOnly(d) >= toDateOnly(fertileRange.start) &&
-      toDateOnly(d) <= toDateOnly(fertileRange.end);
-    const isOvulation = ovulationDate && diffDays(d, ovulationDate) === 0;
-    days.push({ date: d, isPeriod, isFertile, isOvulation });
-  }
-  return days;
-};
-
 /**
  * Calculate cycle irregularity (variance and standard deviation)
  * @param {Array} cycles - Array of completed cycles

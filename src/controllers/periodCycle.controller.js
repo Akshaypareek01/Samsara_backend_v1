@@ -55,10 +55,11 @@ class PeriodCycleController {
     const { cycleId } = req.params;
     const userId = req.user.id;
     const logData = pick(req.body, [
-      'date', 'flowIntensity', 'crampingIntensity', 'painLevel', 
+      'date', 'flowIntensity', 'mood', 'crampingIntensity', 'painLevel',
       'energyPattern', 'restNeeded', 'symptoms', 'cravings',
       'medicationTaken', 'supplementTaken', 'exercise', 'discharge',
-      'sexualActivity', 'pregnancyTest', 'notes'
+      'sexualActivity', 'pregnancyTest', 'notes',
+      'basalBodyTemperature', 'sleepHours', 'sleepQuality', 'skinCondition',
     ]);
     
     const updatedCycle = await periodCycleService.updateDailyLog(cycleId, userId, logData);
@@ -194,6 +195,27 @@ class PeriodCycleController {
         cycle: updatedCycle
       },
       message: 'Cycle notes updated successfully'
+    });
+  });
+
+  /**
+   * Import historical period dates (onboarding / first-time).
+   * POST /api/v1/period-cycles/import-history
+   * Body: { periods: [{ startDate, endDate? }, ...] } — past period start/end dates (endDate optional, default 5 days)
+   */
+  importHistoricalPeriods = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+    const { periods } = req.body;
+
+    const cycles = await periodCycleService.importHistoricalPeriods(userId, periods);
+
+    res.status(201).json({
+      status: 'success',
+      data: {
+        cycles,
+        count: cycles.length,
+      },
+      message: `Imported ${cycles.length} historical period(s). Predictions will use this data.`,
     });
   });
 

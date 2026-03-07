@@ -17,6 +17,11 @@ const dailyLogSchema = Joi.object().keys({
   painLevel: Joi.number().min(0).max(10),
   energyPattern: Joi.string().valid('Low', 'Low-Mid', 'Moderate', 'Mid-High', 'High'),
   restNeeded: Joi.boolean(),
+  mood: Joi.string().valid('Happy', 'Calm', 'Sad', 'Anxious', 'Irritable', 'Energetic', 'Tired', 'Sensitive', 'PMS'),
+  basalBodyTemperature: Joi.number().min(35).max(42),
+  sleepHours: Joi.number().min(0).max(24),
+  sleepQuality: Joi.string().valid('Poor', 'Fair', 'Good', 'Excellent'),
+  skinCondition: Joi.string().valid('Clear', 'Mild Acne', 'Moderate Acne', 'Oily', 'Dry'),
   symptoms: Joi.array().items(Joi.string()),
   cravings: Joi.array().items(Joi.string()),
   medicationTaken: Joi.boolean(),
@@ -36,7 +41,7 @@ const dailyLogSchema = Joi.object().keys({
 
 export const startPeriod = {
   body: Joi.object().keys({
-    date: isoDate.required(),
+    date: isoDate.optional(),
     cycleEndDate: isoDate.optional(), // For historical completed cycles
     periodDurationDays: Joi.number().min(1).max(15).optional(),
     cycleStatus: Joi.string().valid('Active', 'Completed').optional(),
@@ -61,6 +66,11 @@ export const upsertLog = {
       painLevel: Joi.number().min(0).max(10),
       energyPattern: Joi.string().valid('Low', 'Low-Mid', 'Moderate', 'Mid-High', 'High'),
       restNeeded: Joi.boolean(),
+      mood: Joi.string().valid('Happy', 'Calm', 'Sad', 'Anxious', 'Irritable', 'Energetic', 'Tired', 'Sensitive', 'PMS'),
+      basalBodyTemperature: Joi.number().min(35).max(42),
+      sleepHours: Joi.number().min(0).max(24),
+      sleepQuality: Joi.string().valid('Poor', 'Fair', 'Good', 'Excellent'),
+      skinCondition: Joi.string().valid('Clear', 'Mild Acne', 'Moderate Acne', 'Oily', 'Dry'),
       symptoms: Joi.array().items(Joi.string()),
       cravings: Joi.array().items(Joi.string()),
       medicationTaken: Joi.boolean(),
@@ -109,6 +119,10 @@ export const updateSettings = {
       // PMS settings
       pmsPredictionEnabled: Joi.boolean(),
       pmsDaysBeforePeriod: Joi.number().min(1).max(10),
+      // Calendar display
+      firstDayOfWeek: Joi.string().valid('Sunday', 'Monday'),
+      // Onboarding
+      isOnboarded: Joi.boolean(),
       // Sync
       syncEnabled: Joi.boolean(),
     })
@@ -173,6 +187,7 @@ export const updateCycle = {
   body: Joi.object().keys({
     cycleStartDate: isoDate.optional(),
     cycleEndDate: isoDate.optional(),
+    periodEndDate: isoDate.optional(),
     periodDurationDays: Joi.number().min(1).max(15).optional(),
     cycleStatus: Joi.string().valid('Active', 'Completed', 'Predicted').optional(),
     cycleNotes: Joi.string().max(2000).optional(),

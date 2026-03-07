@@ -1,6 +1,5 @@
 import { PeriodCycle } from '../models/period-cycle.model.js';
 import ApiError from '../utils/ApiError.js';
-import catchAsync from '../utils/catchAsync.js';
 import { toDateOnly, diffDays, addDays } from './period/prediction.service.js';
 
 /**
@@ -401,6 +400,67 @@ class PeriodCycleService {
     
     await PeriodCycle.findByIdAndDelete(cycleId);
     return true;
+  }
+
+  /**
+   * Import historical period dates (for first-time / onboarding).
+   * User passes previous months' period start (and optionally end) dates so we have past data for predictions.
+   * @param {string} userId - User ID
+   * @param {Array<{ startDate: Date|string, endDate?: Date|string }>} periods - Sorted or unsorted; we sort by startDate ascending
+   */
+  async importHistoricalPeriods(userId, periods) {
+    if (!periods || periods.length === 0) {
+      throw new ApiError(400, 'At least one period is required');
+    }
+
+    const DEFAULT_PERIOD_DAYS = 5;
+    const sorted = [...periods]
+      .map((p) => ({
+        startDate: toDateOnly(p.startDate),
+        endDate: p.endDate ? toDateOnly(p.endDate) : addDays(toDateOnly(p.startDate), DEFAULT_PERIOD_DAYS),
+      }))
+      .sort((a, b) => a.startDate - b.startDate);
+
+    // Validate endDate >= startDate
+    for (const p of sorted) {
+      if (p.endDate < p.startDate) {
+        throw new ApiError(400, 'Period end date cannot be before start date');
+      }
+    }
+
+    const existing = await PeriodCycle.find({ userId }).sort({ cycleStartDate: -1 });
+    const nextCycleNumber =
+      existing.length > 0 ? Math.max(...existing.map((c) => c.cycleNumber)) + 1 : 1;
+
+    const toInsert = [];
+    for (let i = 0; i < sorted.length; i++) {
+      const { startDate, endDate } = sorted[i];
+      const nextStart = i < sorted.length - 1 ? sorted[i + 1].startDate : null;
+      const cycleEndDate = nextStart || addDays(startDate, 28);
+      const cycleLengthDays = nextStart ? diffDays(nextStart, startDate) : 28;
+      const periodDurationDays = Math.max(1, diffDays(endDate, startDate) + 1);
+
+      const predictions = this.calculateCyclePredictions(
+        [...existing, ...toInsert].slice(-6),
+        startDate
+      );
+
+      toInsert.push({
+        userId,
+        cycleNumber: nextCycleNumber + i,
+        cycleStartDate: startDate,
+        cycleEndDate,
+        periodEndDate: endDate,
+        periodDurationDays,
+        cycleLengthDays,
+        cycleStatus: 'Completed',
+        ...predictions,
+      });
+    }
+
+    const created = await PeriodCycle.insertMany(toInsert);
+    await this.updateUserRegularity(userId);
+    return created;
   }
 }
 

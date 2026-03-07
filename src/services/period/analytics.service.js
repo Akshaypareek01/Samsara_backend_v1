@@ -1,5 +1,5 @@
 import { PeriodCycle, PeriodSettings } from '../../models/index.js';
-import { calculateIrregularity, toDateOnly, diffDays } from './prediction.service.js';
+import { calculateIrregularity, toDateOnly, diffDays, addDays } from './prediction.service.js';
 
 /**
  * Get comprehensive cycle analytics
@@ -139,9 +139,8 @@ export const getCycleInsights = async (userId) => {
     const avgCycle = irregularity.averageCycleLength || settings?.defaultCycleLengthDays || 28;
     
     if (lastCycle.cycleStartDate) {
-      const nextPeriod = new Date(lastCycle.cycleStartDate);
-      nextPeriod.setDate(nextPeriod.getDate() + avgCycle);
-      
+      const nextPeriod = addDays(lastCycle.cycleStartDate, avgCycle);
+
       insights.predictions = {
         nextPeriodDate: nextPeriod,
         daysUntilNextPeriod: diffDays(nextPeriod, toDateOnly(new Date())),
@@ -158,7 +157,13 @@ export const getCycleInsights = async (userId) => {
     insights.patterns = {
       regularity: irregularity.regularity,
       trend: cycles.length >= 2
-        ? (cycles[0].cycleLengthDays > cycles[1].cycleLengthDays ? 'Increasing' : 'Decreasing')
+        ? (cycles[0].cycleLengthDays == null || cycles[1].cycleLengthDays == null)
+          ? 'Unknown'
+          : cycles[0].cycleLengthDays > cycles[1].cycleLengthDays
+            ? 'Increasing'
+            : cycles[0].cycleLengthDays < cycles[1].cycleLengthDays
+              ? 'Decreasing'
+              : 'Stable'
         : 'Stable',
       averageCycleLength: irregularity.averageCycleLength,
       consistency: irregularity.isIrregular ? 'Variable' : 'Consistent',
@@ -176,11 +181,10 @@ export const getCycleInsights = async (userId) => {
   // PMS insights
   if (insights.predictions?.nextPeriodDate && settings?.pmsPredictionEnabled) {
     const pmsDays = settings.pmsDaysBeforePeriod || 5;
-    const pmsStart = new Date(insights.predictions.nextPeriodDate);
-    pmsStart.setDate(pmsStart.getDate() - pmsDays);
+    const pmsStart = addDays(insights.predictions.nextPeriodDate, -pmsDays);
     const today = toDateOnly(new Date());
-    
-    if (today >= pmsStart && today < insights.predictions.nextPeriodDate) {
+
+    if (today >= pmsStart && today < new Date(insights.predictions.nextPeriodDate)) {
       insights.recommendations.push(`You may experience PMS symptoms. Your period is predicted in ${insights.predictions.daysUntilNextPeriod} days.`);
     }
   }
@@ -217,12 +221,6 @@ export const getCycleStats = async (userId) => {
     longestPeriod: periodDurations.length > 0 ? Math.max(...periodDurations) : null,
   };
 };
-
-
-
-
-
-
 
 
 

@@ -24,6 +24,10 @@ const PeriodSettingsSchema = new mongoose.Schema(
     pmsDaysBeforePeriod: { type: Number, default: 5, min: 1, max: 10 },
     // Auto-completion settings
     maxCycleDays: { type: Number, default: 60, min: 30, max: 90 }, // Auto-complete cycles exceeding this many days
+    // Calendar display preference
+    firstDayOfWeek: { type: String, enum: ['Sunday', 'Monday'], default: 'Sunday' },
+    // Onboarding
+    isOnboarded: { type: Boolean, default: false },
     // Sync/Backup
     lastSyncDate: { type: Date },
     syncEnabled: { type: Boolean, default: true },

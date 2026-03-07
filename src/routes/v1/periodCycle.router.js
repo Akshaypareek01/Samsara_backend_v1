@@ -11,6 +11,12 @@ router.use(auth());
 
 router.post('/start', validate(periodCycleValidation.startNewCycle), periodCycleController.startNewCycle);
 
+router.post(
+  '/import-history',
+  validate(periodCycleValidation.importHistoricalPeriods),
+  periodCycleController.importHistoricalPeriods
+);
+
 router.get('/current', periodCycleController.getCurrentCycle);
 
 router.get('/history', periodCycleController.getCycleHistory);

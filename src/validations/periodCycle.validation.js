@@ -18,9 +18,14 @@ const updateDailyLog = {
   body: Joi.object().keys({
     date: Joi.date().required(),
     flowIntensity: Joi.number().min(0).max(5),
+    mood: Joi.string().valid('Happy', 'Calm', 'Sad', 'Anxious', 'Irritable', 'Energetic', 'Tired', 'Sensitive', 'PMS'),
     crampingIntensity: Joi.string().valid('None', 'Mild', 'Moderate', 'Strong', 'Severe'),
     painLevel: Joi.number().min(0).max(10),
     energyPattern: Joi.string().valid('Low', 'Low-Mid', 'Moderate', 'Mid-High', 'High'),
+    basalBodyTemperature: Joi.number().min(35).max(42),
+    sleepHours: Joi.number().min(0).max(24),
+    sleepQuality: Joi.string().valid('Poor', 'Fair', 'Good', 'Excellent'),
+    skinCondition: Joi.string().valid('Clear', 'Mild Acne', 'Moderate Acne', 'Oily', 'Dry'),
     restNeeded: Joi.boolean(),
     symptoms: Joi.array().items(Joi.string()),
     cravings: Joi.array().items(Joi.string()),
@@ -56,9 +61,26 @@ const updateNotes = {
   }),
 };
 
+/** Import historical period dates (onboarding / first-time). Up to 24 past periods. */
+const importHistoricalPeriods = {
+  body: Joi.object().keys({
+    periods: Joi.array()
+      .items(
+        Joi.object().keys({
+          startDate: isoDate.required(),
+          endDate: isoDate.optional(),
+        })
+      )
+      .min(1)
+      .max(24)
+      .required(),
+  }),
+};
+
 export const periodCycleValidation = {
   startNewCycle,
   completeCycle,
   updateDailyLog,
   updateNotes,
+  importHistoricalPeriods,
 };
