@@ -48,6 +48,7 @@ import adminPeriodRoute from './admin-period.route.js';
 import adminMembershipRoute from './admin-membership.route.js';
 import bookingRoute from './booking.router.js';
 import roleRoute from './role.route.js';
+import webhookRoute from './webhook.route.js';
 
 const router = express.Router();
 
@@ -239,6 +240,10 @@ const defaultRoutes = [
   {
     path: '/roles',
     route: roleRoute,
+  },
+  {
+    path: '/webhooks',
+    route: webhookRoute,
   },
 ];
 

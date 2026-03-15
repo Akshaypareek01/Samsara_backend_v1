@@ -4,49 +4,77 @@ import { createZoomMeeting as createZoomMeetingBackend } from './zoom.controller
 import { createUserNotification } from '../utils/notificationUtils.js';
 import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
 
+// Helper to parse time string (HH:MM or HH:MM:SS) to minutes since midnight
+const parseTimeToMinutes = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string') return null;
+  const parts = timeStr.trim().split(':').map(Number);
+  if (parts.length < 2) return null;
+  return (parts[0] || 0) * 60 + (parts[1] || 0);
+};
+
+// Helper to check if class end time has passed for a given date (uses current real time for "today")
+const hasEndTimePassedForDate = (classData, schedule, targetDate, currentDateTime) => {
+  const endTimeStr = schedule?.endTime || classData.endTime;
+  const endMinutes = parseTimeToMinutes(endTimeStr);
+  if (endMinutes == null) return false; // No end time, can't exclude
+
+  const targetDateOnly = new Date(targetDate);
+  targetDateOnly.setHours(0, 0, 0, 0);
+  const currentDateOnly = new Date(currentDateTime);
+  currentDateOnly.setHours(0, 0, 0, 0);
+
+  if (targetDateOnly.getTime() !== currentDateOnly.getTime()) return false; // Different day
+
+  const currentMinutes = currentDateTime.getHours() * 60 + currentDateTime.getMinutes();
+  return currentMinutes >= endMinutes;
+};
+
 // Helper function to filter upcoming classes (handles both single schedule date and recurring schedules)
 const filterUpcomingClasses = (classes, currentDate = null) => {
-  const now = currentDate || new Date();
+  const now = currentDate ? new Date(currentDate) : new Date();
   now.setHours(0, 0, 0, 0);
-  
+  const currentDateTime = new Date(); // Real current time for end-time check (not midnight)
+
   // Calculate end date for upcoming week (next 7 days)
   const weekEndDate = new Date(now);
   weekEndDate.setDate(weekEndDate.getDate() + 7);
 
   // Day name mapping
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
+
   return classes.filter(classItem => {
     const classData = classItem.toObject ? classItem.toObject() : classItem;
-    
+
     // Case 1: Class has a schedule date in the future
     if (classData.schedule) {
       const scheduleDate = new Date(classData.schedule);
       scheduleDate.setHours(0, 0, 0, 0);
-      if (scheduleDate >= now) {
+      if (scheduleDate > now) return true; // Future date
+      if (scheduleDate.getTime() === now.getTime()) {
+        // Today - exclude if end time has passed
+        if (hasEndTimePassedForDate(classData, null, scheduleDate, currentDateTime)) return false;
         return true;
       }
     }
-    
+
     // Case 2: Class has recurring schedules - check if any day matches current/upcoming week
     if (classData.schedules && classData.schedules.length > 0) {
-      // Check all schedule entries
       for (const schedule of classData.schedules) {
         if (schedule.days && schedule.days.length > 0) {
-          // Check if today's day or any day in the upcoming week matches the schedule
           for (let i = 0; i < 7; i++) {
             const checkDate = new Date(now);
             checkDate.setDate(checkDate.getDate() + i);
             const dayOfWeek = dayNames[checkDate.getDay()];
-            
-            // If this day matches any day in the schedule, the class is upcoming
+
             if (schedule.days.includes(dayOfWeek)) {
-              // Also verify the schedule date has passed (class has started)
               const scheduleStartDate = classData.schedule ? new Date(classData.schedule) : now;
               scheduleStartDate.setHours(0, 0, 0, 0);
-              
-              // Class is upcoming if schedule date has passed (or is today) and we're checking within the week
+
               if (checkDate >= scheduleStartDate && checkDate <= weekEndDate) {
+                // Today - exclude if end time has passed
+                if (i === 0 && hasEndTimePassedForDate(classData, schedule, checkDate, currentDateTime)) {
+                  continue; // Skip this match, check other days
+                }
                 return true;
               }
             }
@@ -54,7 +82,7 @@ const filterUpcomingClasses = (classes, currentDate = null) => {
         }
       }
     }
-    
+
     return false;
   });
 };

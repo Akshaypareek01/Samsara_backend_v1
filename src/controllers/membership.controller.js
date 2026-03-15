@@ -12,6 +12,7 @@ import {
   assignMembershipWithCoupon,
   processAppleSubscription
 } from '../services/membership.service.js';
+import { syncSubscription } from '../services/revenuecat.service.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -172,6 +173,27 @@ const verifyIosReceiptController = catchAsync(async (req, res) => {
   });
 });
 
+/**
+ * POST /memberships/sync-revenuecat
+ * Client calls this right after a RevenueCat purchase completes on the app.
+ * Pulls entitlement from RevenueCat API and upserts membership in our DB.
+ */
+const syncRevenuecatController = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+
+  const membership = await syncSubscription(userId);
+
+  if (!membership) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'No active RevenueCat entitlement found for this user');
+  }
+
+  res.status(httpStatus.OK).send({
+    success: true,
+    message: 'RevenueCat subscription synced successfully',
+    data: membership,
+  });
+});
+
 export {
   getActiveMembershipController,
   getMembershipHistory,
@@ -182,5 +204,6 @@ export {
   updateMembershipController,
   cancelMembershipController,
   verifyIosReceiptController,
+  syncRevenuecatController,
   // assignMembershipWithCouponController
 };

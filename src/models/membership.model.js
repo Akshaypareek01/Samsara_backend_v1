@@ -82,7 +82,7 @@ const membershipSchema = new mongoose.Schema(
     },
     paymentProvider: {
       type: String,
-      enum: ['razorpay', 'apple', 'google', 'free', 'manual'],
+      enum: ['razorpay', 'apple', 'google', 'revenuecat', 'free', 'manual'],
       default: 'razorpay',
     },
     transactionId: {
@@ -90,6 +90,19 @@ const membershipSchema = new mongoose.Schema(
       sparse: true,
     },
     appleReceiptData: {
+      type: String,
+      sparse: true,
+    },
+    // RevenueCat fields
+    revenuecatAppUserId: {
+      type: String,
+      sparse: true,
+    },
+    revenuecatEntitlementId: {
+      type: String,
+      sparse: true,
+    },
+    revenuecatProductId: {
       type: String,
       sparse: true,
     },

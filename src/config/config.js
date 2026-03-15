@@ -46,6 +46,9 @@ const envVarsSchema = Joi.object()
     REDIS_PASSWORD: Joi.string().allow('').description('Redis password'),
     REDIS_DB: Joi.number().default(0).description('Redis database number'),
     APPLE_SHARED_SECRET: Joi.string().description('Apple In-App Purchase Shared Secret'),
+    // RevenueCat
+    REVENUECAT_SECRET_KEY: Joi.string().description('RevenueCat Secret API Key (sk_...)'),
+    REVENUECAT_WEBHOOK_SECRET: Joi.string().description('RevenueCat Webhook Authorization Header Secret'),
   })
   .unknown();
 
@@ -127,6 +130,10 @@ const config = {
   },
   apple: {
     sharedSecret: envVars.APPLE_SHARED_SECRET,
+  },
+  revenuecat: {
+    secretKey: envVars.REVENUECAT_SECRET_KEY,
+    webhookSecret: envVars.REVENUECAT_WEBHOOK_SECRET,
   },
 };
 

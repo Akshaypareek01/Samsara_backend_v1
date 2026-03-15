@@ -11,6 +11,7 @@ import {
   updateMembershipController,
   cancelMembershipController,
   verifyIosReceiptController,
+  syncRevenuecatController,
   // assignMembershipWithCouponController
 } from '../../controllers/membership.controller.js';
 import { assignWithCoupon } from '../../controllers/admin-membership.controller.js';
@@ -32,6 +33,9 @@ router.post('/', auth(), validate(membershipValidation.createMembership), create
 
 // Verify iOS receipt
 router.post('/verify-receipt', auth(), validate(membershipValidation.verifyIosReceipt), verifyIosReceiptController);
+
+// Sync RevenueCat subscription (client calls after purchase)
+router.post('/sync-revenuecat', auth(), syncRevenuecatController);
 
 // Update membership
 router.patch('/:membershipId', auth(), validate(membershipValidation.updateMembership), updateMembershipController);
