@@ -3,6 +3,7 @@
 import axios from "axios";
 import { Event } from "../models/index.js";
 import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
+import { validateEventOverlap } from '../services/overlapCheck.service.js';
 
 // Helper function to get teacher data with first image
 const getTeacherData = (teacher) => {
@@ -38,8 +39,19 @@ const getTeacherData = (teacher) => {
 
 // Create a new event
 export const createEvent = async (req, res) => {
-    console.log("body events  ==>",req.body)
+    console.log("body events  ==>", req.body);
     try {
+        if (req.body.teacher) {
+            const overlapResult = await validateEventOverlap(req.body);
+            if (overlapResult.hasOverlap) {
+                return res.status(409).json({
+                    error: overlapResult.message,
+                    code: 'OVERLAPPING_SLOT',
+                    conflictingItem: overlapResult.conflictingItem,
+                });
+            }
+        }
+
         const event = new Event(req.body);
         await event.save();
         
@@ -129,6 +141,23 @@ export const getAllEventsUpcoming = async (req, res) => {
 // Update event
 export const updateEvent = async (req, res) => {
     try {
+        const existingEvent = await Event.findById(req.params.id).lean();
+        if (!existingEvent) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        const mergedData = { ...existingEvent, ...req.body };
+        if (mergedData.teacher) {
+            const overlapResult = await validateEventOverlap(mergedData, req.params.id);
+            if (overlapResult.hasOverlap) {
+                return res.status(409).json({
+                    error: overlapResult.message,
+                    code: 'OVERLAPPING_SLOT',
+                    conflictingItem: overlapResult.conflictingItem,
+                });
+            }
+        }
+
         const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true })
             .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
             .populate('students', 'name email')

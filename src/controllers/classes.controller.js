@@ -3,13 +3,28 @@ import { Class, User } from "../models/index.js";
 import { createZoomMeeting as createZoomMeetingBackend } from './zoom.controller.js';
 import { createUserNotification } from '../utils/notificationUtils.js';
 import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
+import { validateClassOverlap } from '../services/overlapCheck.service.js';
 
-// Helper to parse time string (HH:MM or HH:MM:SS) to minutes since midnight
+// Helper to parse time string (HH:MM, HH:MM:SS, or "h:mm AM/PM") to minutes since midnight
 const parseTimeToMinutes = (timeStr) => {
   if (!timeStr || typeof timeStr !== 'string') return null;
-  const parts = timeStr.trim().split(':').map(Number);
-  if (parts.length < 2) return null;
-  return (parts[0] || 0) * 60 + (parts[1] || 0);
+  const s = timeStr.trim();
+  // 12-hour format: "5:14 PM", "12:00 AM", "11:30 AM"
+  const amPmMatch = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  if (amPmMatch) {
+    let hours = parseInt(amPmMatch[1], 10);
+    const minutes = parseInt(amPmMatch[2], 10) || 0;
+    const amPm = (amPmMatch[4] || '').toUpperCase();
+    if (amPm === 'PM' && hours !== 12) hours += 12;
+    if (amPm === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  }
+  // 24-hour: "17:14" or "17:14:00"
+  const parts = s.split(':').map(Number);
+  if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return (parts[0] || 0) * 60 + (parts[1] || 0);
+  }
+  return null;
 };
 
 // Helper to check if class end time has passed for a given date (uses current real time for "today")
@@ -51,8 +66,14 @@ const filterUpcomingClasses = (classes, currentDate = null) => {
       scheduleDate.setHours(0, 0, 0, 0);
       if (scheduleDate > now) return true; // Future date
       if (scheduleDate.getTime() === now.getTime()) {
-        // Today - exclude if end time has passed
-        if (hasEndTimePassedForDate(classData, null, scheduleDate, currentDateTime)) return false;
+        // Today - exclude if end time has passed (use matching schedule's endTime if available)
+        const sd = scheduleDate;
+        const matchingSchedule = classData.schedules?.find((s) => {
+          if (!s.date) return false;
+          const d = new Date(s.date);
+          return d.getFullYear() === sd.getFullYear() && d.getMonth() === sd.getMonth() && d.getDate() === sd.getDate();
+        });
+        if (hasEndTimePassedForDate(classData, matchingSchedule || null, scheduleDate, currentDateTime)) return false;
         return true;
       }
     }
@@ -164,7 +185,18 @@ export const createClass = async (req, res) => {
     if (req.body.teacher) {
       await validateTeacher(req.body.teacher);
     }
-    
+
+    // Check for overlapping classes/events
+    const overlapResult = await validateClassOverlap(req.body);
+    if (overlapResult.hasOverlap) {
+      return res.status(409).json({
+        success: false,
+        error: overlapResult.message,
+        code: 'OVERLAPPING_SLOT',
+        conflictingItem: overlapResult.conflictingItem,
+      });
+    }
+
     const newClass = await Class.create(req.body);
     const populatedClass = await Class.findById(newClass._id)
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
@@ -337,13 +369,30 @@ export const getClassById = async (req, res) => {
 export const updateClass = async (req, res) => {
   const { classId } = req.params;
   const updatedData = req.body;
-  
+
   try {
     // Validate teacher if being updated
     if (updatedData.teacher) {
       await validateTeacher(updatedData.teacher);
     }
-    
+
+    const existingClass = await Class.findById(classId).lean();
+    if (!existingClass) {
+      return res.status(404).json({ success: false, error: 'Class not found' });
+    }
+
+    // Check for overlapping classes/events (exclude current class)
+    const mergedData = { ...existingClass, ...updatedData };
+    const overlapResult = await validateClassOverlap(mergedData, classId);
+    if (overlapResult.hasOverlap) {
+      return res.status(409).json({
+        success: false,
+        error: overlapResult.message,
+        code: 'OVERLAPPING_SLOT',
+        conflictingItem: overlapResult.conflictingItem,
+      });
+    }
+
     const updatedClass = await Class.findByIdAndUpdate(classId, updatedData, { new: true })
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
       .populate('students', 'name email')
