@@ -64,7 +64,6 @@ const config = {
   mongoose: {
     url: envVars.MONGODB_URL + (envVars.NODE_ENV === 'test' ? '-test' : ''),
     options: {
-      useCreateIndex: true, // Optional: Remove this if using Mongoose v6+
       useNewUrlParser: true,
       useUnifiedTopology: true,
     },

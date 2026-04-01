@@ -12,6 +12,7 @@ import EventApplication from "./event-application.model.js";
 import { CustomSession, TimeSlot } from './custom-session.model.js';
 import Admin from './admin.model.js';
 import Company from './company.model.js';
+import CompanyUser from './company-user.model.js';
 import { TeacherAvailability } from './teacher-availability.model.js';
 import RecordedClass from './recorded-class.model.js';
 import { Meeting } from './meeting.model.js';
@@ -63,6 +64,7 @@ export {
   TimeSlot,
   Admin,
   Company,
+  CompanyUser,
   TeacherAvailability,
   RecordedClass,
   Meeting,

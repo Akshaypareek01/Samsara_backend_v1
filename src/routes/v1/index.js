@@ -5,6 +5,7 @@ import docsRoute from './docs.route.js';
 import uploadRoute from './upload.route.js';
 import trackerRoute from './tracker.route.js';
 import companyRoute from './company.router.js';
+import companyUserRoute from './company-user.router.js';
 import eventsRoute from './events.router.js';
 import eventApplicationRoute from './eventApplication.routes.js';
 import classeRoute from './classe.router.js';
@@ -72,6 +73,10 @@ const defaultRoutes = [
   {
     path: '/companies',
     route: companyRoute,
+  },
+  {
+    path: '/company-users',
+    route: companyUserRoute,
   },
   {
     path: '/events',

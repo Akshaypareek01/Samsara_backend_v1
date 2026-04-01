@@ -11,6 +11,7 @@
   "scripts": {
     "start": "pm2 start ecosystem.config.json --no-daemon",
     "dev": "cross-env NODE_ENV=development nodemon src/index.js",
+    "postinstall": "node scripts/patch-buffer-equal-constant-time.cjs",
     "test": "jest -i --colors --verbose --detectOpenHandles",
     "test:watch": "jest -i --watchAll",
     "coverage": "jest -i --coverage",
@@ -76,7 +77,7 @@
     "jsonwebtoken": "^8.5.1",
     "jsrsasign": "^11.1.0",
     "moment": "^2.24.0",
-    "mongoose": "^5.7.7",
+    "mongoose": "^6.13.9",
     "morgan": "^1.9.1",
     "multer": "^2.0.1",
     "node-fetch": "^3.3.2",
