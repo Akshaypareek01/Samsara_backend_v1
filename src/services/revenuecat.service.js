@@ -59,11 +59,27 @@ const resolvePlan = async (productId) => {
  * Sync a user's RevenueCat entitlements to our DB.
  * Called from POST /memberships/sync-revenuecat (client calls after purchase).
  *
- * @param {string} userId - Our MongoDB user ID
+ * Lookup order for the RevenueCat subscriber record:
+ *   1. Our MongoDB user id (expected after Purchases.logIn(userId)).
+ *   2. `originalAppUserId` supplied by the client (e.g. `$RCAnonymousID:xxx`
+ *      returned by `Purchases.getCustomerInfo()`). Covers the race where a
+ *      purchase happened before the app successfully called `logIn(userId)`.
+ *
+ * @param {string} userId - Our MongoDB user ID.
+ * @param {string|null} [originalAppUserId] - Optional fallback identifier from
+ *   `customerInfo.originalAppUserId` on the client.
  * @returns {Promise<Membership|null>}
  */
-const syncSubscription = async (userId) => {
-  const subscriber = await getSubscriberInfo(userId);
+const syncSubscription = async (userId, originalAppUserId = null) => {
+  let subscriber = await getSubscriberInfo(userId);
+
+  if (!subscriber && originalAppUserId && originalAppUserId !== userId) {
+    console.info(
+      `RevenueCat sync: primary lookup failed for userId=${userId}, trying originalAppUserId=${originalAppUserId}`
+    );
+    subscriber = await getSubscriberInfo(originalAppUserId);
+  }
+
   if (!subscriber) {
     return null;
   }

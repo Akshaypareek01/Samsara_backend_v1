@@ -177,11 +177,21 @@ const verifyIosReceiptController = catchAsync(async (req, res) => {
  * POST /memberships/sync-revenuecat
  * Client calls this right after a RevenueCat purchase completes on the app.
  * Pulls entitlement from RevenueCat API and upserts membership in our DB.
+ *
+ * Optional body fields:
+ *   - productId: the product that was purchased (informational, logged only).
+ *   - originalAppUserId: fallback identifier from `customerInfo.originalAppUserId`
+ *     used when the RC subscriber is still keyed to an anonymous id.
  */
 const syncRevenuecatController = catchAsync(async (req, res) => {
   const userId = req.user.id;
+  const { productId, originalAppUserId } = req.body || {};
 
-  const membership = await syncSubscription(userId);
+  if (productId) {
+    console.info(`RevenueCat sync requested by userId=${userId} for productId=${productId}`);
+  }
+
+  const membership = await syncSubscription(userId, originalAppUserId || null);
 
   if (!membership) {
     throw new ApiError(httpStatus.NOT_FOUND, 'No active RevenueCat entitlement found for this user');

@@ -88,12 +88,14 @@ async function seedMembershipData() {
         planType: 'basic',
         maxUsers: 1,
         isActive: true,
+        appleProductId: 'basic_monthly_plan',
         taxConfig: taxConfigBasic,
         discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
         metadata: {
           billingCycle: 'monthly',
           cancelAnytime: true,
           accessTier: 'Basic Access',
+          revenuecatProductId: 'basic_monthly_plan',
         },
       },
       {
