@@ -209,14 +209,19 @@ membershipSchema.methods.calculateRefund = function () {
   return Math.round((this.amountPaid * remainingDays) / totalDays);
 };
 
-// Static method to get active memberships for a user
+// Static method to get active membership for a user.
+// If a user has multiple active memberships (e.g. legacy Razorpay + new RevenueCat
+// from an upgrade), return the most recently created so the UI reflects the
+// latest purchase and not stale data.
 membershipSchema.statics.getActiveMembership = function (userId) {
   return this.findOne({
     userId,
     status: 'active',
     startDate: { $lte: new Date() },
     endDate: { $gte: new Date() }
-  }).populate('planId');
+  })
+    .sort({ createdAt: -1 })
+    .populate('planId');
 };
 
 // Static method to get user's membership history

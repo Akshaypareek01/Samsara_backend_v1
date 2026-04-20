@@ -1,10 +1,18 @@
 import httpStatus from 'http-status';
 import axios from 'axios';
+import mongoose from 'mongoose';
 import { Membership, MembershipPlan, Transaction } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import config from '../config/config.js';
 
 const RC_API_BASE = 'https://api.revenuecat.com/v1';
+
+/**
+ * RevenueCat `app_user_id` must be our Mongo ObjectId. Anonymous purchases use
+ * `$RCAnonymousID:uuid` — we cannot store those as `userId` on Membership.
+ */
+const isMongoObjectIdString = (id) =>
+  typeof id === 'string' && mongoose.Types.ObjectId.isValid(id) && String(new mongoose.Types.ObjectId(id)) === id;
 
 /**
  * Build auth headers for RevenueCat REST API
@@ -169,6 +177,19 @@ const handleWebhookEvent = async (event) => {
 
   if (!appUserId) {
     console.warn('RevenueCat webhook: missing app_user_id, skipping');
+    return;
+  }
+
+  const skipAnonymous =
+    String(appUserId).startsWith('$RCAnonymousID') ||
+    String(appUserId).startsWith('$RCAnonymous') ||
+    !isMongoObjectIdString(String(appUserId));
+
+  if (skipAnonymous && type !== 'SUBSCRIBER_ALIAS' && type !== 'TRANSFER') {
+    console.warn(
+      `RevenueCat webhook: skipping ${type} — app_user_id is not a Mongo user id (anonymous or invalid). ` +
+        `Fix: call Purchases.logIn(userId) before purchase. app_user_id=${appUserId}`
+    );
     return;
   }
 
@@ -395,26 +416,34 @@ const handleBillingIssue = async (event) => {
 };
 
 /**
- * Helper to record a transaction
+ * Helper to record a transaction.
+ *
+ * RevenueCat sandbox webhooks sometimes omit `original_transaction_id`, so we
+ * fall back to a synthetic id derived from userId + product + timestamp. This
+ * ensures every webhook event leaves an audit trail in the `transactions`
+ * collection even when Apple's payload is incomplete.
  */
 const createTransactionRecord = async (userId, plan, txnId, platform, status) => {
-  if (!txnId) return;
+  const transactionId = txnId || `rc_synthetic_${userId}_${plan._id}_${Date.now()}`;
 
-  const existing = await Transaction.findOne({ transactionId: txnId });
+  const existing = await Transaction.findOne({ transactionId });
   if (existing) return;
 
   await Transaction.create({
     userId,
     planId: plan._id,
     planName: plan.name,
-    transactionId: txnId,
-    orderId: txnId,
+    transactionId,
+    orderId: transactionId,
     amount: plan.basePrice,
     currency: plan.currency,
     status,
     paymentMethod: 'apple',
     platform,
-    metadata: { source: 'revenuecat_webhook' },
+    metadata: {
+      source: 'revenuecat_webhook',
+      synthetic: !txnId,
+    },
   });
 };
 
