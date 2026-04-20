@@ -143,30 +143,6 @@ const syncSubscription = async (userId, originalAppUserId = null) => {
     { upsert: true, new: true }
   );
 
-  const platform = entitlement.store === 'app_store' ? 'ios' : 'android';
-  /** StoreKit ids often live on `subscriber.subscriptions[productId]`, not only on the entitlement. */
-  const subStore = subscriber.subscriptions?.[productId] || {};
-  /** One stable txn id per membership doc so repeat syncs do not duplicate rows. */
-  const syncTxnId =
-    subStore.store_transaction_id ||
-    subStore.original_transaction_id ||
-    entitlement.store_transaction_id ||
-    entitlement.original_transaction_id ||
-    `rc_apple_sync_${membership._id}`;
-
-  try {
-    await createTransactionRecord(userId, plan, syncTxnId, platform, 'completed', {
-      membershipId: membership._id,
-      extraMetadata: {
-        recordSource: 'POST_/memberships/sync-revenuecat',
-        productId,
-        entitlementId,
-      },
-    });
-  } catch (err) {
-    console.error('RevenueCat sync: transaction record failed (membership still saved):', err?.message);
-  }
-
   console.info(`RevenueCat sync: membership upserted for user ${userId}, entitlement=${entitlementId}`);
   return membership;
 };
@@ -262,14 +238,8 @@ const handleInitialPurchase = async (event) => {
     expiration_at_ms: expirationAtMs,
     store,
     is_sandbox: isSandbox,
-    original_transaction_id: originalTxnIdFromEvent,
-    transaction_id: transactionIdFromEvent,
-    id: eventId,
+    original_transaction_id: originalTxnId,
   } = event;
-
-  /** RC / Apple do not always send `original_transaction_id`; use fallbacks. */
-  const originalTxnId =
-    originalTxnIdFromEvent || transactionIdFromEvent || (eventId ? `rc_evt_${eventId}` : null);
 
   const plan = await resolvePlan(productId);
   if (!plan) {
@@ -312,14 +282,7 @@ const handleInitialPurchase = async (event) => {
     { upsert: true, new: true }
   );
 
-  try {
-    await createTransactionRecord(userId, plan, originalTxnId, platform, 'completed', {
-      membershipId: membership._id,
-      extraMetadata: { webhookType: 'INITIAL_PURCHASE', productId },
-    });
-  } catch (err) {
-    console.error('RevenueCat INITIAL_PURCHASE: transaction record failed:', err?.message);
-  }
+  await createTransactionRecord(userId, plan, originalTxnId, platform, 'completed');
 
   console.info(`RevenueCat INITIAL_PURCHASE processed: membership ${membership._id}`);
 };
@@ -332,14 +295,9 @@ const handleRenewal = async (event) => {
     app_user_id: userId,
     product_id: productId,
     expiration_at_ms: expirationAtMs,
-    original_transaction_id: originalTxnFromEvent,
-    transaction_id: transactionIdFromEvent,
-    id: renewalEventId,
+    original_transaction_id: originalTxnId,
     store,
   } = event;
-
-  const originalTxnId =
-    originalTxnFromEvent || transactionIdFromEvent || (renewalEventId ? `rc_evt_${renewalEventId}` : null);
 
   const endDate = expirationAtMs ? new Date(expirationAtMs) : null;
 
@@ -367,16 +325,7 @@ const handleRenewal = async (event) => {
 
   const plan = await MembershipPlan.findById(membership.planId);
   if (plan) {
-    const renewalTxnId =
-      originalTxnId || `rc_renewal_${membership._id}_${Date.now()}`;
-    try {
-      await createTransactionRecord(userId, plan, renewalTxnId, store === 'APP_STORE' ? 'ios' : 'android', 'completed', {
-        membershipId: membership._id,
-        extraMetadata: { webhookType: 'RENEWAL', productId },
-      });
-    } catch (err) {
-      console.error('RevenueCat RENEWAL: transaction record failed:', err?.message);
-    }
+    await createTransactionRecord(userId, plan, originalTxnId, store === 'APP_STORE' ? 'ios' : 'android', 'completed');
   }
 
   console.info(`RevenueCat RENEWAL processed: membership ${membership._id}, new endDate=${endDate}`);
@@ -467,17 +416,14 @@ const handleBillingIssue = async (event) => {
 };
 
 /**
- * Record an App Store (RevenueCat) row in `transactions` for admin / history / parity with Razorpay.
+ * Helper to record a transaction.
  *
- * @param {import('mongoose').Types.ObjectId|string} userId
- * @param {object} plan - MembershipPlan doc
- * @param {string|null} txnId - Apple / RC transaction id when available
- * @param {'ios'|'android'} platform
- * @param {string} status
- * @param {{ membershipId?: import('mongoose').Types.ObjectId, extraMetadata?: object }} [opts]
+ * RevenueCat sandbox webhooks sometimes omit `original_transaction_id`, so we
+ * fall back to a synthetic id derived from userId + product + timestamp. This
+ * ensures every webhook event leaves an audit trail in the `transactions`
+ * collection even when Apple's payload is incomplete.
  */
-const createTransactionRecord = async (userId, plan, txnId, platform, status, opts = {}) => {
-  const { membershipId = null, extraMetadata = {} } = opts;
+const createTransactionRecord = async (userId, plan, txnId, platform, status) => {
   const transactionId = txnId || `rc_synthetic_${userId}_${plan._id}_${Date.now()}`;
 
   const existing = await Transaction.findOne({ transactionId });
@@ -485,7 +431,6 @@ const createTransactionRecord = async (userId, plan, txnId, platform, status, op
 
   await Transaction.create({
     userId,
-    membershipId: membershipId || undefined,
     planId: plan._id,
     planName: plan.name,
     transactionId,
@@ -496,9 +441,8 @@ const createTransactionRecord = async (userId, plan, txnId, platform, status, op
     paymentMethod: 'apple',
     platform,
     metadata: {
-      appleAppStore: true,
+      source: 'revenuecat_webhook',
       synthetic: !txnId,
-      ...extraMetadata,
     },
   });
 };
