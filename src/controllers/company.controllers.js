@@ -3,6 +3,9 @@ import catchAsync from '../utils/catchAsync.js';
 import pick from '../utils/pick.js';
 import ApiError from '../utils/ApiError.js';
 import * as companyService from '../services/company.service.js';
+import * as companyInsightsService from '../services/company-insights.service.js';
+import * as companyPortalEmployeesService from '../services/company-portal-employees.service.js';
+import * as companyReportsExportService from '../services/company-reports-export.service.js';
 import { generateCompanyAuthTokens } from '../services/token.service.js';
 
 /**
@@ -135,6 +138,107 @@ const updateProfile = catchAsync(async (req, res) => {
   res.send(company);
 });
 
+/**
+ * Dashboard KPIs derived from company bookings.
+ * Access: Company JWT only
+ */
+const getDashboardOverview = catchAsync(async (req, res) => {
+  if (req.user.role !== 'company') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'This endpoint is for companies only');
+  }
+  const overview = await companyService.getCompanyDashboardOverview(req.user.id);
+  res.send(overview);
+});
+
+/**
+ * Programs + reports insights (bookings + company users).
+ */
+const getInsights = catchAsync(async (req, res) => {
+  if (req.user.role !== 'company') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'This endpoint is for companies only');
+  }
+  const data = await companyInsightsService.buildCompanyInsights(req.user.id);
+  res.send(data);
+});
+
+/**
+ * Paginated employee-style list backed by company users.
+ */
+const getEmployeeWellnessScores = catchAsync(async (req, res) => {
+  if (req.user.role !== 'company') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'This endpoint is for companies only');
+  }
+  const data = await companyInsightsService.getCompanyEmployeeWellnessPage(req.user.id, req.query);
+  res.send(data);
+});
+
+const assertCompanyUser = (req) => {
+  if (req.user.role !== 'company') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'This endpoint is for companies only');
+  }
+};
+
+/**
+ * Create employee (company JWT); companyId from token.
+ */
+const createPortalEmployee = catchAsync(async (req, res) => {
+  assertCompanyUser(req);
+  const created = await companyPortalEmployeesService.createPortalEmployee(req.user.id, req.body);
+  res.status(httpStatus.CREATED).send(created);
+});
+
+/**
+ * List active employees (paginated, same row shape as insights employee-scores).
+ */
+const listPortalEmployees = catchAsync(async (req, res) => {
+  assertCompanyUser(req);
+  const result = await companyPortalEmployeesService.listPortalEmployees(req.user.id, req.query);
+  res.send(companyPortalEmployeesService.mapPortalEmployeesToRows(result));
+});
+
+const getPortalEmployee = catchAsync(async (req, res) => {
+  assertCompanyUser(req);
+  const u = await companyPortalEmployeesService.getPortalEmployeeById(req.user.id, req.params.employeeId);
+  res.send(u);
+});
+
+const updatePortalEmployee = catchAsync(async (req, res) => {
+  assertCompanyUser(req);
+  const u = await companyPortalEmployeesService.updatePortalEmployee(
+    req.user.id,
+    req.params.employeeId,
+    req.body
+  );
+  res.send(u);
+});
+
+const deletePortalEmployee = catchAsync(async (req, res) => {
+  assertCompanyUser(req);
+  const deletedBy = req.user.email || req.user.contactPerson1?.email || String(req.user.id);
+  await companyPortalEmployeesService.softDeletePortalEmployee(req.user.id, req.params.employeeId, {
+    deletedBy,
+    reason: req.body?.reason,
+  });
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const listPortalDeletionHistory = catchAsync(async (req, res) => {
+  assertCompanyUser(req);
+  const data = await companyPortalEmployeesService.listPortalDeletionHistory(req.user.id, req.query);
+  res.send(data);
+});
+
+/**
+ * CSV export for bookings or active employees.
+ */
+const exportCompanyReports = catchAsync(async (req, res) => {
+  assertCompanyUser(req);
+  const csv = await companyReportsExportService.buildCompanyCsvExport(req.user.id, req.query.type);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="company-export-${req.query.type}.csv"`);
+  res.send(csv);
+});
+
 export {
   createCompany,
   getAllCompanies,
@@ -147,4 +251,14 @@ export {
   verifyLoginOTP,
   getProfile,
   updateProfile,
+  getDashboardOverview,
+  getInsights,
+  getEmployeeWellnessScores,
+  createPortalEmployee,
+  listPortalEmployees,
+  getPortalEmployee,
+  updatePortalEmployee,
+  deletePortalEmployee,
+  listPortalDeletionHistory,
+  exportCompanyReports,
 };

@@ -80,6 +80,12 @@ const createCompanyUser = async (body) => {
  */
 const queryCompanyUsers = async (query, options) => {
   const filter = await buildFilter(query);
+  const parts = [{ $or: [{ isActive: true }, { isActive: { $exists: false } }] }];
+  if (filter.$or) {
+    parts.unshift({ $or: filter.$or });
+    delete filter.$or;
+  }
+  filter.$and = parts;
   return CompanyUser.paginate(filter, options);
 };
 
@@ -93,6 +99,12 @@ const getCompanyUsersByCompany = async (companyRef, query, options) => {
   }
   const { companyId: _omit, companyKey: _omitKey, ...rest } = query;
   const filter = await buildFilter({ ...rest, companyId: cid.toString() });
+  const parts = [{ $or: [{ isActive: true }, { isActive: { $exists: false } }] }];
+  if (filter.$or) {
+    parts.unshift({ $or: filter.$or });
+    delete filter.$or;
+  }
+  filter.$and = parts;
   return CompanyUser.paginate(filter, options);
 };
 

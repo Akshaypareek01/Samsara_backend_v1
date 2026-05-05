@@ -29,6 +29,13 @@ router.get(
     bookingController.getMyBookings
 );
 
+// Month dashboard summary for company / trainer
+router.get(
+    '/my-bookings/summary',
+    auth(),
+    bookingController.getMyBookingsSummary
+);
+
 // Get bookings pending admin approval (for CRM)
 router.get(
     '/pending-approvals',

@@ -99,6 +99,7 @@ const createTrainer = {
       })
       .optional(),
     status: Joi.boolean().optional(),
+    acceptingBookings: Joi.boolean().optional(),
   }),
 };
 
@@ -108,6 +109,7 @@ const getTrainers = {
     specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
     typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
     status: Joi.boolean(),
+    acceptingBookings: Joi.boolean(),
     sortBy: Joi.string(),
     limit: Joi.number().integer().min(1),
     page: Joi.number().integer().min(1),
@@ -141,6 +143,7 @@ const updateMe = {
         _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
       }),
       status: Joi.boolean(),
+      acceptingBookings: Joi.boolean(),
     })
     .min(1),
 };
@@ -169,6 +172,7 @@ const updateTrainer = {
         _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
       }),
       status: Joi.boolean(),
+      acceptingBookings: Joi.boolean(),
     })
     .min(1),
 };

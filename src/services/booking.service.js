@@ -1,6 +1,7 @@
 import httpStatus from 'http-status';
 import { Booking, Trainer, Company } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
+import mongoose from 'mongoose';
 
 /**
  * Create a booking
@@ -28,6 +29,16 @@ const createBooking = async (bookingBody) => {
         throw new ApiError(
             httpStatus.BAD_REQUEST,
             `Invalid training types for this trainer: ${invalidTypes.join(', ')}`
+        );
+    }
+
+    if (trainer.status === false) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'This trainer is inactive and cannot accept bookings.');
+    }
+    if (trainer.acceptingBookings === false) {
+        throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'This trainer is not accepting new bookings at the moment.'
         );
     }
 
@@ -326,6 +337,221 @@ const rejectBooking = async (id, adminId, adminNotes) => {
     return booking.populate(['company', 'trainer', 'approvedBy']);
 };
 
+/**
+ * Month summary for company or trainer dashboard (bookings UI).
+ * @param {import('mongoose').Types.ObjectId|string} actorId
+ * @param {string} monthStr - YYYY-MM
+ * @param {'company'|'trainer'} role
+ * @returns {Promise<Object>}
+ */
+const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
+    if (!/^\d{4}-\d{2}$/.test(monthStr)) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'month must be YYYY-MM');
+    }
+    const [year, month] = monthStr.split('-').map((n) => parseInt(n, 10));
+    const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const end = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const actorField = role === 'company' ? 'company' : 'trainer';
+    const oid = mongoose.Types.ObjectId.isValid(actorId) ? new mongoose.Types.ObjectId(actorId) : actorId;
+
+    const match = {
+        [actorField]: oid,
+        bookingDate: { $gte: start, $lte: end },
+    };
+
+    const monthBookings = await Booking.find(match)
+        .populate('trainer', 'name specialistIn acceptingBookings')
+        .sort({ bookingDate: 1, startTime: 1 })
+        .lean();
+
+    const statusCounts = {};
+    for (const b of monthBookings) {
+        statusCounts[b.status] = (statusCounts[b.status] || 0) + 1;
+    }
+
+    const calendarDotCounts = {};
+    for (const b of monthBookings) {
+        const d = new Date(b.bookingDate).getDate();
+        calendarDotCounts[d] = (calendarDotCounts[d] || 0) + 1;
+    }
+
+    const activeReservations =
+        (statusCounts.approved || 0) + (statusCounts.confirmed || 0);
+    const waitingList = statusCounts.pending_approval || 0;
+    const totalBookings = monthBookings.length;
+
+    const recentRaw = await Booking.find({ [actorField]: oid })
+        .sort({ updatedAt: -1 })
+        .limit(8)
+        .populate('trainer', 'name')
+        .lean();
+
+    const statusColor = (s) => {
+        const map = {
+            pending_approval: '#F59E0B',
+            approved: '#22C55E',
+            confirmed: '#3B82F6',
+            completed: '#6366F1',
+            rejected: '#EF4444',
+            cancelled: '#9CA3AF',
+        };
+        return map[s] || '#F97316';
+    };
+
+    const formatShortDate = (d) => {
+        const dt = new Date(d);
+        return dt.toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        });
+    };
+
+    const relativeTime = (d) => {
+        const sec = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+        if (sec < 60) return 'just now';
+        if (sec < 3600) return `${Math.floor(sec / 60)} min ago`;
+        if (sec < 86400) return `${Math.floor(sec / 3600)} hr ago`;
+        return `${Math.floor(sec / 86400)} d ago`;
+    };
+
+    const recentActivities = recentRaw.map((b) => {
+        const trainerName =
+            b.trainer && typeof b.trainer === 'object' && b.trainer.name
+                ? b.trainer.name
+                : 'Trainer';
+        return {
+            color: statusColor(b.status),
+            title: `Booking ${String(b.status).replace(/_/g, ' ')}`,
+            sub: `${trainerName} · ${formatShortDate(b.bookingDate)}`,
+            time: relativeTime(b.updatedAt),
+        };
+    });
+
+    const dotPalette = ['#F97316', '#EF4444', '#3B82F6', '#22C55E'];
+    const calendarDots = {};
+    Object.entries(calendarDotCounts).forEach(([day, count]) => {
+        const n = Number(day);
+        calendarDots[n] = Array.from({ length: Math.min(count, 4) }, (_, i) => dotPalette[i % dotPalette.length]);
+    });
+
+    const statusUi = (s) => {
+        if (s === 'confirmed' || s === 'approved') return 'Active';
+        if (s === 'pending_approval') return 'Nearly Full';
+        if (s === 'completed') return 'Full';
+        return 'Active';
+    };
+
+    const initials = (name) => {
+        if (!name || typeof name !== 'string') return '?';
+        const p = name.split(/\s+/).filter(Boolean);
+        if (p.length === 0) return '?';
+        if (p.length === 1) return p[0].slice(0, 2).toUpperCase();
+        return (p[0][0] + p[1][0]).toUpperCase();
+    };
+
+    const trainerBgPalette = ['#DBEAFE', '#FCE7F3', '#D1FAE5', '#FEF9C3', '#EDE9FE'];
+
+    const classSchedule = monthBookings.map((b, idx) => {
+        const trainerName =
+            b.trainer && typeof b.trainer === 'object' && b.trainer.name
+                ? b.trainer.name
+                : 'Trainer';
+        const dt = new Date(b.bookingDate);
+        const types = (b.typeOfTraining || []).join(', ') || 'Session';
+        return {
+            dateLabel: `${dt.toLocaleDateString(undefined, { weekday: 'short' })}, ${b.startTime}`,
+            dateSubLabel: formatShortDate(b.bookingDate),
+            dotColor: statusColor(b.status),
+            classType: types,
+            trainerInitials: initials(trainerName),
+            trainerBg: trainerBgPalette[idx % trainerBgPalette.length],
+            trainerName,
+            capacity: 1,
+            booked: 1,
+            waitingList: b.status === 'pending_approval' ? 1 : 0,
+            status: statusUi(b.status),
+        };
+    });
+
+    const trainerMap = new Map();
+    for (const b of monthBookings) {
+        const tid =
+            b.trainer && b.trainer._id
+                ? String(b.trainer._id)
+                : b.trainer
+                  ? String(b.trainer)
+                  : null;
+        if (!tid || trainerMap.has(tid)) continue;
+        const name =
+            b.trainer && typeof b.trainer === 'object' && b.trainer.name
+                ? b.trainer.name
+                : 'Trainer';
+        const spec =
+            b.trainer && typeof b.trainer === 'object' && b.trainer.specialistIn
+                ? (Array.isArray(b.trainer.specialistIn)
+                      ? b.trainer.specialistIn.join(', ')
+                      : b.trainer.specialistIn)
+                : 'Trainer';
+        const accepting = !(
+            b.trainer &&
+            typeof b.trainer === 'object' &&
+            b.trainer.acceptingBookings === false
+        );
+        trainerMap.set(tid, {
+            initials: initials(name),
+            avatarBg: trainerBgPalette[trainerMap.size % trainerBgPalette.length],
+            name,
+            speciality: spec,
+            status: accepting ? 'Available' : 'Unavailable',
+        });
+    }
+    const trainerAvailability = [...trainerMap.values()];
+
+    const waitingListGroups =
+        waitingList > 0
+            ? [
+                  {
+                      title: `Pending admin approval (${waitingList})`,
+                      count: waitingList,
+                      people: monthBookings
+                          .filter((x) => x.status === 'pending_approval')
+                          .slice(0, 5)
+                          .map((x) => {
+                              const nm =
+                                  x.trainer && typeof x.trainer === 'object' && x.trainer.name
+                                      ? x.trainer.name
+                                      : 'Trainer';
+                              return `${nm} · ${formatShortDate(x.bookingDate)}`;
+                          }),
+                  },
+              ]
+            : [];
+
+    let occupancyRate = '—';
+    if (totalBookings > 0) {
+        const pct = Math.round((activeReservations / totalBookings) * 100);
+        occupancyRate = `${pct}%`;
+    }
+
+    return {
+        month: monthStr,
+        totals: {
+            totalBookings,
+            activeReservations,
+            waitingList,
+            occupancyRate,
+            statusCounts,
+        },
+        calendarDots,
+        recentActivities,
+        classSchedule,
+        trainerAvailability,
+        waitingListGroups,
+    };
+};
+
 export default {
     createBooking,
     queryBookings,
@@ -340,5 +566,6 @@ export default {
     getPendingApprovals,
     getTrainerApprovedBookings,
     rejectBooking,
+    getActorBookingMonthSummary,
 };
 

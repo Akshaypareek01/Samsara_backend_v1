@@ -33,11 +33,60 @@ router.post(
   companyController.createCompany
 );
 
+// Company dashboard (company auth)
+router.get('/dashboard/overview', auth(), companyController.getDashboardOverview);
+
+router.get('/insights', auth(), companyController.getInsights);
+router.get('/insights/employee-scores', auth(), companyController.getEmployeeWellnessScores);
+
 // Company profile routes (company auth required)
 router
   .route('/profile')
   .get(auth(), companyController.getProfile)
   .patch(auth(), validate(companyValidation.updateProfile), companyController.updateProfile);
+
+router.post(
+  '/employees',
+  auth(),
+  validate(companyValidation.createPortalEmployee),
+  companyController.createPortalEmployee
+);
+router.get(
+  '/employees/deletion-history',
+  auth(),
+  validate(companyValidation.listPortalDeletionHistory),
+  companyController.listPortalDeletionHistory
+);
+router.get(
+  '/employees',
+  auth(),
+  validate(companyValidation.listPortalEmployees),
+  companyController.listPortalEmployees
+);
+router.get(
+  '/reports/export',
+  auth(),
+  validate(companyValidation.exportCompanyReports),
+  companyController.exportCompanyReports
+);
+router.get(
+  '/employees/:employeeId',
+  auth(),
+  validate(companyValidation.portalEmployeeId),
+  companyController.getPortalEmployee
+);
+router.patch(
+  '/employees/:employeeId',
+  auth(),
+  validate(companyValidation.updatePortalEmployee),
+  companyController.updatePortalEmployee
+);
+router.delete(
+  '/employees/:employeeId',
+  auth(),
+  validate(companyValidation.deletePortalEmployee),
+  companyController.deletePortalEmployee
+);
 
 // Get all companies with pagination and filtering
 router.get(

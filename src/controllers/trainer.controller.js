@@ -15,7 +15,7 @@ const createTrainer = catchAsync(async (req, res) => {
  * Get all trainers with pagination and filtering
  */
 const getAllTrainers = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['name', 'specialistIn', 'typeOfTraining', 'status']);
+  const filter = pick(req.query, ['name', 'specialistIn', 'typeOfTraining', 'status', 'acceptingBookings']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   const result = await trainerService.queryTrainers(filter, options);
   res.send(result);

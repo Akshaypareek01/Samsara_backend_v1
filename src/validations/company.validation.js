@@ -145,6 +145,68 @@ const updateProfile = {
     .min(1),
 };
 
+const portalLevelValues = ['beginner', 'intermediate', 'advanced'];
+
+const createPortalEmployee = {
+  body: Joi.object().keys({
+    fullName: Joi.string().required().trim(),
+    email: Joi.string().required().email().trim().lowercase(),
+    level: Joi.string().valid(...portalLevelValues).required(),
+    status: Joi.boolean().optional(),
+    department: Joi.string().trim().allow('').optional(),
+  }),
+};
+
+const listPortalEmployees = {
+  query: Joi.object().keys({
+    page: Joi.number().integer().min(1),
+    limit: Joi.number().integer().min(1).max(100),
+    search: Joi.string().trim().allow(''),
+    status: Joi.string().trim().allow(''),
+    department: Joi.string().trim().allow(''),
+  }),
+};
+
+const portalEmployeeId = {
+  params: Joi.object().keys({
+    employeeId: Joi.string().custom(objectId).required(),
+  }),
+};
+
+const updatePortalEmployee = {
+  params: Joi.object().keys({
+    employeeId: Joi.string().custom(objectId).required(),
+  }),
+  body: Joi.object()
+    .keys({
+      fullName: Joi.string().trim(),
+      email: Joi.string().email().trim().lowercase(),
+      level: Joi.string().valid(...portalLevelValues),
+      status: Joi.boolean(),
+      department: Joi.string().trim().allow(''),
+    })
+    .min(1),
+};
+
+const deletePortalEmployee = {
+  params: Joi.object().keys({
+    employeeId: Joi.string().custom(objectId).required(),
+  }),
+};
+
+const listPortalDeletionHistory = {
+  query: Joi.object().keys({
+    page: Joi.number().integer().min(1),
+    limit: Joi.number().integer().min(1).max(100),
+  }),
+};
+
+const exportCompanyReports = {
+  query: Joi.object().keys({
+    type: Joi.string().valid('bookings', 'employees').required(),
+  }),
+};
+
 export {
   createCompany,
   getCompanies,
@@ -156,5 +218,12 @@ export {
   sendLoginOTP,
   verifyLoginOTP,
   updateProfile,
+  createPortalEmployee,
+  listPortalEmployees,
+  portalEmployeeId,
+  updatePortalEmployee,
+  deletePortalEmployee,
+  listPortalDeletionHistory,
+  exportCompanyReports,
 };
 

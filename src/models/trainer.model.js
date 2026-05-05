@@ -135,6 +135,11 @@ const trainerSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    /** When false, companies cannot create new bookings for this trainer (existing bookings unchanged). */
+    acceptingBookings: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
