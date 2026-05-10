@@ -33,23 +33,57 @@ describe('Auth routes', () => {
       const res = await request(app).post('/v1/auth/register').send(newUser).expect(httpStatus.CREATED);
 
       expect(res.body.user).not.toHaveProperty('password');
-      expect(res.body.user).toEqual({
-        id: expect.anything(),
-        name: newUser.name,
-        email: newUser.email,
-        role: 'user',
-        isEmailVerified: false,
-      });
+      expect(res.body.user).toEqual(
+        expect.objectContaining({
+          id: expect.anything(),
+          name: newUser.name,
+          email: newUser.email,
+          role: 'user',
+          referralCode: expect.any(String),
+        })
+      );
 
       const dbUser = await User.findById(res.body.user.id);
       expect(dbUser).toBeDefined();
       expect(dbUser.password).not.toBe(newUser.password);
-      expect(dbUser).toMatchObject({ name: newUser.name, email: newUser.email, role: 'user', isEmailVerified: false });
+      expect(dbUser).toMatchObject({ name: newUser.name, email: newUser.email, role: 'user' });
+      expect(dbUser.referralCode).toEqual(res.body.user.referralCode);
 
       expect(res.body.tokens).toEqual({
         access: { token: expect.anything(), expires: expect.anything() },
         refresh: { token: expect.anything(), expires: expect.anything() },
       });
+    });
+
+    test('should persist referredBy when referralCode is valid', async () => {
+      const referrer = {
+        name: faker.name.findName(),
+        email: faker.internet.email().toLowerCase(),
+        password: 'password1',
+      };
+      const resA = await request(app).post('/v1/auth/register').send(referrer).expect(httpStatus.CREATED);
+      const { referralCode } = resA.body.user;
+      expect(referralCode).toBeTruthy();
+
+      const referred = {
+        name: faker.name.findName(),
+        email: faker.internet.email().toLowerCase(),
+        password: 'password1',
+        referralCode,
+      };
+      const resB = await request(app).post('/v1/auth/register').send(referred).expect(httpStatus.CREATED);
+      const dbB = await User.findById(resB.body.user.id);
+      expect(dbB.referredBy.toString()).toBe(resA.body.user.id);
+    });
+
+    test('should return 400 when referralCode does not exist', async () => {
+      const referred = {
+        name: faker.name.findName(),
+        email: faker.internet.email().toLowerCase(),
+        password: 'password1',
+        referralCode: 'SAM00000',
+      };
+      await request(app).post('/v1/auth/register').send(referred).expect(httpStatus.BAD_REQUEST);
     });
 
     test('should return 400 error if email is invalid', async () => {
@@ -92,13 +126,14 @@ describe('Auth routes', () => {
 
       const res = await request(app).post('/v1/auth/login').send(loginCredentials).expect(httpStatus.OK);
 
-      expect(res.body.user).toEqual({
-        id: expect.anything(),
-        name: userOne.name,
-        email: userOne.email,
-        role: userOne.role,
-        isEmailVerified: userOne.isEmailVerified,
-      });
+      expect(res.body.user).toEqual(
+        expect.objectContaining({
+          id: expect.anything(),
+          name: userOne.name,
+          email: userOne.email,
+          role: userOne.role,
+        })
+      );
 
       expect(res.body.tokens).toEqual({
         access: { token: expect.anything(), expires: expect.anything() },

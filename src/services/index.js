@@ -62,3 +62,6 @@ export * as membershipService from './membership.service.js';
 // Export blood report service
 export * as bloodReportService from './bloodReport.service.js';
 
+// Referral program
+export * as referralService from './referral.service.js';
+

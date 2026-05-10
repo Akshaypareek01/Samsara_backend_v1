@@ -65,20 +65,21 @@ const sendRegistrationOTPController = catchAsync(async (req, res) => {
 });
 
 const verifyRegistrationOTPController = catchAsync(async (req, res) => {
-  const { 
-    email, 
-    otp, 
-    name, 
-    mobile, 
-    role, 
-    userCategory, 
-    corporate_id, 
+  const {
+    email,
+    otp,
+    name,
+    mobile,
+    role,
+    userCategory,
+    corporate_id,
     teacherCategory,
+    referralCode,
     // Body data fields
     age,
     gender,
     height,
-    weight
+    weight,
   } = req.body;
 
   const isValidOTP = await verifyRegistrationOTP(email, otp);
@@ -93,6 +94,10 @@ const verifyRegistrationOTPController = catchAsync(async (req, res) => {
     role,
     active: true, // Mark as active since email is verified
   };
+
+  if (referralCode != null && String(referralCode).trim() !== '') {
+    userData.referralCode = referralCode;
+  }
 
   // Add mobile if provided
   if (mobile) {

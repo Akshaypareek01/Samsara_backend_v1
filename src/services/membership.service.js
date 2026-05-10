@@ -521,6 +521,109 @@ const assignMembershipWithCoupon = async (userId, planId, couponCode) => {
   }
 };
 
+/**
+ * Resolve a user document by email (case-insensitive, trimmed).
+ * @param {string} rawEmail - Email from the client
+ * @returns {Promise<import('../models/user.model.js').default|null>}
+ */
+const findUserByEmailInsensitive = async (rawEmail) => {
+  const email = String(rawEmail || '').trim();
+  if (!email) return null;
+
+  const escaped = email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return User.findOne({ email: { $regex: new RegExp(`^${escaped}$`, 'i') } });
+};
+
+/**
+ * Admin: attach a membership to a user identified by email and plan by human-readable name.
+ * Trial / Lifetime delegates to existing single-use assignment logic.
+ * Other plans are granted manually (paymentProvider manual, waived amount) if the user has no overlapping active membership.
+ *
+ * @param {string} email - User email
+ * @param {string} planName - Must match MembershipPlan.name
+ * @returns {Promise<import('../models/membership.model.js').default>}
+ */
+const assignMembershipByEmailAndPlanName = async (email, planName) => {
+  const trimmedEmail = String(email || '').trim();
+  const trimmedPlanName = String(planName || '').trim();
+
+  if (!trimmedEmail || !trimmedPlanName) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'email and planName are required');
+  }
+
+  const user = await findUserByEmailInsensitive(trimmedEmail);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found for this email');
+  }
+
+  const userId = user._id;
+
+  if (trimmedPlanName === 'Trial Plan') {
+    return assignTrialPlan(userId);
+  }
+
+  if (trimmedPlanName === 'Lifetime Plan') {
+    return assignLifetimePlan(userId);
+  }
+
+  const membershipPlan = await MembershipPlan.findOne({
+    name: trimmedPlanName,
+    isActive: true,
+  });
+
+  if (!membershipPlan) {
+    throw new ApiError(httpStatus.NOT_FOUND, `No active membership plan named "${trimmedPlanName}"`);
+  }
+
+  const existingActiveMembership = await Membership.findOne({
+    userId,
+    status: 'active',
+    startDate: { $lte: new Date() },
+    endDate: { $gte: new Date() },
+  });
+
+  if (existingActiveMembership) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'User already has an active membership');
+  }
+
+  const startDate = new Date();
+  let endDate;
+  if (membershipPlan.metadata?.specialValidityEndDate) {
+    endDate = new Date(membershipPlan.metadata.specialValidityEndDate);
+  } else {
+    endDate = new Date(startDate.getTime() + membershipPlan.validityDays * 24 * 60 * 60 * 1000);
+  }
+
+  const originalAmount = membershipPlan.calculateTotalPrice();
+
+  const membership = new Membership({
+    userId,
+    planId: membershipPlan._id,
+    planName: membershipPlan.name,
+    validityDays: membershipPlan.validityDays,
+    status: 'active',
+    startDate,
+    endDate,
+    amountPaid: 0,
+    originalAmount,
+    discountAmount: originalAmount,
+    currency: membershipPlan.currency,
+    couponCode: null,
+    couponCodeString: 'ADMIN_ASSIGN',
+    platform: 'admin',
+    paymentProvider: 'manual',
+    autoRenewal: false,
+    metadata: {
+      assignedAt: new Date(),
+      source: 'admin_assign_by_email',
+    },
+  });
+
+  await membership.save();
+  console.info(`Manual membership assigned via admin: userId=${userId}, plan="${membershipPlan.name}"`);
+  return membership;
+};
+
 export {
   assignTrialPlan,
   assignLifetimePlan,
@@ -533,4 +636,5 @@ export {
   assignMembershipWithCoupon,
   verifyAppleReceipt,
   processAppleSubscription,
+  assignMembershipByEmailAndPlanName,
 };

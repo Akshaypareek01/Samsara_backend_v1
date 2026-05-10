@@ -1,11 +1,14 @@
 import Joi from 'joi';
 import { password } from './custom.validation.js';
 
+const referralCodeField = Joi.string().trim().max(16).optional().allow('', null);
+
 const register = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
     password: Joi.string().required().custom(password),
     name: Joi.string().required(),
+    referralCode: referralCodeField,
   }),
 };
 
@@ -43,6 +46,7 @@ const sendRegistrationOTP = {
         .required(),
       otherwise: Joi.forbidden(),
     }),
+    referralCode: referralCodeField,
   }),
 };
 
@@ -76,6 +80,7 @@ const verifyRegistrationOTP = {
         .required(),
       otherwise: Joi.forbidden(),
     }),
+    referralCode: referralCodeField,
   }),
 };
 

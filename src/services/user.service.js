@@ -7,6 +7,20 @@ import { assignTrialPlan, assignLifetimePlan } from './membership.service.js';
 import cacheService from './cache.service.js';
 import { CacheKeys, CacheTTL } from '../utils/cacheKeys.js';
 
+/** @type {string[]} */
+const REFERRAL_IMMUTABLE_FIELDS = ['referralCode', 'referredBy', 'referredAt'];
+
+/**
+ * Normalize optional referral code from client input.
+ * @param {unknown} value
+ * @returns {string|null} uppercase code or null if absent
+ */
+const normalizeIncomingReferralCode = (value) => {
+  if (value == null) return null;
+  const s = String(value).trim().toUpperCase();
+  return s === '' ? null : s;
+};
+
 /**
  * Create a user
  * @param {Object} userBody
@@ -17,7 +31,29 @@ const createUser = async (userBody) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
 
-  const user = await User.create(userBody);
+  const incomingReferralRaw = userBody.referralCode;
+  const createPayload = { ...userBody };
+  delete createPayload.referralCode;
+
+  const normalizedRef = normalizeIncomingReferralCode(incomingReferralRaw);
+  let referredBy;
+  let referredAt;
+  if (normalizedRef) {
+    const referrer = await User.findOne({ referralCode: normalizedRef });
+    if (!referrer) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid referral code');
+    }
+    if (referrer.email === createPayload.email) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'You cannot use your own referral code');
+    }
+    referredBy = referrer._id;
+    referredAt = new Date();
+  }
+
+  const user = await User.create({
+    ...createPayload,
+    ...(referredBy && { referredBy, referredAt }),
+  });
   
   // Note: No need to cache new user immediately, will be cached on first fetch
 
@@ -154,6 +190,20 @@ const queryUsers = async (filter, options) => {
 };
 
 /**
+ * Ensure the user has a persisted referral code (lazy backfill for legacy accounts).
+ * @param {import('mongoose').Types.ObjectId|string} userId
+ * @returns {Promise<void>}
+ */
+const ensureReferralCodeForUser = async (userId) => {
+  const fresh = await User.findById(userId);
+  if (!fresh || fresh.referralCode) return;
+  await fresh.save();
+  await cacheService.del(CacheKeys.user(userId));
+  await cacheService.del(CacheKeys.userProfile(userId));
+  await cacheService.del(CacheKeys.userSettings(userId));
+};
+
+/**
  * Get user by id
  * @param {ObjectId} id
  * @returns {Promise<User>}
@@ -190,6 +240,11 @@ const updateUserById = async (userId, updateBody) => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
+  REFERRAL_IMMUTABLE_FIELDS.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(updateBody, key)) {
+      delete updateBody[key];
+    }
+  });
   if (updateBody.email && (await User.isEmailTaken(updateBody.email, userId))) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
@@ -241,4 +296,14 @@ const getUsersByRole = async (role, options = {}) => {
   return users;
 };
 
-export { createUser, queryUsers, getUserById, getUserByEmail, updateUserById, deleteUserById, getUsersByRole };
+export {
+  createUser,
+  queryUsers,
+  getUserById,
+  getUserByEmail,
+  updateUserById,
+  deleteUserById,
+  getUsersByRole,
+  ensureReferralCodeForUser,
+  normalizeIncomingReferralCode,
+};

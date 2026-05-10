@@ -213,6 +213,24 @@ const userSchema = new mongoose.Schema(
       ref: 'NotificationPreferences',
       default: null,
     },
+
+    /** Public shareable code (generated server-side; unique when set) */
+    referralCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+    },
+    /** User who referred this account (set only at signup) */
+    referredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Users',
+      default: null,
+    },
+    referredAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: {},
@@ -239,6 +257,44 @@ userSchema.pre('save', function (next) {
 
   this.passwordChangedAt = Date.now() - 1000;
   next();
+});
+
+const REFERRAL_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+/**
+ * Builds a random referral code prefix SAM + 5 chars (collisions retried in pre-save).
+ * @returns {string}
+ */
+function buildReferralCodeCandidate() {
+  const bytes = crypto.randomBytes(8);
+  let s = 'SAM';
+  for (let i = 0; i < 5; i += 1) {
+    s += REFERRAL_CHARSET[bytes[i] % REFERRAL_CHARSET.length];
+  }
+  return s;
+}
+
+// Assign persistent referral code when missing (new or legacy users on next save)
+userSchema.pre('save', async function (next) {
+  try {
+    if (this.referralCode) return next();
+    const UserModel = this.constructor;
+    for (let attempt = 0; attempt < 25; attempt += 1) {
+      const candidate = buildReferralCodeCandidate();
+      // eslint-disable-next-line no-await-in-loop
+      const exists = await UserModel.findOne({ referralCode: candidate }).select('_id').lean();
+      if (!exists) {
+        this.referralCode = candidate;
+        break;
+      }
+    }
+    if (!this.referralCode) {
+      return next(new Error('Failed to assign unique referral code'));
+    }
+    return next();
+  } catch (err) {
+    return next(err);
+  }
 });
 
 // Create notification preferences when user is created

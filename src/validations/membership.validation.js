@@ -43,10 +43,19 @@ const verifyIosReceipt = {
   })
 };
 
+/** Admin: attach membership using user email + plan display name */
+const assignMembershipByEmailAndPlan = {
+  body: Joi.object().keys({
+    email: Joi.string().email().required(),
+    planName: Joi.string().trim().min(1).required()
+  })
+};
+
 export const membershipValidation = {
   createMembership,
   updateMembership,
   cancelMembership,
   assignMembershipWithCoupon,
-  verifyIosReceipt
+  verifyIosReceipt,
+  assignMembershipByEmailAndPlan
 };

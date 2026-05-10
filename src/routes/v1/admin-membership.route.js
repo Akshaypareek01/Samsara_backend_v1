@@ -1,11 +1,14 @@
 import express from 'express';
 import auth from '../../middlewares/auth.js';
+import validate from '../../middlewares/validate.js';
+import { membershipValidation } from '../../validations/membership.validation.js';
 import {
   getUserMembershipOverview,
   getUserMembershipHistory,
   assignTrialPlan,
   assignLifetimePlan,
   assignWithCoupon,
+  assignByEmailAndPlanName,
 } from '../../controllers/admin-membership.controller.js';
 
 const router = express.Router();
@@ -16,5 +19,12 @@ router.get('/users/:userId/history', auth(), getUserMembershipHistory);
 router.post('/users/:userId/assign-trial', auth(), assignTrialPlan);
 router.post('/users/:userId/assign-lifetime', auth(), assignLifetimePlan);
 router.post('/assign-with-coupon', auth(), assignWithCoupon);
+
+// Intentionally unauthenticated (internal/script use). Do not expose publicly without network controls.
+router.post(
+  '/assign-by-email-plan',
+  validate(membershipValidation.assignMembershipByEmailAndPlan),
+  assignByEmailAndPlanName
+);
 
 export default router;

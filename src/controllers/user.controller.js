@@ -89,6 +89,7 @@ const updateProfile = catchAsync(async (req, res) => {
 
 // Get current user's profile
 const getProfile = catchAsync(async (req, res) => {
+  await userService.ensureReferralCodeForUser(req.user.id);
   const user = await userService.getUserById(req.user.id);
   res.send(user);
 });

@@ -50,6 +50,7 @@ import adminMembershipRoute from './admin-membership.route.js';
 import bookingRoute from './booking.router.js';
 import roleRoute from './role.route.js';
 import webhookRoute from './webhook.route.js';
+import referralRoute from './referral.route.js';
 
 const router = express.Router();
 
@@ -57,6 +58,10 @@ const defaultRoutes = [
   {
     path: '/auth',
     route: authRoute,
+  },
+  {
+    path: '/referrals',
+    route: referralRoute,
   },
   {
     path: '/users',
