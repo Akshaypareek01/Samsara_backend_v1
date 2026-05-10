@@ -4,24 +4,83 @@ import ApiError from '../utils/ApiError.js';
 import catchAsync from '../utils/catchAsync.js';
 import { MembershipPlan, CouponCode, Membership, Transaction, User } from '../models/index.js';
 import razorpayService from '../services/razorpay.service.js';
+import config from '../config/config.js';
+
+/**
+ * @param {number} n
+ * @returns {number}
+ */
+const roundMoney2 = (n) => Math.round(Number(n) * 100) / 100;
+
+/**
+ * Plan must have a real USD list tier (not INR base misread as USD).
+ *
+ * @param {import('mongoose').Document & { usdBasePrice?: number }} plan
+ */
+function assertPlanHasUsdCatalogPrice(plan) {
+  if (
+    typeof plan.usdBasePrice !== 'number' ||
+    Number.isNaN(plan.usdBasePrice) ||
+    plan.usdBasePrice <= 0
+  ) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'This plan does not have a USD list price configured for FX settlement.'
+    );
+  }
+}
+
+/**
+ * Razorpay-facing INR breakdown when charging `USD catalogue total × FX`.
+ *
+ * @param {*} plan - MembershipPlan doc
+ * @param {number} fx
+ * @param {number} discountAmount
+ * @param {string|null} couponCode
+ * @param {number} finalAmountInr
+ */
+function pricingBreakdownUsdCatalogToInr(plan, fx, discountAmount, couponCode, finalAmountInr) {
+  const usdZero = plan.calculatePricingBreakdown(0, null, 'USD');
+  const scale = (x) => roundMoney2(Number(x) * fx);
+  return {
+    basePrice: scale(usdZero.basePrice),
+    taxes: {
+      gst: {
+        rate: usdZero.taxes.gst.rate,
+        type: usdZero.taxes.gst.type,
+        amount: scale(usdZero.taxes.gst.amount),
+      },
+      other: (usdZero.taxes.other || []).map((t) => ({
+        ...t,
+        amount: scale(t.amount),
+      })),
+    },
+    subtotal: scale(usdZero.subtotal),
+    discount: { amount: discountAmount, couponCode: couponCode || null },
+    total: roundMoney2(finalAmountInr),
+    currency: 'INR',
+  };
+}
 
 /**
  * Create payment order
  */
 const createPaymentOrder = catchAsync(async (req, res) => {
-  const { planId, couponCode, platform, pricingCurrency = 'INR' } = req.body;
+  const { planId, couponCode, platform, settlementPricing = 'inr_catalog' } = req.body;
   const userId = req.user.id;
-
-  if (pricingCurrency === 'USD') {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Web checkout uses INR only; use native IAP for USD pricing.');
-  }
+  const fx = config.fx.usdToInr;
 
   // Safety Check: Block Razorpay for iOS
   if (platform === 'ios') {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Razorpay not allowed for iOS. Use Apple verify-receipt API.');
   }
 
-  // Get user details
+  if (settlementPricing === 'usd_catalog_fx' && platform !== 'android') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'USD-list → INR settlement is only supported for Android checkout.'
+    );
+  }
   const user = await User.findById(userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
@@ -50,7 +109,26 @@ const createPaymentOrder = catchAsync(async (req, res) => {
 
   let discountAmount = 0;
   let couponCodeDoc = null;
-  let finalAmount = membershipPlan.calculateTotalPrice();
+  const settlementCurrency = 'INR';
+
+  if (couponCode && settlementPricing === 'usd_catalog_fx') {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      'Coupons apply to India catalogue (INR) pricing only. Remove the coupon to pay the USD-listed amount converted to INR.'
+    );
+  }
+
+  /** Pre-discount list total settled in INR (India catalogue or USD catalogue × FX). */
+  let listTotalInr;
+  if (settlementPricing === 'usd_catalog_fx') {
+    assertPlanHasUsdCatalogPrice(membershipPlan);
+    const usdListTotal = membershipPlan.calculateTotalPrice('USD');
+    listTotalInr = roundMoney2(usdListTotal * fx);
+  } else {
+    listTotalInr = membershipPlan.calculateTotalPrice('INR');
+  }
+
+  let finalAmount = listTotalInr;
 
   // Apply coupon code if provided
   if (couponCode) {
@@ -83,7 +161,7 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     }
 
     const couponDiscountAmount = couponCodeDoc.calculateDiscount(finalAmount);
-    discountAmount = membershipPlan.calculateDiscountAmount(couponDiscountAmount, finalAmount);
+    discountAmount = membershipPlan.calculateDiscountAmount(couponDiscountAmount, finalAmount, 'INR');
     finalAmount = finalAmount - discountAmount;
   }
 
@@ -97,9 +175,9 @@ const createPaymentOrder = catchAsync(async (req, res) => {
       transactionId: razorpayService.generateReceiptId('TXN'),
       orderId: razorpayService.generateReceiptId('FREE'),
       amount: finalAmount,
-      originalAmount: membershipPlan.calculateTotalPrice(),
+      originalAmount: listTotalInr,
       discountAmount: discountAmount,
-      currency: membershipPlan.currency,
+      currency: settlementCurrency,
       razorpayOrderId: null,
       couponCode: couponCodeDoc?._id || null,
       couponCodeString: couponCode || null,
@@ -162,7 +240,11 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     }
 
     // Calculate detailed pricing breakdown
-    const pricingBreakdown = membershipPlan.calculatePricingBreakdown(discountAmount, couponCode);
+    const pricingBreakdown = membershipPlan.calculatePricingBreakdown(
+      discountAmount,
+      couponCode,
+      'INR'
+    );
 
     res.status(httpStatus.CREATED).send({
       success: true,
@@ -174,7 +256,7 @@ const createPaymentOrder = catchAsync(async (req, res) => {
       discount: {
         couponCode: couponCode || null,
         discountAmount: discountAmount,
-        originalAmount: membershipPlan.calculateTotalPrice(),
+        originalAmount: listTotalInr,
         finalAmount: finalAmount
       },
       isFreeOrder: true
@@ -185,16 +267,23 @@ const createPaymentOrder = catchAsync(async (req, res) => {
   // Create Razorpay order for paid orders
   const orderData = {
     amount: razorpayService.convertToPaise(finalAmount),
-    currency: membershipPlan.currency,
+    currency: settlementCurrency,
     receipt: razorpayService.generateReceiptId(),
     notes: {
       userId: userId,
       planId: planId,
       planName: membershipPlan.name,
-      originalAmount: membershipPlan.calculateTotalPrice(),
+      originalAmount: listTotalInr,
       discountAmount: discountAmount,
       couponCode: couponCode || null,
-    }
+      settlementPricing,
+      ...(settlementPricing === 'usd_catalog_fx'
+        ? {
+            fxUsdToInr: fx,
+            usdListTotalPreFx: membershipPlan.calculateTotalPrice('USD'),
+          }
+        : {}),
+    },
   };
 
   const razorpayOrder = await razorpayService.createOrder(orderData);
@@ -207,9 +296,9 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     transactionId: razorpayService.generateReceiptId('TXN'),
     orderId: orderData.receipt,
     amount: finalAmount,
-    originalAmount: membershipPlan.calculateTotalPrice(),
+    originalAmount: listTotalInr,
     discountAmount: discountAmount,
-    currency: membershipPlan.currency,
+    currency: settlementCurrency,
     razorpayOrderId: razorpayOrder.id,
     couponCode: couponCodeDoc?._id || null,
     couponCodeString: couponCode || null,
@@ -220,11 +309,20 @@ const createPaymentOrder = catchAsync(async (req, res) => {
       userEmail: user.email,
       userName: user.name,
       planType: membershipPlan.planType,
-    }
+      settlementPricing,
+      ...(settlementPricing === 'usd_catalog_fx'
+        ? {
+            fxUsdToInr: fx,
+            usdListTotalPreFx: membershipPlan.calculateTotalPrice('USD'),
+          }
+        : {}),
+    },
   });
 
-  // Calculate detailed pricing breakdown
-  const pricingBreakdown = membershipPlan.calculatePricingBreakdown(discountAmount, couponCode);
+  const pricingBreakdown =
+    settlementPricing === 'usd_catalog_fx'
+      ? pricingBreakdownUsdCatalogToInr(membershipPlan, fx, discountAmount, couponCode, finalAmount)
+      : membershipPlan.calculatePricingBreakdown(discountAmount, couponCode, 'INR');
 
   res.status(httpStatus.CREATED).send({
     order: razorpayOrder,
@@ -234,7 +332,7 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     discount: {
       couponCode: couponCode || null,
       discountAmount: discountAmount,
-      originalAmount: membershipPlan.calculateTotalPrice(),
+      originalAmount: listTotalInr,
       finalAmount: finalAmount
     }
   });

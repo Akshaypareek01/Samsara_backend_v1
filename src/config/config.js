@@ -48,8 +48,7 @@ const envVarsSchema = Joi.object()
     APPLE_SHARED_SECRET: Joi.string().description('Apple In-App Purchase Shared Secret'),
     // RevenueCat
     REVENUECAT_SECRET_KEY: Joi.string().description('RevenueCat Secret API Key (sk_...)'),
-    REVENUECAT_WEBHOOK_SECRET: Joi.string().description('RevenueCat Webhook Authorization Header Secret'),
-  })
+    USD_TO_INR_RATE: Joi.number().positive().default(83).description('USD catalogue total × this → INR charged on Razorpay (international)'),
   .unknown();
 
 const { value: envVars, error } = envVarsSchema.prefs({ errors: { label: 'key' } }).validate(process.env);
@@ -133,6 +132,9 @@ const config = {
   revenuecat: {
     secretKey: envVars.REVENUECAT_SECRET_KEY,
     webhookSecret: envVars.REVENUECAT_WEBHOOK_SECRET,
+  },
+  fx: {
+    usdToInr: envVars.USD_TO_INR_RATE,
   },
 };
 

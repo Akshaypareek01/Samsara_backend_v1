@@ -3,6 +3,7 @@ import pick from '../utils/pick.js';
 import ApiError from '../utils/ApiError.js';
 import catchAsync from '../utils/catchAsync.js';
 import { MembershipPlan, CouponCode } from '../models/index.js';
+import config from '../config/config.js';
 
 /** Public plan catalog: `isPublic !== false` and discontinued / internal legacy names excluded. */
 const publicPlanFilter = {
@@ -249,17 +250,33 @@ const getPlanPricingBreakdown = catchAsync(async (req, res) => {
     pricingCurrency
   );
 
-  res.send({
+  const payload = {
     plan: membershipPlan,
     pricing: pricingBreakdown,
-    coupon: couponCodeDoc ? {
-      code: couponCodeDoc.code,
-      name: couponCodeDoc.name,
-      discountType: couponCodeDoc.discountType,
-      discountValue: couponCodeDoc.discountValue
-    } : null
-  });
-});
+    coupon: couponCodeDoc
+      ? {
+          code: couponCodeDoc.code,
+          name: couponCodeDoc.name,
+          discountType: couponCodeDoc.discountType,
+          discountValue: couponCodeDoc.discountValue,
+        }
+      : null,
+  };
+
+  const hasUsdTier =
+    pricingCurrency === 'USD' &&
+    typeof membershipPlan.usdBasePrice === 'number' &&
+    !Number.isNaN(membershipPlan.usdBasePrice) &&
+    membershipPlan.usdBasePrice > 0;
+
+  if (hasUsdTier && !couponCode) {
+    const fx = config.fx.usdToInr;
+    const usdTot = membershipPlan.calculateTotalPrice('USD');
+    payload.inrSettlementFromUsdTier = Math.round(usdTot * fx * 100) / 100;
+    payload.usdToInrFx = fx;
+  }
+
+  res.send(payload);
 
 export {
   createMembershipPlan,
