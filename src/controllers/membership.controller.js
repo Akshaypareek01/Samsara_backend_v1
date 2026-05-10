@@ -1,8 +1,6 @@
 import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
 import {
-  assignTrialPlan,
-  assignLifetimePlan,
   hasUsedTrialPlan,
   getActiveMembership,
   getUserMemberships,
@@ -54,8 +52,9 @@ const checkTrialPlanUsage = catchAsync(async (req, res) => {
     success: true,
     data: {
       hasUsedTrialPlan: hasUsed,
-      canUseTrialPlan: !hasUsed
-    }
+      canUseTrialPlan: false,
+      trialDiscontinued: true,
+    },
   });
 });
 

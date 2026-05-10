@@ -1,6 +1,5 @@
 import { Membership } from '../models/index.js';
 import {
-  assignTrialPlan,
   assignLifetimePlan,
   assignMembershipWithCoupon,
   assignMembershipByEmailAndPlanName,
@@ -35,7 +34,6 @@ export const adminGetUserMembershipHistory = async (userId) => {
 };
 
 // Thin wrappers (reuse your existing logic)
-export const adminAssignTrialPlan = assignTrialPlan;
 export const adminAssignLifetimePlan = assignLifetimePlan;
 export const adminAssignMembershipWithCoupon = async ({
   userId,

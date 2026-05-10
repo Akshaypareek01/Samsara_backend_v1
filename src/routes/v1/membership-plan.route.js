@@ -17,6 +17,7 @@ import {
   createMembershipPlan as createMembershipPlanValidation,
   getMembershipPlans as getMembershipPlansValidation,
   getMembershipPlan as getMembershipPlanValidation,
+  getPlanPricingBreakdown as getPlanPricingBreakdownValidation,
   updateMembershipPlan as updateMembershipPlanValidation,
   deleteMembershipPlan as deleteMembershipPlanValidation,
   getMembershipPlansByType as getMembershipPlansByTypeValidation,
@@ -36,7 +37,7 @@ router.use(auth());
 router.get('/', validate(getMembershipPlansValidation), getMembershipPlans);
 router.get('/stats', getMembershipPlanStats);
 router.get('/:planId', validate(getMembershipPlanValidation), getMembershipPlan);
-router.get('/:planId/pricing', validate(getMembershipPlanValidation), getPlanPricingBreakdown);
+router.get('/:planId/pricing', validate(getPlanPricingBreakdownValidation), getPlanPricingBreakdown);
 
 // Admin routes (require admin role)
 router.post('/', auth('admin'), validate(createMembershipPlanValidation), createMembershipPlan);

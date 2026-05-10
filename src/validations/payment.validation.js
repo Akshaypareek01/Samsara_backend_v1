@@ -6,6 +6,8 @@ const createPaymentOrder = {
     planId: Joi.string().required().custom(objectId),
     couponCode: Joi.string().trim().uppercase().allow('', null),
     platform: Joi.string().valid('ios', 'android', 'web', 'admin', 'other').default('web'),
+    /** Must stay INR until a USD PSP is wired; reject USD to align UI vs charge. */
+    pricingCurrency: Joi.string().valid('INR', 'USD').default('INR'),
   }),
 };
 

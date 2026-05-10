@@ -112,6 +112,7 @@ const syncSubscription = async (userId, originalAppUserId = null) => {
     throw new ApiError(httpStatus.BAD_REQUEST, `No plan mapped for product: ${productId}`);
   }
 
+  const iapPricing = plan.getIapReportingPricing();
   const startDate = new Date(entitlement.purchase_date);
   const endDate = new Date(entitlement.expires_date);
 
@@ -130,9 +131,9 @@ const syncSubscription = async (userId, originalAppUserId = null) => {
       startDate,
       endDate,
       status: 'active',
-      amountPaid: plan.basePrice,
-      originalAmount: plan.basePrice,
-      currency: plan.currency,
+      amountPaid: iapPricing.amount,
+      originalAmount: iapPricing.amount,
+      currency: iapPricing.currency,
       autoRenewal: !entitlement.unsubscribe_detected_at,
       metadata: {
         revenuecatStore: entitlement.store,
@@ -247,6 +248,7 @@ const handleInitialPurchase = async (event) => {
     return;
   }
 
+  const iapPricing = plan.getIapReportingPricing();
   const entitlementId = entitlementIds?.[0] || 'premium';
   const startDate = new Date(purchasedAtMs);
   const endDate = expirationAtMs ? new Date(expirationAtMs) : plan.getMembershipEndDate(startDate);
@@ -268,9 +270,9 @@ const handleInitialPurchase = async (event) => {
       startDate,
       endDate,
       status: 'active',
-      amountPaid: plan.basePrice,
-      originalAmount: plan.basePrice,
-      currency: plan.currency,
+      amountPaid: iapPricing.amount,
+      originalAmount: iapPricing.amount,
+      currency: iapPricing.currency,
       autoRenewal: true,
       metadata: {
         revenuecatStore: store,
@@ -425,6 +427,7 @@ const handleBillingIssue = async (event) => {
  */
 const createTransactionRecord = async (userId, plan, txnId, platform, status) => {
   const transactionId = txnId || `rc_synthetic_${userId}_${plan._id}_${Date.now()}`;
+  const iapPricing = plan.getIapReportingPricing();
 
   const existing = await Transaction.findOne({ transactionId });
   if (existing) return;
@@ -435,8 +438,8 @@ const createTransactionRecord = async (userId, plan, txnId, platform, status) =>
     planName: plan.name,
     transactionId,
     orderId: transactionId,
-    amount: plan.basePrice,
-    currency: plan.currency,
+    amount: iapPricing.amount,
+    currency: iapPricing.currency,
     status,
     paymentMethod: 'apple',
     platform,

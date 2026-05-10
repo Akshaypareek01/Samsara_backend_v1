@@ -19,8 +19,6 @@ async function seedMembershipData() {
     // Get current date for dynamic date calculations
     const today = new Date();
     const nextYear = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
-    const nextWeek = new Date(today.getTime() + (7 * 24 * 60 * 60 * 1000));
 
     /**
      * Basic Access Plan – shared features (from product spec)
@@ -80,14 +78,16 @@ async function seedMembershipData() {
       // --- Basic Access Plan (4 billing tiers) ---
       {
         name: 'Basic Access – Monthly Plan',
-        description: 'Basic Access Plan billed monthly. Cancel anytime.',
-        basePrice: 3999,
+        description: 'Basic Access Plan billed monthly (INR ₹2999 / USD $65). Cancel anytime.',
+        basePrice: 2999,
+        usdBasePrice: 65,
         currency: 'INR',
         validityDays: 30,
         features: basicAccessPlanFeatures,
         planType: 'basic',
         maxUsers: 1,
         isActive: true,
+        isPublic: true,
         appleProductId: 'basic_monthly_plan',
         taxConfig: taxConfigBasic,
         discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
@@ -100,69 +100,66 @@ async function seedMembershipData() {
       },
       {
         name: 'Basic Access – Quarterly Plan',
-        description: 'Basic Access Plan – Save 10%. Effective ₹3,599/month.',
-        basePrice: 10797,
+        description: 'Basic Access Plan billed every 3 months (INR ₹7197.60 / USD $156).',
+        basePrice: 7197.6,
+        usdBasePrice: 156,
         currency: 'INR',
         validityDays: 90,
         features: basicAccessPlanFeatures,
         planType: 'basic',
         maxUsers: 1,
         isActive: true,
+        isPublic: true,
         taxConfig: taxConfigBasic,
         discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
         metadata: {
           billingCycle: 'quarterly',
-          discountPercentage: 10,
-          originalPrice: 11997,
-          effectiveMonthlyPrice: 3599,
-          savingsOverPeriod: 1200,
-          savingsPeriodLabel: '3 months',
           accessTier: 'Basic Access',
+          effectiveMonthlyInr: 2399.2,
+          effectiveMonthlyUsd: 52,
         },
       },
       {
         name: 'Basic Access – Half-Yearly Plan',
-        description: 'Basic Access Plan – Save 20%. Effective ₹3,199/month.',
-        basePrice: 19194,
+        description: 'Basic Access Plan billed every 6 months (INR ₹12595.80 / USD $273).',
+        basePrice: 12595.8,
+        usdBasePrice: 273,
         currency: 'INR',
         validityDays: 180,
         features: basicAccessPlanFeatures,
         planType: 'basic',
         maxUsers: 1,
         isActive: true,
+        isPublic: true,
         taxConfig: taxConfigBasic,
         discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
         metadata: {
           billingCycle: 'half-yearly',
-          discountPercentage: 20,
-          originalPrice: 23994,
-          effectiveMonthlyPrice: 3199,
-          savingsOverPeriod: 4800,
-          savingsPeriodLabel: '6 months',
           accessTier: 'Basic Access',
+          effectiveMonthlyInr: 2099.3,
+          effectiveMonthlyUsd: 45.5,
         },
       },
       {
         name: 'Basic Access – Yearly Plan',
-        description: 'Basic Access Plan – Save 35%. Best Value. Effective ₹2,599/month.',
-        basePrice: 31188,
+        description: 'Basic Access Plan billed annually (INR ₹19793.40 / USD $429). Best value.',
+        basePrice: 19793.4,
+        usdBasePrice: 429,
         currency: 'INR',
         validityDays: 365,
         features: basicAccessPlanFeatures,
         planType: 'basic',
         maxUsers: 1,
         isActive: true,
+        isPublic: true,
         taxConfig: taxConfigBasic,
         discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
         metadata: {
           billingCycle: 'yearly',
-          discountPercentage: 35,
-          originalPrice: 47988,
-          effectiveMonthlyPrice: 2599,
-          savingsOverPeriod: 16800,
-          savingsPeriodLabel: 'per year',
           bestValue: true,
           accessTier: 'Basic Access',
+          effectiveMonthlyInr: 1649.45,
+          effectiveMonthlyUsd: 35.75,
         },
       },
       // --- Premium Access Plan (4 billing tiers) ---
@@ -250,39 +247,14 @@ async function seedMembershipData() {
           accessTier: 'Premium Access',
         },
       },
-      // --- Legacy / special plans ---
-      {
-        name: 'Trial Plan',
-        description: '7-day trial plan to experience the platform',
-        basePrice: 99,
-        currency: 'INR',
-        validityDays: 7,
-        features: [
-          'Access to basic classes',
-          'Limited tracking features',
-          'Community support'
-        ],
-        planType: 'trial',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: {
-          gst: {
-            rate: 5,
-            type: 'percentage'
-          },
-          otherTaxes: []
-        },
-        discountConfig: {
-          maxDiscountPercentage: 100,
-          maxDiscountAmount: 99
-        }
-      },
+      // --- Internal teacher plan (not listed publicly) ---
       {
         name: 'Lifetime Plan',
-        description: 'Lifetime access for teachers - Free forever access to all platform features',
+        description: 'Internal teacher complimentary access — not available for purchase.',
         basePrice: 0,
         currency: 'INR',
-        validityDays: 36500, // 100 years (effectively lifetime)
+        validityDays: 36500,
+        isPublic: false,
         features: [
           'All premium features',
           'Yoga Classes',
@@ -299,7 +271,7 @@ async function seedMembershipData() {
           'Student Management',
           'Analytics Dashboard'
         ],
-        planType: 'trial',
+        planType: 'enterprise',
         maxUsers: 1,
         isActive: true,
         taxConfig: {
@@ -363,25 +335,10 @@ async function seedMembershipData() {
     const createdPlans = await MembershipPlan.insertMany(membershipPlans);
     console.log(`Created ${createdPlans.length} membership plans`);
 
+    const betaPlanId = createdPlans.find((p) => p.name === 'Beta Launch Plan')?._id;
+
     // Create sample coupon codes with current dates
     const couponCodes = [
-      {
-        code: 'TRIAL100',
-        name: 'Free Trial',
-        description: '100% off on Trial Plan - Completely Free',
-        discountType: 'percentage',
-        discountValue: 100,
-        maxDiscountAmount: 99,
-        minOrderAmount: 0,
-        startDate: today,
-        endDate: nextYear,
-        usageLimit: 10000,
-        usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[8]._id], // Trial Plan
-        applicableUserCategories: ['Personal'],
-        isActive: true,
-        createdBy: new mongoose.Types.ObjectId(),
-      },
       {
         code: 'MONTHLY20',
         name: 'Monthly Plan Discount',
@@ -394,7 +351,7 @@ async function seedMembershipData() {
         endDate: nextYear,
         usageLimit: 5000,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[10]._id], // Beta Launch Plan
+        applicablePlans: betaPlanId ? [betaPlanId] : [],
         applicableUserCategories: ['Personal'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(),
@@ -411,7 +368,7 @@ async function seedMembershipData() {
         endDate: nextYear,
         usageLimit: 2000,
         usageLimitPerUser: 1,
-        applicablePlans: [createdPlans[10]._id], // Beta Launch Plan
+        applicablePlans: betaPlanId ? [betaPlanId] : [],
         applicableUserCategories: ['Personal', 'Corporate'],
         isActive: true,
         createdBy: new mongoose.Types.ObjectId(),
@@ -553,9 +510,15 @@ async function seedMembershipData() {
 
     console.log('\n=== Sample Data Created Successfully ===');
     console.log('\nMembership Plans:');
-    createdPlans.forEach(plan => {
-      const totalPrice = plan.calculateTotalPrice();
-      console.log(`- ${plan.name}: ₹${plan.basePrice} base + ₹${(totalPrice - plan.basePrice).toFixed(2)} taxes = ₹${totalPrice} total (${plan.validityDays} days)`);
+    createdPlans.forEach((plan) => {
+      const totalInr = plan.calculateTotalPrice('INR');
+      const usdLine =
+        typeof plan.usdBasePrice === 'number'
+          ? ` | USD $${plan.usdBasePrice} (total $${plan.calculateTotalPrice('USD')})`
+          : '';
+      console.log(
+        `- ${plan.name}: INR ₹${plan.basePrice} → total ₹${totalInr}${usdLine} (${plan.validityDays} d, public=${plan.isPublic !== false})`
+      );
     });
 
     console.log('\nCoupon Codes:');

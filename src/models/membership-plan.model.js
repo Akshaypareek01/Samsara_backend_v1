@@ -24,6 +24,16 @@ const membershipPlanSchema = new mongoose.Schema(
       default: 'INR',
       enum: ['INR', 'USD', 'EUR'],
     },
+    /** Optional USD list price alongside INR {@link basePrice} (dual-currency storefronts). */
+    usdBasePrice: {
+      type: Number,
+      min: [0, 'USD base price cannot be negative'],
+    },
+    /** When false, hidden from non-admin listing and direct purchase APIs. */
+    isPublic: {
+      type: Boolean,
+      default: true,
+    },
     // Tax configuration
     taxConfig: {
       gst: {
@@ -135,20 +145,31 @@ membershipPlanSchema.index({ name: 1 });
 membershipPlanSchema.index({ isActive: 1 });
 membershipPlanSchema.index({ planType: 1 });
 membershipPlanSchema.index({ availableFrom: 1, availableUntil: 1 });
+membershipPlanSchema.index({ isPublic: 1 });
+
+/**
+ * Normalize currency codes for dual-currency lookups.
+ * @param {string} [code='INR'] - INR or USD
+ * @returns {'INR'|'USD'}
+ */
+function normalizePricingCurrency(code) {
+  const upper = typeof code === 'string' ? code.toUpperCase() : '';
+  return upper === 'USD' ? 'USD' : 'INR';
+}
 
 // Virtual for formatted base price
 membershipPlanSchema.virtual('formattedBasePrice').get(function () {
   return `${this.currency} ${this.basePrice}`;
 });
 
-// Virtual for total price including taxes
+// Virtual for total price including taxes (defaults to INR base)
 membershipPlanSchema.virtual('totalPrice').get(function () {
-  return this.calculateTotalPrice();
+  return this.calculateTotalPrice('INR');
 });
 
 // Virtual for formatted total price
 membershipPlanSchema.virtual('formattedTotalPrice').get(function () {
-  return `${this.currency} ${this.calculateTotalPrice()}`;
+  return `${this.currency} ${this.calculateTotalPrice('INR')}`;
 });
 
 // Method to check if plan is available for purchase
@@ -193,25 +214,61 @@ membershipPlanSchema.methods.getActualValidityDays = function (purchaseDate = ne
   return Math.ceil((endDate - purchaseDate) / (1000 * 60 * 60 * 24));
 };
 
-// Method to calculate total price including all taxes
-membershipPlanSchema.methods.calculateTotalPrice = function () {
-  let totalPrice = this.basePrice;
+/**
+ * Resolve list base amount for tax/breakdown: INR uses {@link basePrice}; USD uses {@link usdBasePrice} or falls back to INR base when unset.
+ * @param {string} [pricingCurrency='INR'] - 'INR' or 'USD'
+ * @returns {number}
+ */
+membershipPlanSchema.methods.getBasePriceForCurrency = function (pricingCurrency = 'INR') {
+  const curr = normalizePricingCurrency(pricingCurrency);
+  if (curr === 'USD' && typeof this.usdBasePrice === 'number' && !Number.isNaN(this.usdBasePrice)) {
+    return this.usdBasePrice;
+  }
+  return this.basePrice;
+};
 
-  // Add GST
+/**
+ * ISO 4217 code for breakdown rows for the chosen pricing tier.
+ * @param {string} [pricingCurrency='INR']
+ * @returns {string}
+ */
+membershipPlanSchema.methods.getSettlementCurrencyCode = function (pricingCurrency = 'INR') {
+  return normalizePricingCurrency(pricingCurrency) === 'USD' ? 'USD' : 'INR';
+};
+
+/**
+ * List price for IAP / RevenueCat reporting: prefers {@link usdBasePrice} when set.
+ * @returns {{ amount: number, currency: string }}
+ */
+membershipPlanSchema.methods.getIapReportingPricing = function () {
+  if (typeof this.usdBasePrice === 'number' && !Number.isNaN(this.usdBasePrice)) {
+    return { amount: this.usdBasePrice, currency: 'USD' };
+  }
+  return { amount: this.basePrice, currency: this.currency || 'INR' };
+};
+
+/**
+ * Total including taxes for the given storefront currency (default INR for Razorpay).
+ * @param {string} [pricingCurrency='INR'] - 'INR' | 'USD'
+ * @returns {number}
+ */
+membershipPlanSchema.methods.calculateTotalPrice = function (pricingCurrency = 'INR') {
+  const baseAmt = this.getBasePriceForCurrency(pricingCurrency);
+  let totalPrice = baseAmt;
+
   if (this.taxConfig.gst.rate > 0) {
     if (this.taxConfig.gst.type === 'percentage') {
-      totalPrice += (this.basePrice * this.taxConfig.gst.rate) / 100;
+      totalPrice += (baseAmt * this.taxConfig.gst.rate) / 100;
     } else {
       totalPrice += this.taxConfig.gst.amount;
     }
   }
 
-  // Add other taxes
   if (this.taxConfig.otherTaxes && this.taxConfig.otherTaxes.length > 0) {
     this.taxConfig.otherTaxes.forEach(tax => {
       if (tax.rate > 0) {
         if (tax.type === 'percentage') {
-          totalPrice += (this.basePrice * tax.rate) / 100;
+          totalPrice += (baseAmt * tax.rate) / 100;
         } else {
           totalPrice += tax.amount;
         }
@@ -219,14 +276,23 @@ membershipPlanSchema.methods.calculateTotalPrice = function () {
     });
   }
 
-  return Math.round(totalPrice * 100) / 100; // Round to 2 decimal places
+  return Math.round(totalPrice * 100) / 100;
 };
 
-// Method to calculate detailed pricing breakdown
-membershipPlanSchema.methods.calculatePricingBreakdown = function (discountAmount = 0, couponCode = null) {
-  const basePrice = this.basePrice;
+/**
+ * Detailed pricing breakdown for a currency tier.
+ * @param {number} [discountAmount=0]
+ * @param {string|null} [couponCode=null]
+ * @param {string} [pricingCurrency='INR'] - 'INR' | 'USD'
+ */
+membershipPlanSchema.methods.calculatePricingBreakdown = function (
+  discountAmount = 0,
+  couponCode = null,
+  pricingCurrency = 'INR'
+) {
+  const basePrice = this.getBasePriceForCurrency(pricingCurrency);
+  const breakdownCurrency = this.getSettlementCurrencyCode(pricingCurrency);
 
-  // Calculate taxes
   let gstAmount = 0;
   if (this.taxConfig.gst.rate > 0) {
     if (this.taxConfig.gst.type === 'percentage') {
@@ -277,21 +343,27 @@ membershipPlanSchema.methods.calculatePricingBreakdown = function (discountAmoun
       couponCode: couponCode
     },
     total: Math.round(finalAmount * 100) / 100,
-    currency: this.currency
+    currency: breakdownCurrency
   };
 };
 
-// Method to calculate discount amount with plan-specific limits
-membershipPlanSchema.methods.calculateDiscountAmount = function (couponDiscountAmount, totalOrderAmount = null) {
+/**
+ * @param {number} couponDiscountAmount
+ * @param {number|null} [totalOrderAmount=null] - inclusive total before discount for this currency tier
+ * @param {string} [pricingCurrency='INR']
+ */
+membershipPlanSchema.methods.calculateDiscountAmount = function (
+  couponDiscountAmount,
+  totalOrderAmount = null,
+  pricingCurrency = 'INR'
+) {
   let finalDiscountAmount = couponDiscountAmount;
 
-  // Apply plan-specific discount limits
   if (this.discountConfig.maxDiscountAmount !== null) {
     finalDiscountAmount = Math.min(finalDiscountAmount, this.discountConfig.maxDiscountAmount);
   }
 
-  // Apply percentage limit based on total order amount (including taxes) instead of base price
-  const orderAmount = totalOrderAmount || this.calculateTotalPrice();
+  const orderAmount = totalOrderAmount ?? this.calculateTotalPrice(pricingCurrency);
   const maxPercentageDiscount = (orderAmount * this.discountConfig.maxDiscountPercentage) / 100;
   finalDiscountAmount = Math.min(finalDiscountAmount, maxPercentageDiscount);
 

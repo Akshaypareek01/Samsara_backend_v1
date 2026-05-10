@@ -9,8 +9,12 @@ import razorpayService from '../services/razorpay.service.js';
  * Create payment order
  */
 const createPaymentOrder = catchAsync(async (req, res) => {
-  const { planId, couponCode, platform } = req.body;
+  const { planId, couponCode, platform, pricingCurrency = 'INR' } = req.body;
   const userId = req.user.id;
+
+  if (pricingCurrency === 'USD') {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Web checkout uses INR only; use native IAP for USD pricing.');
+  }
 
   // Safety Check: Block Razorpay for iOS
   if (platform === 'ios') {
@@ -29,8 +33,7 @@ const createPaymentOrder = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found or inactive');
   }
 
-  // Prevent users from purchasing internal plans (Trial Plan and Lifetime Plan)
-  if (membershipPlan.name === 'Trial Plan' || membershipPlan.name === 'Lifetime Plan') {
+  if (membershipPlan.isPublic === false || ['Trial Plan', 'Lifetime Plan'].includes(membershipPlan.name)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'This plan cannot be purchased directly');
   }
 

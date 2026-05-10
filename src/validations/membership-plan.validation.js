@@ -33,6 +33,8 @@ const createMembershipPlan = {
     razorpayPlanId: Joi.string().allow('', null),
     appleProductId: Joi.string().allow('', null),
     metadata: Joi.object().default({}),
+    usdBasePrice: Joi.number().min(0),
+    isPublic: Joi.boolean().default(true),
   }),
 };
 
@@ -50,6 +52,16 @@ const getMembershipPlans = {
 const getMembershipPlan = {
   params: Joi.object().keys({
     planId: Joi.string().custom(objectId),
+  }),
+};
+
+const getPlanPricingBreakdown = {
+  params: Joi.object().keys({
+    planId: Joi.string().required().custom(objectId),
+  }),
+  query: Joi.object().keys({
+    couponCode: Joi.string().trim(),
+    currency: Joi.string().valid('INR', 'USD'),
   }),
 };
 
@@ -90,6 +102,8 @@ const updateMembershipPlan = {
       appleProductId: Joi.string().allow('', null),
       isActive: Joi.boolean(),
       metadata: Joi.object(),
+      usdBasePrice: Joi.number().min(0),
+      isPublic: Joi.boolean(),
     })
     .min(1),
 };
@@ -121,6 +135,7 @@ export {
   createMembershipPlan,
   getMembershipPlans,
   getMembershipPlan,
+  getPlanPricingBreakdown,
   updateMembershipPlan,
   deleteMembershipPlan,
   getMembershipPlansByType,

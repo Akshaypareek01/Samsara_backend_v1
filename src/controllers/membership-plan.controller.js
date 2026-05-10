@@ -2,7 +2,12 @@ import httpStatus from 'http-status';
 import pick from '../utils/pick.js';
 import ApiError from '../utils/ApiError.js';
 import catchAsync from '../utils/catchAsync.js';
-import { MembershipPlan } from '../models/index.js';
+import { MembershipPlan, CouponCode } from '../models/index.js';
+
+/** Public plan catalog: `isPublic !== false` and discontinued / internal legacy names excluded. */
+const publicPlanFilter = {
+  $and: [{ isPublic: { $ne: false } }, { name: { $nin: ['Trial Plan', 'Lifetime Plan'] } }],
+};
 
 /**
  * Create a membership plan
@@ -34,9 +39,8 @@ const getMembershipPlans = catchAsync(async (req, res) => {
       { availableUntil: null },
       { availableUntil: { $gte: now } }
     ];
-    
-    // Exclude internal plans (Trial Plan and Lifetime Plan) from user-facing APIs
-    filter.name = { $nin: ['Trial Plan', 'Lifetime Plan'] };
+
+    Object.assign(filter, publicPlanFilter);
   }
 
   const result = await MembershipPlan.paginate(filter, options);
@@ -57,13 +61,12 @@ const getMembershipPlan = catchAsync(async (req, res) => {
     if (!membershipPlan.isActive || !membershipPlan.isAvailable()) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
     }
-    
-    // Don't show internal plans (Trial Plan and Lifetime Plan) to non-admin users
-    if (membershipPlan.name === 'Trial Plan' || membershipPlan.name === 'Lifetime Plan') {
+
+    if (membershipPlan.isPublic === false || ['Trial Plan', 'Lifetime Plan'].includes(membershipPlan.name)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
     }
   }
-  
+
   res.send(membershipPlan);
 });
 
@@ -113,8 +116,7 @@ const getActiveMembershipPlans = catchAsync(async (req, res) => {
       { availableUntil: null },
       { availableUntil: { $gte: now } }
     ],
-    // Exclude internal plans (Trial Plan and Lifetime Plan) from public APIs
-    name: { $nin: ['Trial Plan', 'Lifetime Plan'] }
+    ...publicPlanFilter,
   };
 
   const result = await MembershipPlan.paginate(filter, options);
@@ -138,8 +140,7 @@ const getMembershipPlansByType = catchAsync(async (req, res) => {
       { availableUntil: null },
       { availableUntil: { $gte: now } }
     ],
-    // Exclude internal plans (Trial Plan and Lifetime Plan) from user-facing APIs
-    name: { $nin: ['Trial Plan', 'Lifetime Plan'] }
+    ...publicPlanFilter,
   };
 
   const result = await MembershipPlan.paginate(filter, options);
@@ -199,45 +200,54 @@ const getMembershipPlanStats = catchAsync(async (req, res) => {
  */
 const getPlanPricingBreakdown = catchAsync(async (req, res) => {
   const { planId } = req.params;
-  const { couponCode } = req.query;
+  const { couponCode, currency } = req.query;
+
+  const pricingCurrency = typeof currency === 'string' && currency.toUpperCase() === 'USD' ? 'USD' : 'INR';
 
   const membershipPlan = await MembershipPlan.findById(planId);
   if (!membershipPlan) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
   }
 
+  let discountAmount = 0;
+  let couponCodeDoc = null;
+
   // Don't show unavailable plans to non-admin users
   if (req.user.role !== 'admin') {
     if (!membershipPlan.isActive || !membershipPlan.isAvailable()) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
     }
-    
-    // Don't show internal plans (Trial Plan and Lifetime Plan) to non-admin users
-    if (membershipPlan.name === 'Trial Plan' || membershipPlan.name === 'Lifetime Plan') {
+
+    if (membershipPlan.isPublic === false || ['Trial Plan', 'Lifetime Plan'].includes(membershipPlan.name)) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
     }
   }
 
-  let discountAmount = 0;
-  let couponCodeDoc = null;
-
   // Calculate discount if coupon code provided
   if (couponCode) {
-    couponCodeDoc = await CouponCode.findOne({ 
+    couponCodeDoc = await CouponCode.findOne({
       code: couponCode.toUpperCase(),
-      isActive: true 
+      isActive: true
     });
 
     if (couponCodeDoc && couponCodeDoc.isValid) {
-      const totalPrice = membershipPlan.calculateTotalPrice();
+      const totalPrice = membershipPlan.calculateTotalPrice(pricingCurrency);
       if (couponCodeDoc.canApplyToPlan(planId) && totalPrice >= couponCodeDoc.minOrderAmount) {
         const couponDiscountAmount = couponCodeDoc.calculateDiscount(totalPrice);
-        discountAmount = membershipPlan.calculateDiscountAmount(couponDiscountAmount, totalPrice);
+        discountAmount = membershipPlan.calculateDiscountAmount(
+          couponDiscountAmount,
+          totalPrice,
+          pricingCurrency
+        );
       }
     }
   }
 
-  const pricingBreakdown = membershipPlan.calculatePricingBreakdown(discountAmount, couponCode);
+  const pricingBreakdown = membershipPlan.calculatePricingBreakdown(
+    discountAmount,
+    couponCode,
+    pricingCurrency
+  );
 
   res.send({
     plan: membershipPlan,
