@@ -49,6 +49,7 @@ const envVarsSchema = Joi.object()
     // RevenueCat
     REVENUECAT_SECRET_KEY: Joi.string().description('RevenueCat Secret API Key (sk_...)'),
     USD_TO_INR_RATE: Joi.number().positive().default(83).description('USD catalogue total × this → INR charged on Razorpay (international)'),
+  })
   .unknown();
 
 const { value: envVars, error } = envVarsSchema.prefs({ errors: { label: 'key' } }).validate(process.env);

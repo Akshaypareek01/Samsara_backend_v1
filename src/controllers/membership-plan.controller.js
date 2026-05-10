@@ -277,6 +277,7 @@ const getPlanPricingBreakdown = catchAsync(async (req, res) => {
   }
 
   res.send(payload);
+});
 
 export {
   createMembershipPlan,
