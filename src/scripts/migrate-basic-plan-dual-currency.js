@@ -43,14 +43,14 @@ async function migrateBasicPlanDualCurrency() {
       { name: 'Basic Access – Quarterly Plan' },
       {
         $set: {
-          basePrice: 8997,
-          usdBasePrice: 195,
+          basePrice: 7197.6,
+          usdBasePrice: 156,
           isPublic: true,
-          description: 'Basic Access Plan billed every 3 months (INR ₹8997 / USD $195).',
+          description: 'Basic Access Plan billed every 3 months (INR ₹7197.6 / USD $156).',
           'metadata.billingCycle': 'quarterly',
           'metadata.accessTier': 'Basic Access',
-          'metadata.effectiveMonthlyInr': 2999,
-          'metadata.effectiveMonthlyUsd': 65,
+          'metadata.effectiveMonthlyInr': 2399.2,
+          'metadata.effectiveMonthlyUsd': 52,
         },
         $unset: {
           'metadata.discountPercentage': '',
@@ -66,14 +66,14 @@ async function migrateBasicPlanDualCurrency() {
       { name: 'Basic Access – Half-Yearly Plan' },
       {
         $set: {
-          basePrice: 17994,
-          usdBasePrice: 390,
+          basePrice: 12595.8,
+          usdBasePrice: 273,
           isPublic: true,
-          description: 'Basic Access Plan billed every 6 months (INR ₹17994 / USD $390).',
+          description: 'Basic Access Plan billed every 6 months (INR ₹12595.8 / USD $273).',
           'metadata.billingCycle': 'half-yearly',
           'metadata.accessTier': 'Basic Access',
-          'metadata.effectiveMonthlyInr': 2999,
-          'metadata.effectiveMonthlyUsd': 65,
+          'metadata.effectiveMonthlyInr': 2099.3,
+          'metadata.effectiveMonthlyUsd': 45.5,
         },
         $unset: {
           'metadata.discountPercentage': '',
@@ -89,15 +89,15 @@ async function migrateBasicPlanDualCurrency() {
       { name: 'Basic Access – Yearly Plan' },
       {
         $set: {
-          basePrice: 35988,
-          usdBasePrice: 780,
+          basePrice: 19793.4,
+          usdBasePrice: 429,
           isPublic: true,
-          description: 'Basic Access Plan billed annually (INR ₹35988 / USD $780). Best value.',
+          description: 'Basic Access Plan billed annually (INR ₹19793.4 / USD $429). Best value.',
           'metadata.billingCycle': 'yearly',
           'metadata.bestValue': true,
           'metadata.accessTier': 'Basic Access',
-          'metadata.effectiveMonthlyInr': 2999,
-          'metadata.effectiveMonthlyUsd': 65,
+          'metadata.effectiveMonthlyInr': 1649.45,
+          'metadata.effectiveMonthlyUsd': 35.75,
         },
         $unset: {
           'metadata.discountPercentage': '',
