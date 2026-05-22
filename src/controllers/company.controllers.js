@@ -146,7 +146,7 @@ const getDashboardOverview = catchAsync(async (req, res) => {
   if (req.user.role !== 'company') {
     throw new ApiError(httpStatus.BAD_REQUEST, 'This endpoint is for companies only');
   }
-  const overview = await companyService.getCompanyDashboardOverview(req.user.id);
+  const overview = await companyService.getCompanyDashboardOverview(req.user.id, req.query.period);
   res.send(overview);
 });
 

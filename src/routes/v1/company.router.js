@@ -34,7 +34,12 @@ router.post(
 );
 
 // Company dashboard (company auth)
-router.get('/dashboard/overview', auth(), companyController.getDashboardOverview);
+router.get(
+  '/dashboard/overview',
+  auth(),
+  validate(companyValidation.getDashboardOverview),
+  companyController.getDashboardOverview
+);
 
 router.get('/insights', auth(), companyController.getInsights);
 router.get('/insights/employee-scores', auth(), companyController.getEmployeeWellnessScores);

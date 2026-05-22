@@ -161,11 +161,44 @@ const loginCompanyWithOTP = async (email, otp) => {
  * @param {import('mongoose').Types.ObjectId|string} companyId
  * @returns {Promise<Object>}
  */
-const getCompanyDashboardOverview = async (companyId) => {
+/**
+ * Map CRM period tab to a bookingDate lower bound (inclusive).
+ *
+ * @param {string|undefined} period - Weekly | Monthly | Quarterly | Yearly
+ * @returns {Date|undefined}
+ */
+const periodToStartDate = (period) => {
+  if (!period) return undefined;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  switch (period) {
+    case 'Weekly':
+      start.setDate(start.getDate() - 7);
+      return start;
+    case 'Monthly':
+      start.setMonth(start.getMonth() - 1);
+      return start;
+    case 'Quarterly':
+      start.setMonth(start.getMonth() - 3);
+      return start;
+    case 'Yearly':
+      start.setFullYear(start.getFullYear() - 1);
+      return start;
+    default:
+      return undefined;
+  }
+};
+
+const getCompanyDashboardOverview = async (companyId, period) => {
   const oid = mongoose.Types.ObjectId.isValid(companyId)
     ? new mongoose.Types.ObjectId(companyId)
     : companyId;
-  const bookings = await Booking.find({ company: oid }).lean();
+  const startDate = periodToStartDate(period);
+  const bookingQuery = { company: oid };
+  if (startDate) {
+    bookingQuery.bookingDate = { $gte: startDate };
+  }
+  const bookings = await Booking.find(bookingQuery).lean();
   const total = bookings.length;
   const completed = bookings.filter((b) => b.status === 'completed').length;
   const confirmed = bookings.filter(
@@ -309,7 +342,7 @@ const getCompanyDashboardOverview = async (companyId) => {
     },
     programStats: {
       goalsAchievement: {
-        label: 'All time',
+        label: period || 'All time',
         wellnessSessions: total,
         healthMetrics: completionPct,
       },

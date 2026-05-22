@@ -207,6 +207,12 @@ const exportCompanyReports = {
   }),
 };
 
+const getDashboardOverview = {
+  query: Joi.object().keys({
+    period: Joi.string().valid('Weekly', 'Monthly', 'Quarterly', 'Yearly').optional(),
+  }),
+};
+
 export {
   createCompany,
   getCompanies,
@@ -225,5 +231,6 @@ export {
   deletePortalEmployee,
   listPortalDeletionHistory,
   exportCompanyReports,
+  getDashboardOverview,
 };
 
