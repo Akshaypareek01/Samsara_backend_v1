@@ -41,7 +41,8 @@ app.use(helmet({
         "https://source.zoom.us",
         "https://*.zoom.us",
         "https://us05st1.zoom.us",
-        "https://st1.zoom.us"
+        "https://st1.zoom.us",
+        "https://fonts.googleapis.com"
       ],
       imgSrc: [
         "'self'",
@@ -60,6 +61,7 @@ app.use(helmet({
       fontSrc: [
         "'self'",
         "https://source.zoom.us",
+        "https://fonts.gstatic.com",
         "data:"
       ],
       frameSrc: [
