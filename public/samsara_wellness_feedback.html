@@ -626,8 +626,8 @@
           <input type="text" id="employeeName" name="employeeName" placeholder="Your name">
         </div>
         <div class="field-group">
-          <label>Department</label>
-          <input type="text" id="department" name="department" placeholder="e.g. Marketing">
+          <label>Email</label>
+          <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email">
         </div>
         <div class="field-group">
           <label>Company Name</label>
@@ -678,9 +678,8 @@
       <div class="trainer-selector">
         <label for="trainerSelect">Select Trainer(s):</label>
         <select class="trainer-dropdown" id="trainerSelect" onchange="setTrainer(this.value)">
-          <option value="one">Trainer 1 Only</option>
-          <option value="two">Trainer 2 Only</option>
-          <option value="both">Both Trainers</option>
+          <option value="trainer">Trainer</option>
+          <option value="both">Both Trainer</option>
         </select>
       </div>
 
@@ -688,7 +687,7 @@
 
         <!-- TRAINER 1 -->
         <div class="trainer-block visible" id="block1">
-          <div class="trainer-block-head"><h3>🧘 Trainer 1</h3></div>
+          <div class="trainer-block-head"><h3>🧘 Trainer</h3></div>
           <div class="trainer-block-body">
             <div class="trainer-name-field">
               <label>Trainer Name</label>
@@ -865,14 +864,12 @@ function setTrainer(mode) {
   b2.classList.remove('visible');
   wrap.classList.remove('two-col');
 
-  if (mode === 'one') {
-    b1.classList.add('visible');
-  } else if (mode === 'two') {
-    b2.classList.add('visible');
-  } else {
+  if (mode === 'both') {
     b1.classList.add('visible');
     b2.classList.add('visible');
     wrap.classList.add('two-col');
+  } else {
+    b1.classList.add('visible');
   }
 }
 
@@ -979,7 +976,7 @@ function collectTrainerRatings(trainerNumber) {
  */
 function collectTrainers() {
   const mode = document.getElementById('trainerSelect').value;
-  const trainerNumbers = mode === 'one' ? [1] : mode === 'two' ? [2] : [1, 2];
+  const trainerNumbers = mode === 'both' ? [1, 2] : [1];
   return trainerNumbers.map((num) => ({
     trainerNumber: num,
     name: document.querySelector('[data-trainer-name="' + num + '"]')?.value?.trim() || '',
@@ -997,7 +994,7 @@ function collectFormPayload() {
   const sessionDateValue = document.getElementById('sessionDate').value;
   return {
     employeeName: document.getElementById('employeeName').value.trim(),
-    department: document.getElementById('department').value.trim(),
+    email: document.getElementById('email').value.trim(),
     companyName: document.getElementById('companyName').value.trim(),
     sessionDate: sessionDateValue || null,
     sessionsAttended: getCheckedValues('session'),

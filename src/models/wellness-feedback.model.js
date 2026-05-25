@@ -26,7 +26,7 @@ const trainerFeedbackSchema = new mongoose.Schema(
 const wellnessFeedbackSchema = new mongoose.Schema(
   {
     employeeName: { type: String, trim: true, default: '' },
-    department: { type: String, trim: true, default: '' },
+    email: { type: String, trim: true, lowercase: true, default: '' },
     companyName: { type: String, trim: true, default: '' },
     sessionDate: { type: Date },
     sessionsAttended: {
@@ -36,8 +36,8 @@ const wellnessFeedbackSchema = new mongoose.Schema(
     sessionOther: { type: String, trim: true, default: '' },
     trainerMode: {
       type: String,
-      enum: ['one', 'two', 'both'],
-      default: 'one',
+      enum: ['trainer', 'both', 'one', 'two'],
+      default: 'trainer',
     },
     trainers: {
       type: [trainerFeedbackSchema],

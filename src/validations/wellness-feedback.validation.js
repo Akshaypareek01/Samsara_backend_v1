@@ -19,12 +19,12 @@ const trainerFeedbackSchema = Joi.object({
 const submitWellnessFeedback = {
   body: Joi.object({
     employeeName: Joi.string().trim().allow('').max(200),
-    department: Joi.string().trim().allow('').max(200),
+    email: Joi.string().trim().lowercase().max(320).empty('').email({ tlds: { allow: false } }),
     companyName: Joi.string().trim().allow('').max(200),
     sessionDate: Joi.date().iso().allow(null, ''),
     sessionsAttended: Joi.array().items(Joi.string().trim().max(100)).default([]),
     sessionOther: Joi.string().trim().allow('').max(300),
-    trainerMode: Joi.string().valid('one', 'two', 'both').default('one'),
+    trainerMode: Joi.string().valid('trainer', 'both', 'one', 'two').default('trainer'),
     trainers: Joi.array().items(trainerFeedbackSchema).default([]),
     overallSatisfaction: Joi.string()
       .valid('Excellent', 'Good', 'Average', 'Needs Improvement')
