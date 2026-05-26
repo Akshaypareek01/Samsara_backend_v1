@@ -131,6 +131,7 @@
     margin-bottom: 5px;
   }
   .field-group input[type="text"],
+  .field-group input[type="email"],
   .field-group input[type="date"] {
     width: 100%;
     border: none;
@@ -144,6 +145,13 @@
     transition: border-color 0.2s;
   }
   .field-group input:focus { border-bottom-color: var(--orange); }
+  .field-group input[type="email"]:-webkit-autofill,
+  .field-group input[type="email"]:-webkit-autofill:hover,
+  .field-group input[type="email"]:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--off-white) inset;
+    transition: background-color 9999s ease-out 0s;
+  }
 
   /* ── QUESTION ── */
   .question { margin-bottom: 24px; }
@@ -520,6 +528,7 @@
     .card-body { padding: 14px 12px; }
     .field-grid { grid-template-columns: 1fr; gap: 14px; }
     .field-group input[type="text"],
+    .field-group input[type="email"],
     .field-group input[type="date"] { font-size: 1rem; padding: 10px 0; }
     .options-grid.col-2,
     .options-grid.col-3,
