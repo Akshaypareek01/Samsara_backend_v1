@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import httpStatus from 'http-status';
@@ -8,22 +9,50 @@ import pick from '../utils/pick.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const PUBLIC_DIR = path.join(__dirname, '../../public');
+const FORM_HTML_PATH = path.join(PUBLIC_DIR, 'samsara_wellness_feedback.html');
+const LOGO_HEADER_PATH = path.join(PUBLIC_DIR, 'ios-light-header.png');
+
+let cachedFormHtml = null;
+
+/**
+ * Build form HTML with the logo embedded inline (avoids separate image request / cache issues).
+ * @returns {string}
+ */
+const getFormHtmlWithInlineLogo = () => {
+  if (cachedFormHtml) {
+    return cachedFormHtml;
+  }
+
+  const logoBase64 = fs.readFileSync(LOGO_HEADER_PATH).toString('base64');
+  const logoDataUri = `data:image/png;base64,${logoBase64}`;
+  let html = fs.readFileSync(FORM_HTML_PATH, 'utf8');
+
+  html = html.replace(
+    /src="\/v1\/wellness-feedback\/logo[^"]*"/,
+    `src="${logoDataUri}"`
+  );
+
+  cachedFormHtml = html;
+  return cachedFormHtml;
+};
+
 /**
  * Serve the public corporate wellness feedback HTML form.
  */
 const serveFeedbackForm = catchAsync(async (req, res) => {
-  const publicPath = path.join(__dirname, '../../public/samsara_wellness_feedback.html');
-  res.sendFile(publicPath);
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.send(getFormHtmlWithInlineLogo());
 });
 
 /**
  * Serve the header logo image for the feedback form.
  */
 const serveFeedbackLogo = catchAsync(async (req, res) => {
-  const logoPath = path.join(__dirname, '../../public/ios-light.png');
   res.type('image/png');
   res.setHeader('Cache-Control', 'public, max-age=86400');
-  res.sendFile(logoPath);
+  res.sendFile(LOGO_HEADER_PATH);
 });
 
 /**
