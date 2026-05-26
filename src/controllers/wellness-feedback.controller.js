@@ -17,6 +17,16 @@ const serveFeedbackForm = catchAsync(async (req, res) => {
 });
 
 /**
+ * Serve the header logo image for the feedback form.
+ */
+const serveFeedbackLogo = catchAsync(async (req, res) => {
+  const logoPath = path.join(__dirname, '../../public/ios-light.png');
+  res.type('image/png');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(logoPath);
+});
+
+/**
  * Accept and store a wellness feedback form submission (public).
  */
 const submitWellnessFeedback = catchAsync(async (req, res) => {
@@ -52,4 +62,4 @@ const listWellnessFeedback = catchAsync(async (req, res) => {
   res.status(httpStatus.OK).json(result);
 });
 
-export { serveFeedbackForm, submitWellnessFeedback, listWellnessFeedback };
+export { serveFeedbackForm, serveFeedbackLogo, submitWellnessFeedback, listWellnessFeedback };
