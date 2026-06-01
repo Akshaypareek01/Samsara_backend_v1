@@ -15,9 +15,11 @@ const createTrainer = catchAsync(async (req, res) => {
  * Get all trainers with pagination and filtering
  */
 const getAllTrainers = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['name', 'specialistIn', 'typeOfTraining', 'status', 'acceptingBookings']);
+  const filter = pick(req.query, ['name', 'category', 'specialistIn', 'typeOfTraining', 'status', 'acceptingBookings']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  const result = await trainerService.queryTrainers(filter, options);
+  const companyBookableOnly = req.user?.role === 'company';
+  const mongoFilter = trainerService.buildTrainerQueryFilter(filter, { companyBookableOnly });
+  const result = await trainerService.queryTrainers(mongoFilter, options);
   res.send(result);
 });
 
@@ -56,6 +58,12 @@ const updateMe = catchAsync(async (req, res) => {
 const getTrainerById = catchAsync(async (req, res) => {
   const trainer = await trainerService.getTrainerById(req.params.id);
   if (!trainer) {
+    return res.status(httpStatus.NOT_FOUND).json({
+      status: 'fail',
+      message: 'Trainer not found',
+    });
+  }
+  if (req.user?.role === 'company' && !trainerService.isTrainerBookable(trainer)) {
     return res.status(httpStatus.NOT_FOUND).json({
       status: 'fail',
       message: 'Trainer not found',

@@ -104,12 +104,11 @@ const getBookingById = async (id) => {
 const updateBookingStatus = async (id, status, trainerNotes) => {
     const booking = await getBookingById(id);
 
-    // Validate status transitions
+    // Trainer: pending_approval → approved (accept). Admin: approved → confirmed (separate endpoint).
     const validTransitions = {
-        pending_approval: ['approved', 'rejected', 'cancelled'],
-        approved: ['confirmed', 'cancelled'],
-        pending: ['confirmed', 'rejected', 'cancelled'],
-        confirmed: ['completed', 'cancelled'],
+        pending_approval: ['approved'],
+        approved: [],
+        confirmed: ['completed'],
         rejected: [],
         cancelled: [],
         completed: [],
@@ -136,9 +135,10 @@ const updateBookingStatus = async (id, status, trainerNotes) => {
  * @param {ObjectId} id
  * @param {ObjectId} userId
  * @param {string} userType - 'company' or 'trainer'
+ * @param {string} [cancellationReason] - Reason for cancellation
  * @returns {Promise<Booking>}
  */
-const cancelBooking = async (id, userId, userType) => {
+const cancelBooking = async (id, userId, userType, cancellationReason) => {
     const booking = await getBookingById(id);
 
     // Verify user owns this booking
@@ -149,14 +149,58 @@ const cancelBooking = async (id, userId, userType) => {
         throw new ApiError(httpStatus.FORBIDDEN, 'You can only cancel your own bookings');
     }
 
-    // Can only cancel pending_approval, approved, or confirmed bookings
-    if (!['pending_approval', 'approved', 'confirmed'].includes(booking.status)) {
-        throw new ApiError(httpStatus.BAD_REQUEST, `Cannot cancel a ${booking.status} booking`);
+    if (userType === 'company') {
+        const reason = typeof cancellationReason === 'string' ? cancellationReason.trim() : '';
+        if (!reason) {
+            throw new ApiError(httpStatus.BAD_REQUEST, 'Cancellation reason is required');
+        }
+        booking.cancellationReason = reason;
+    } else if (cancellationReason && String(cancellationReason).trim()) {
+        booking.cancellationReason = String(cancellationReason).trim();
+    }
+
+    if (!['pending_approval', 'approved'].includes(booking.status)) {
+        throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Cannot cancel a ${booking.status} booking. Confirmed sessions cannot be cancelled.`
+        );
     }
 
     booking.status = 'cancelled';
     await booking.save();
     return booking.populate(['company', 'trainer']);
+};
+
+/**
+ * Admin cancels a booking at any stage (except already cancelled/rejected).
+ * @param {import('mongoose').Types.ObjectId|string} id
+ * @param {import('mongoose').Types.ObjectId|string} adminId
+ * @param {string} adminNotes - Required remark explaining the cancellation
+ * @returns {Promise<Booking>}
+ */
+const adminCancelBooking = async (id, adminId, adminNotes) => {
+    const booking = await getBookingById(id);
+    const notes = typeof adminNotes === 'string' ? adminNotes.trim() : '';
+
+    if (!notes) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Cancellation remark is required');
+    }
+
+    if (['cancelled', 'rejected'].includes(booking.status)) {
+        throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            `Cannot cancel a booking that is already ${booking.status}`
+        );
+    }
+
+    booking.status = 'cancelled';
+    booking.adminNotes = notes;
+    booking.cancellationReason = notes;
+    booking.approvedBy = adminId;
+    booking.approvedAt = new Date();
+
+    await booking.save();
+    return booking.populate(['company', 'trainer', 'approvedBy']);
 };
 
 /**
@@ -253,16 +297,15 @@ const deleteBookingById = async (id) => {
 const approveBookingAndConfirmPayment = async (id, adminId, paymentDetails, adminNotes) => {
     const booking = await getBookingById(id);
 
-    // Can only approve bookings in pending_approval status
-    if (booking.status !== 'pending_approval') {
+    // Trainer accepted; admin confirms payment and finalizes the meeting
+    if (booking.status !== 'approved') {
         throw new ApiError(
             httpStatus.BAD_REQUEST,
-            `Cannot approve booking with status ${booking.status}. Only pending_approval bookings can be approved.`
+            `Cannot approve booking with status ${booking.status}. Only trainer-accepted (approved) bookings can be confirmed by admin.`
         );
     }
 
-    // Update booking with payment and approval details
-    booking.status = 'approved';
+    booking.status = 'confirmed';
     booking.isApprovedByAdmin = true;
     booking.approvedBy = adminId;
     booking.approvedAt = new Date();
@@ -287,23 +330,22 @@ const approveBookingAndConfirmPayment = async (id, adminId, paymentDetails, admi
  * @returns {Promise<QueryResult>}
  */
 const getPendingApprovals = async (filter, options) => {
-    const pendingFilter = { status: 'pending_approval', ...filter };
+    const pendingFilter = { status: 'approved', ...filter };
     return queryBookings(pendingFilter, options);
 };
 
 /**
- * Get trainer's approved bookings only (trainers should only see approved bookings)
+ * Get trainer's bookings (all statuses except rejected for list views).
  * @param {ObjectId} trainerId
  * @param {Object} filter - Additional filters
  * @param {Object} options - Query options
  * @returns {Promise<QueryResult>}
  */
 const getTrainerApprovedBookings = async (trainerId, filter, options) => {
-    // Trainers should only see bookings that are approved by admin
     const trainerFilter = {
         trainer: trainerId,
-        isApprovedByAdmin: true,
-        ...filter
+        status: { $ne: 'rejected' },
+        ...filter,
     };
     return queryBookings(trainerFilter, options);
 };
@@ -318,7 +360,7 @@ const getTrainerApprovedBookings = async (trainerId, filter, options) => {
 const rejectBooking = async (id, adminId, adminNotes) => {
     const booking = await getBookingById(id);
 
-    if (booking.status !== 'pending_approval') {
+    if (booking.status !== 'approved' && booking.status !== 'pending_approval') {
         throw new ApiError(
             httpStatus.BAD_REQUEST,
             `Cannot reject booking with status ${booking.status}`
@@ -362,8 +404,23 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
 
     const monthBookings = await Booking.find(match)
         .populate('trainer', 'name specialistIn acceptingBookings')
+        .populate('company', 'companyName name')
         .sort({ bookingDate: 1, startTime: 1 })
         .lean();
+
+    const companyLabel = (b) => {
+        if (b.company && typeof b.company === 'object') {
+            return b.company.companyName || b.company.name || 'Company';
+        }
+        return 'Company';
+    };
+
+    const trainerLabel = (b) => {
+        if (b.trainer && typeof b.trainer === 'object' && b.trainer.name) {
+            return b.trainer.name;
+        }
+        return 'Trainer';
+    };
 
     const statusCounts = {};
     for (const b of monthBookings) {
@@ -371,20 +428,41 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
     }
 
     const calendarDotCounts = {};
+    const calendarDays = {};
     for (const b of monthBookings) {
         const d = new Date(b.bookingDate).getDate();
         calendarDotCounts[d] = (calendarDotCounts[d] || 0) + 1;
+        if (!calendarDays[d]) {
+            calendarDays[d] = [];
+        }
+        calendarDays[d].push({
+            id: String(b._id),
+            trainerId: b.trainer && typeof b.trainer === 'object' && b.trainer._id
+                ? String(b.trainer._id)
+                : b.trainer
+                  ? String(b.trainer)
+                  : undefined,
+            status: b.status,
+            startTime: b.startTime,
+            companyName: role === 'trainer' ? companyLabel(b) : undefined,
+            trainerName: role === 'company' ? trainerLabel(b) : undefined,
+            isPaid: Boolean(b.paymentStatus?.isPaid),
+            duration: b.duration,
+            typeOfTraining: b.typeOfTraining || [],
+        });
     }
 
-    const activeReservations =
-        (statusCounts.approved || 0) + (statusCounts.confirmed || 0);
-    const waitingList = statusCounts.pending_approval || 0;
+    const activeReservations = statusCounts.confirmed || 0;
+    const pendingTrainer = statusCounts.pending_approval || 0;
+    const pendingAdmin = statusCounts.approved || 0;
+    const waitingList = pendingTrainer + pendingAdmin;
     const totalBookings = monthBookings.length;
 
     const recentRaw = await Booking.find({ [actorField]: oid })
         .sort({ updatedAt: -1 })
         .limit(8)
         .populate('trainer', 'name')
+        .populate('company', 'companyName name')
         .lean();
 
     const statusColor = (s) => {
@@ -417,14 +495,11 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
     };
 
     const recentActivities = recentRaw.map((b) => {
-        const trainerName =
-            b.trainer && typeof b.trainer === 'object' && b.trainer.name
-                ? b.trainer.name
-                : 'Trainer';
+        const label = role === 'trainer' ? companyLabel(b) : trainerLabel(b);
         return {
             color: statusColor(b.status),
             title: `Booking ${String(b.status).replace(/_/g, ' ')}`,
-            sub: `${trainerName} · ${formatShortDate(b.bookingDate)}`,
+            sub: `${label} · ${formatShortDate(b.bookingDate)}`,
             time: relativeTime(b.updatedAt),
         };
     });
@@ -437,7 +512,8 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
     });
 
     const statusUi = (s) => {
-        if (s === 'confirmed' || s === 'approved') return 'Active';
+        if (s === 'confirmed') return 'Active';
+        if (s === 'approved') return 'Nearly Full';
         if (s === 'pending_approval') return 'Nearly Full';
         if (s === 'completed') return 'Full';
         return 'Active';
@@ -458,6 +534,12 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
             b.trainer && typeof b.trainer === 'object' && b.trainer.name
                 ? b.trainer.name
                 : 'Trainer';
+        const trainerId =
+            b.trainer && typeof b.trainer === 'object' && b.trainer._id
+                ? String(b.trainer._id)
+                : b.trainer
+                  ? String(b.trainer)
+                  : undefined;
         const dt = new Date(b.bookingDate);
         const types = (b.typeOfTraining || []).join(', ') || 'Session';
         return {
@@ -468,9 +550,11 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
             trainerInitials: initials(trainerName),
             trainerBg: trainerBgPalette[idx % trainerBgPalette.length],
             trainerName,
+            trainerId,
+            bookingId: String(b._id),
             capacity: 1,
             booked: 1,
-            waitingList: b.status === 'pending_approval' ? 1 : 0,
+            waitingList: b.status === 'pending_approval' || b.status === 'approved' ? 1 : 0,
             status: statusUi(b.status),
         };
     });
@@ -509,25 +593,39 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
     }
     const trainerAvailability = [...trainerMap.values()];
 
-    const waitingListGroups =
-        waitingList > 0
-            ? [
-                  {
-                      title: `Pending admin approval (${waitingList})`,
-                      count: waitingList,
-                      people: monthBookings
-                          .filter((x) => x.status === 'pending_approval')
-                          .slice(0, 5)
-                          .map((x) => {
-                              const nm =
-                                  x.trainer && typeof x.trainer === 'object' && x.trainer.name
-                                      ? x.trainer.name
-                                      : 'Trainer';
-                              return `${nm} · ${formatShortDate(x.bookingDate)}`;
-                          }),
-                  },
-              ]
-            : [];
+    const waitingListGroups = [];
+    if (pendingTrainer > 0) {
+        waitingListGroups.push({
+            title: `Pending trainer approval (${pendingTrainer})`,
+            count: pendingTrainer,
+            people: monthBookings
+                .filter((x) => x.status === 'pending_approval')
+                .slice(0, 5)
+                .map((x) => {
+                    const nm =
+                        role === 'company'
+                            ? trainerLabel(x)
+                            : companyLabel(x);
+                    return `${nm} · ${formatShortDate(x.bookingDate)}`;
+                }),
+        });
+    }
+    if (pendingAdmin > 0) {
+        waitingListGroups.push({
+            title: `Pending admin approval (${pendingAdmin})`,
+            count: pendingAdmin,
+            people: monthBookings
+                .filter((x) => x.status === 'approved')
+                .slice(0, 5)
+                .map((x) => {
+                    const nm =
+                        role === 'company'
+                            ? trainerLabel(x)
+                            : companyLabel(x);
+                    return `${nm} · ${formatShortDate(x.bookingDate)}`;
+                }),
+        });
+    }
 
     let occupancyRate = '—';
     if (totalBookings > 0) {
@@ -545,6 +643,7 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
             statusCounts,
         },
         calendarDots,
+        calendarDays,
         recentActivities,
         classSchedule,
         trainerAvailability,
@@ -558,6 +657,7 @@ export default {
     getBookingById,
     updateBookingStatus,
     cancelBooking,
+    adminCancelBooking,
     getTrainerBookings,
     getCompanyBookings,
     updateBookingById,

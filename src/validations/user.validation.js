@@ -79,6 +79,8 @@ const updateProfile = {
         'Ayurveda Specialist',
         'Mental Health Specialist',
         'Yoga Trainer',
+        'Sound Healing',
+        'Psychologist',
         'General Trainer'
       ),
       teachingExperience: Joi.string(),

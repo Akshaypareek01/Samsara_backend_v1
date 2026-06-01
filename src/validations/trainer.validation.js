@@ -1,60 +1,81 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
+import {
+  TRAINER_CATEGORY_ENUM,
+  TRAINER_EXPERIENCE_ENUM,
+  TRAINER_SPECIALIST_IN_ALL,
+  TRAINER_SPECIALIST_IN_CURRENT,
+  TRAINER_TYPE_OF_TRAINING_ALL,
+  TRAINER_TYPE_OF_TRAINING_CURRENT,
+} from '../constants/trainerProfileEnums.js';
+import {
+  MAX_TRAINER_CERTIFICATION_ENTRIES,
+  MAX_TRAINER_EDUCATION_ENTRIES,
+  normalizeQualificationListForValidation,
+} from '../utils/trainerQualificationUtils.js';
 
-const specialistInEnum = ['Employees', 'Mid Level Managers', 'Leadership', 'GenZ'];
+const categoryEnum = TRAINER_CATEGORY_ENUM;
+const specialistInEnum = TRAINER_SPECIALIST_IN_CURRENT;
+const specialistInUpdateEnum = TRAINER_SPECIALIST_IN_ALL;
+const typeOfTrainingEnum = TRAINER_TYPE_OF_TRAINING_CURRENT;
+const typeOfTrainingUpdateEnum = TRAINER_TYPE_OF_TRAINING_ALL;
+const experienceEnum = TRAINER_EXPERIENCE_ENUM;
 
-const typeOfTrainingEnum = [
-  // Employees
-  'Masterclass for Employee Wellbeing',
-  'Emotional Intelligence Skill Workshop',
-  'Mindfulness at Work',
-  'Resilience during Change & Uncertainty',
-  'The Mental Health Toolkit: Daily Self-Care for Working Professionals',
-  'Managing Anxiety at Work: Coping with High-Pressure Moments',
-  'Work-Life Balance and Digital Wellbeing',
-  'Stress Management and Emotional Resilience',
-  'Peer Support & Mental Health Champions Program',
-  'Building Psychological Safety at Work',
-  'Enhancing Collaboration through Emotional Intelligence',
-  // Mid-Level Managers
-  "Myndwell's Emerging Leader Series",
-  'Emerging Leader Skill Assessment',
-  'Weekly Sessions',
-  'Continuous Learning Support',
-  'Personalized One-on-One Sessions',
-  'Post-Intervention Assessment',
-  'Mastering Managerial Effectiveness',
-  'Understanding Stress and Burnout',
-  'Impactful Communication: Fostering Genuine Connections',
-  'Boosting Team Performance & Upholding Organizational Culture',
-  'Cultivating Leadership Excellence in Managers',
-  "Navigating Performance Appraisal Dynamics: A Manager's Guide",
-  'Manager Sensitization Program',
-  'How to Have Difficult Conversations: A Guide for Leaders',
-  'Feedback Mastery: Enhancing Communication and Performance',
-  'Leading with Empathy: Mental Health Leadership Training',
-  'Creating a Mentally Healthy Environment: A Culture of Psychological Safety',
-  'Preventing Burnout: A Leadership Lens',
-  'Emotional Intelligence for Managers',
-  // Leadership
-  'Strategic Leadership in Evolving Workplaces',
-  'Building Inclusive Leadership Practices',
-  'Leading Change with Emotional Intelligence',
-  'Resilient Leadership: Thriving Through Disruption',
-  'Fostering a Culture of Innovation and Growth',
-  'Mentoring and Coaching for High-Performance Teams',
-  'Leadership Agility: Adapting to Uncertainty',
-  'Mental Health Leadership: Supporting Workforce Wellbeing',
-  // GenZ
-  'From Campus to Corporate: The Real-World Starter Pack',
-  'Emotional Intelligence 2.0: Thriving Beyond IQ',
-  'The Resilience Playbook: Fail Fast, Rise Faster',
-  'Unstoppable Confidence: Owning Your Story at Work',
-  'Digital Detox for Digital Natives: Reclaiming Focus & Energy',
-  'Collaborate & Conquer: Cracking Multigenerational Workplaces',
-  'EQ in Action: Empathy as Your Superpower',
-  'Thriving as a Fresher: Adapting to the Corporate World',
-];
+// Shared optional sub-schemas reused across create/update validators
+const educationSchema = Joi.object().keys({
+  qualification: Joi.string().trim().allow('', null),
+  university: Joi.string().trim().allow('', null),
+  yearOfCompletion: Joi.number().integer().min(1900).max(2100).allow(null),
+  _id: Joi.any().strip(),
+});
+
+const certificationSchema = Joi.object().keys({
+  name: Joi.string().trim().allow('', null),
+  institute: Joi.string().trim().allow('', null),
+  year: Joi.number().integer().min(1900).max(2100).allow(null),
+  _id: Joi.any().strip(),
+});
+
+const educationListSchema = Joi.alternatives()
+  .try(
+    Joi.array().items(educationSchema).max(MAX_TRAINER_EDUCATION_ENTRIES),
+    educationSchema
+  )
+  .custom((value) =>
+    normalizeQualificationListForValidation(
+      value,
+      ['qualification', 'university', 'yearOfCompletion'],
+      MAX_TRAINER_EDUCATION_ENTRIES
+    )
+  );
+
+const certificationListSchema = Joi.alternatives()
+  .try(
+    Joi.array().items(certificationSchema).max(MAX_TRAINER_CERTIFICATION_ENTRIES),
+    certificationSchema
+  )
+  .custom((value) =>
+    normalizeQualificationListForValidation(
+      value,
+      ['name', 'institute', 'year'],
+      MAX_TRAINER_CERTIFICATION_ENTRIES
+    )
+  );
+
+// Personal/profile detail keys shared by create and update payloads
+const profileDetailKeys = {
+  dateOfBirth: Joi.date().allow(null),
+  city: Joi.string().trim().allow('', null),
+  pinCode: Joi.string()
+    .pattern(/^[0-9]{6}$/)
+    .allow('', null)
+    .messages({ 'string.pattern.base': 'PIN code must be 6 digits' }),
+  experience: Joi.string()
+    .valid(...experienceEnum)
+    .allow('', null),
+  education: educationListSchema,
+  certification: certificationListSchema,
+};
 
 const createTrainer = {
   body: Joi.object().keys({
@@ -66,6 +87,13 @@ const createTrainer = {
     name: Joi.string().required().trim(),
     title: Joi.string().required().trim(),
     bio: Joi.string().required().max(2000).trim(),
+    category: Joi.string()
+      .valid(...categoryEnum)
+      .required()
+      .messages({
+        'any.only': `Category must be one of: ${categoryEnum.join(', ')}`,
+        'any.required': 'Trainer category is required',
+      }),
     specialistIn: Joi.array()
       .items(Joi.string().valid(...specialistInEnum))
       .min(1)
@@ -82,6 +110,7 @@ const createTrainer = {
         'array.min': 'At least one type of training is required',
         'any.required': 'Type of training is required',
       }),
+    ...profileDetailKeys,
     images: Joi.array()
       .items(
         Joi.object().keys({
@@ -106,6 +135,7 @@ const createTrainer = {
 const getTrainers = {
   query: Joi.object().keys({
     name: Joi.string(),
+    category: Joi.string().valid(...categoryEnum),
     specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
     typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
     status: Joi.boolean(),
@@ -128,8 +158,10 @@ const updateMe = {
       name: Joi.string().trim(),
       title: Joi.string().trim(),
       bio: Joi.string().max(2000).trim(),
-      specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
-      typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
+      category: Joi.string().valid(...categoryEnum),
+      specialistIn: Joi.array().items(Joi.string().valid(...specialistInUpdateEnum)).min(1),
+      typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingUpdateEnum)).min(1),
+      ...profileDetailKeys,
       images: Joi.array().items(
         Joi.object().keys({
           key: Joi.string().required(),
@@ -157,8 +189,10 @@ const updateTrainer = {
       name: Joi.string().trim(),
       title: Joi.string().trim(),
       bio: Joi.string().max(2000).trim(),
-      specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
-      typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
+      category: Joi.string().valid(...categoryEnum),
+      specialistIn: Joi.array().items(Joi.string().valid(...specialistInUpdateEnum)).min(1),
+      typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingUpdateEnum)).min(1),
+      ...profileDetailKeys,
       images: Joi.array().items(
         Joi.object().keys({
           key: Joi.string().required(),

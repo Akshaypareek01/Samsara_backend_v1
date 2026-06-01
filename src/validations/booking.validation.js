@@ -1,60 +1,5 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
-
-// Import training types from trainer validation for consistency
-const typeOfTrainingEnum = [
-    // Employees
-    'Masterclass for Employee Wellbeing',
-    'Emotional Intelligence Skill Workshop',
-    'Mindfulness at Work',
-    'Resilience during Change & Uncertainty',
-    'The Mental Health Toolkit: Daily Self-Care for Working Professionals',
-    'Managing Anxiety at Work: Coping with High-Pressure Moments',
-    'Work-Life Balance and Digital Wellbeing',
-    'Stress Management and Emotional Resilience',
-    'Peer Support & Mental Health Champions Program',
-    'Building Psychological Safety at Work',
-    'Enhancing Collaboration through Emotional Intelligence',
-    // Mid-Level Managers
-    "Myndwell's Emerging Leader Series",
-    'Emerging Leader Skill Assessment',
-    'Weekly Sessions',
-    'Continuous Learning Support',
-    'Personalized One-on-One Sessions',
-    'Post-Intervention Assessment',
-    'Mastering Managerial Effectiveness',
-    'Understanding Stress and Burnout',
-    'Impactful Communication: Fostering Genuine Connections',
-    'Boosting Team Performance & Upholding Organizational Culture',
-    'Cultivating Leadership Excellence in Managers',
-    "Navigating Performance Appraisal Dynamics: A Manager's Guide",
-    'Manager Sensitization Program',
-    'How to Have Difficult Conversations: A Guide for Leaders',
-    'Feedback Mastery: Enhancing Communication and Performance',
-    'Leading with Empathy: Mental Health Leadership Training',
-    'Creating a Mentally Healthy Environment: A Culture of Psychological Safety',
-    'Preventing Burnout: A Leadership Lens',
-    'Emotional Intelligence for Managers',
-    // Leadership
-    'Strategic Leadership in Evolving Workplaces',
-    'Building Inclusive Leadership Practices',
-    'Leading Change with Emotional Intelligence',
-    'Resilient Leadership: Thriving Through Disruption',
-    'Fostering a Culture of Innovation and Growth',
-    'Mentoring and Coaching for High-Performance Teams',
-    'Leadership Agility: Adapting to Uncertainty',
-    'Mental Health Leadership: Supporting Workforce Wellbeing',
-    // GenZ
-    'From Campus to Corporate: The Real-World Starter Pack',
-    'Emotional Intelligence 2.0: Thriving Beyond IQ',
-    'The Resilience Playbook: Fail Fast, Rise Faster',
-    'Unstoppable Confidence: Owning Your Story at Work',
-    'Digital Detox for Digital Natives: Reclaiming Focus & Energy',
-    'Collaborate & Conquer: Cracking Multigenerational Workplaces',
-    'EQ in Action: Empathy as Your Superpower',
-    'Thriving as a Fresher: Adapting to the Corporate World',
-];
-
 const statusEnum = ['pending_approval', 'approved', 'confirmed', 'rejected', 'cancelled', 'completed'];
 
 const paymentModeEnum = ['cash', 'card', 'upi', 'bank_transfer', 'cheque', 'online', 'other'];
@@ -81,7 +26,7 @@ const createBooking = {
             'number.max': 'Duration cannot exceed 24 hours',
         }),
         typeOfTraining: Joi.array()
-            .items(Joi.string().valid(...typeOfTrainingEnum))
+            .items(Joi.string().trim().min(1).max(300))
             .min(1)
             .required()
             .messages({
@@ -116,10 +61,10 @@ const updateBookingStatus = {
     }),
     body: Joi.object().keys({
         status: Joi.string()
-            .valid('confirmed', 'completed')
+            .valid('approved', 'completed')
             .required()
             .messages({
-                'any.only': 'Status must be one of: confirmed, completed',
+                'any.only': 'Status must be one of: approved, completed',
             }),
         trainerNotes: Joi.string().max(1000).trim().optional(),
     }),
@@ -134,9 +79,7 @@ const updateBooking = {
             bookingDate: Joi.date().min('now'),
             startTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/),
             duration: Joi.number().min(0.5).max(24),
-            typeOfTraining: Joi.array()
-                .items(Joi.string().valid(...typeOfTrainingEnum))
-                .min(1),
+            typeOfTraining: Joi.array().items(Joi.string().trim().min(1).max(300)).min(1),
             notes: Joi.string().max(1000).trim(),
             trainerNotes: Joi.string().max(1000).trim(),
         })
@@ -175,6 +118,9 @@ const cancelBooking = {
     params: Joi.object().keys({
         id: Joi.string().custom(objectId).required(),
     }),
+    body: Joi.object().keys({
+        cancellationReason: Joi.string().trim().min(1).max(1000).optional(),
+    }),
 };
 
 const deleteBooking = {
@@ -206,6 +152,15 @@ const rejectBooking = {
     }),
 };
 
+const adminCancelBooking = {
+    params: Joi.object().keys({
+        id: Joi.string().custom(objectId).required(),
+    }),
+    body: Joi.object().keys({
+        adminNotes: Joi.string().trim().min(1).max(1000).required(),
+    }),
+};
+
 export {
     createBooking,
     getBookings,
@@ -218,5 +173,6 @@ export {
     deleteBooking,
     approveBookingAndConfirmPayment,
     rejectBooking,
+    adminCancelBooking,
 };
 

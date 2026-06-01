@@ -37,7 +37,15 @@ const userSchema = new mongoose.Schema(
     // Teacher specific fields
     teacherCategory: {
       type: String,
-      enum: ['Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer'],
+      enum: [
+        'Fitness Coach',
+        'Ayurveda Specialist',
+        'Mental Health Specialist',
+        'Yoga Trainer',
+        'Sound Healing',
+        'Psychologist',
+        'General Trainer',
+      ],
       required() {
         return this.role === 'teacher';
       },

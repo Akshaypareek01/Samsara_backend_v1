@@ -42,7 +42,15 @@ const sendRegistrationOTP = {
     teacherCategory: Joi.when('role', {
       is: 'teacher',
       then: Joi.string()
-        .valid('Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer')
+        .valid(
+          'Fitness Coach',
+          'Ayurveda Specialist',
+          'Mental Health Specialist',
+          'Yoga Trainer',
+          'Sound Healing',
+          'Psychologist',
+          'General Trainer'
+        )
         .required(),
       otherwise: Joi.forbidden(),
     }),
@@ -76,7 +84,15 @@ const verifyRegistrationOTP = {
     teacherCategory: Joi.when('role', {
       is: 'teacher',
       then: Joi.string()
-        .valid('Fitness Coach', 'Ayurveda Specialist', 'Mental Health Specialist', 'Yoga Trainer', 'General Trainer')
+        .valid(
+          'Fitness Coach',
+          'Ayurveda Specialist',
+          'Mental Health Specialist',
+          'Yoga Trainer',
+          'Sound Healing',
+          'Psychologist',
+          'General Trainer'
+        )
         .required(),
       otherwise: Joi.forbidden(),
     }),

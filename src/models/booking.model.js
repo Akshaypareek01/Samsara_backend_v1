@@ -108,6 +108,11 @@ const bookingSchema = new mongoose.Schema(
             trim: true,
             maxlength: [1000, 'Trainer notes cannot exceed 1000 characters'],
         },
+        cancellationReason: {
+            type: String,
+            trim: true,
+            maxlength: [1000, 'Cancellation reason cannot exceed 1000 characters'],
+        },
     },
     {
         timestamps: true,
@@ -164,7 +169,7 @@ bookingSchema.statics.isTimeSlotAvailable = async function (
             $gte: new Date(bookingDate.setHours(0, 0, 0, 0)),
             $lt: new Date(bookingDate.setHours(23, 59, 59, 999)),
         },
-        status: { $in: ['pending', 'confirmed'] },
+        status: { $in: ['pending_approval', 'approved', 'confirmed'] },
         _id: { $ne: excludeBookingId },
     });
 

@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
 import pick from '../utils/pick.js';
 import ApiError from '../utils/ApiError.js';
+import isAdminUser from '../utils/isAdminUser.js';
 import bookingService from '../services/booking.service.js';
 
 /**
@@ -155,7 +156,25 @@ const cancelBooking = catchAsync(async (req, res) => {
         throw new ApiError(httpStatus.FORBIDDEN, 'Only companies and trainers can cancel bookings');
     }
     const userType = req.user.role === 'trainer' ? 'trainer' : 'company';
-    const booking = await bookingService.cancelBooking(req.params.id, req.user.id, userType);
+    const { cancellationReason } = req.body || {};
+    const booking = await bookingService.cancelBooking(
+        req.params.id,
+        req.user.id,
+        userType,
+        cancellationReason
+    );
+    res.send(booking);
+});
+
+/**
+ * Admin cancels a booking with a required remark
+ */
+const adminCancelBooking = catchAsync(async (req, res) => {
+    if (!isAdminUser(req.user)) {
+        throw new ApiError(httpStatus.FORBIDDEN, 'Only administrators can cancel bookings');
+    }
+    const { adminNotes } = req.body;
+    const booking = await bookingService.adminCancelBooking(req.params.id, req.user.id, adminNotes);
     res.send(booking);
 });
 
@@ -163,7 +182,7 @@ const cancelBooking = catchAsync(async (req, res) => {
  * Delete a booking by ID (admin only)
  */
 const deleteBooking = catchAsync(async (req, res) => {
-    if (req.user.role !== 'admin') {
+    if (!isAdminUser(req.user)) {
         throw new ApiError(httpStatus.FORBIDDEN, 'Only administrators can delete bookings');
     }
     await bookingService.deleteBookingById(req.params.id);
@@ -174,7 +193,7 @@ const deleteBooking = catchAsync(async (req, res) => {
  * Admin approves booking and confirms payment
  */
 const approveBookingAndConfirmPayment = catchAsync(async (req, res) => {
-    if (req.user.role !== 'admin') {
+    if (!isAdminUser(req.user)) {
         throw new ApiError(httpStatus.FORBIDDEN, 'Only administrators can approve bookings');
     }
     const { paymentMode, transactionId, paymentType, paymentAmount, adminNotes } = req.body;
@@ -200,7 +219,7 @@ const approveBookingAndConfirmPayment = catchAsync(async (req, res) => {
  * Get bookings pending admin approval (for CRM)
  */
 const getPendingApprovals = catchAsync(async (req, res) => {
-    if (req.user.role !== 'admin') {
+    if (!isAdminUser(req.user)) {
         throw new ApiError(httpStatus.FORBIDDEN, 'Only administrators can view pending approvals');
     }
     const filter = pick(req.query, ['company', 'trainer', 'bookingDate']);
@@ -213,7 +232,7 @@ const getPendingApprovals = catchAsync(async (req, res) => {
  * Admin rejects booking
  */
 const rejectBooking = catchAsync(async (req, res) => {
-    if (req.user.role !== 'admin') {
+    if (!isAdminUser(req.user)) {
         throw new ApiError(httpStatus.FORBIDDEN, 'Only administrators can reject bookings');
     }
     const { adminNotes } = req.body;
@@ -246,6 +265,7 @@ export {
     updateBookingStatus,
     updateBooking,
     cancelBooking,
+    adminCancelBooking,
     deleteBooking,
     approveBookingAndConfirmPayment,
     getPendingApprovals,

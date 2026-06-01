@@ -1,6 +1,18 @@
 import mongoose from 'mongoose';
 import validator from 'validator';
 import { toJSON, paginate } from './plugins/index.js';
+import {
+  TRAINER_CATEGORY_ENUM,
+  TRAINER_EXPERIENCE_ENUM,
+  TRAINER_SPECIALIST_IN_ALL,
+  TRAINER_TYPE_OF_TRAINING_ALL,
+} from '../constants/trainerProfileEnums.js';
+import {
+  filterFilledCertificationEntries,
+  filterFilledEducationEntries,
+  normalizeCertificationList,
+  normalizeEducationList,
+} from '../utils/trainerQualificationUtils.js';
 
 const trainerSchema = new mongoose.Schema(
   {
@@ -40,75 +52,68 @@ const trainerSchema = new mongoose.Schema(
       maxlength: [2000, 'Bio must be less than or equal to 2000 characters (approximately 400 words)'],
       trim: true,
     },
+    category: {
+      type: String,
+      enum: TRAINER_CATEGORY_ENUM,
+      trim: true,
+    },
+    // Audience the trainer works with (UI label: "Training For")
     specialistIn: {
       type: [String],
       required: [true, 'Specialist field is required'],
-      enum: ['Employees', 'Mid Level Managers', 'Leadership', 'GenZ'],
+      enum: TRAINER_SPECIALIST_IN_ALL,
       validate: {
         validator: (v) => Array.isArray(v) && v.length > 0,
         message: 'At least one specialty is required',
       },
     },
+    // Wellness disciplines the trainer offers (UI label: "Specializations")
     typeOfTraining: {
       type: [String],
       required: [true, 'Type of training is required'],
-      enum: [
-        // Employees
-        'Masterclass for Employee Wellbeing',
-        'Emotional Intelligence Skill Workshop',
-        'Mindfulness at Work',
-        'Resilience during Change & Uncertainty',
-        'The Mental Health Toolkit: Daily Self-Care for Working Professionals',
-        'Managing Anxiety at Work: Coping with High-Pressure Moments',
-        'Work-Life Balance and Digital Wellbeing',
-        'Stress Management and Emotional Resilience',
-        'Peer Support & Mental Health Champions Program',
-        'Building Psychological Safety at Work',
-        'Enhancing Collaboration through Emotional Intelligence',
-        // Mid-Level Managers
-        "Myndwell's Emerging Leader Series",
-        'Emerging Leader Skill Assessment',
-        'Weekly Sessions',
-        'Continuous Learning Support',
-        'Personalized One-on-One Sessions',
-        'Post-Intervention Assessment',
-        'Mastering Managerial Effectiveness',
-        'Understanding Stress and Burnout',
-        'Impactful Communication: Fostering Genuine Connections',
-        'Boosting Team Performance & Upholding Organizational Culture',
-        'Cultivating Leadership Excellence in Managers',
-        "Navigating Performance Appraisal Dynamics: A Manager's Guide",
-        'Manager Sensitization Program',
-        'How to Have Difficult Conversations: A Guide for Leaders',
-        'Feedback Mastery: Enhancing Communication and Performance',
-        'Leading with Empathy: Mental Health Leadership Training',
-        'Creating a Mentally Healthy Environment: A Culture of Psychological Safety',
-        'Preventing Burnout: A Leadership Lens',
-        'Emotional Intelligence for Managers',
-        // Leadership
-        'Strategic Leadership in Evolving Workplaces',
-        'Building Inclusive Leadership Practices',
-        'Leading Change with Emotional Intelligence',
-        'Resilient Leadership: Thriving Through Disruption',
-        'Fostering a Culture of Innovation and Growth',
-        'Mentoring and Coaching for High-Performance Teams',
-        'Leadership Agility: Adapting to Uncertainty',
-        'Mental Health Leadership: Supporting Workforce Wellbeing',
-        // GenZ
-        'From Campus to Corporate: The Real-World Starter Pack',
-        'Emotional Intelligence 2.0: Thriving Beyond IQ',
-        'The Resilience Playbook: Fail Fast, Rise Faster',
-        'Unstoppable Confidence: Owning Your Story at Work',
-        'Digital Detox for Digital Natives: Reclaiming Focus & Energy',
-        'Collaborate & Conquer: Cracking Multigenerational Workplaces',
-        'EQ in Action: Empathy as Your Superpower',
-        'Thriving as a Fresher: Adapting to the Corporate World',
-      ],
+      enum: TRAINER_TYPE_OF_TRAINING_ALL,
       validate: {
         validator: (v) => Array.isArray(v) && v.length > 0,
         message: 'At least one type of training is required',
       },
     },
+    // Date of birth (optional; collected at registration)
+    dateOfBirth: {
+      type: Date,
+    },
+    city: {
+      type: String,
+      trim: true,
+    },
+    pinCode: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: (v) => v == null || v === '' || /^[0-9]{6}$/.test(v),
+        message: 'PIN code must be 6 digits',
+      },
+    },
+    experience: {
+      type: String,
+      enum: TRAINER_EXPERIENCE_ENUM,
+      trim: true,
+    },
+    // Academic qualification entries (max 5)
+    education: [
+      {
+        qualification: { type: String, trim: true },
+        university: { type: String, trim: true },
+        yearOfCompletion: { type: Number, min: 1900, max: 2100 },
+      },
+    ],
+    // Professional certification / course entries (max 5)
+    certification: [
+      {
+        name: { type: String, trim: true },
+        institute: { type: String, trim: true },
+        year: { type: Number, min: 1900, max: 2100 },
+      },
+    ],
     images: [
       {
         key: {
@@ -145,6 +150,32 @@ const trainerSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+/**
+ * Normalize legacy single-object education/certification shapes after load.
+ *
+ * @param {import('mongoose').Document} doc - Trainer document.
+ */
+function normalizeLegacyQualificationsOnInit(doc) {
+  if (doc.education != null && !Array.isArray(doc.education)) {
+    doc.education = normalizeEducationList(doc.education);
+  }
+  if (doc.certification != null && !Array.isArray(doc.certification)) {
+    doc.certification = normalizeCertificationList(doc.certification);
+  }
+}
+
+trainerSchema.post('init', normalizeLegacyQualificationsOnInit);
+
+trainerSchema.pre('save', function preSaveNormalizeQualifications(next) {
+  if (this.education !== undefined) {
+    this.education = filterFilledEducationEntries(normalizeEducationList(this.education));
+  }
+  if (this.certification !== undefined) {
+    this.certification = filterFilledCertificationEntries(normalizeCertificationList(this.certification));
+  }
+  next();
+});
 
 // add plugin that converts mongoose to json
 trainerSchema.plugin(toJSON);

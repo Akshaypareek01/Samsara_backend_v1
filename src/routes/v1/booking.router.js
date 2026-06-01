@@ -107,6 +107,14 @@ router.patch(
     bookingController.cancelBooking
 );
 
+// Admin cancels a booking (any active status, remark required)
+router.patch(
+    '/:id/admin-cancel',
+    auth(),
+    validate(bookingValidation.adminCancelBooking),
+    bookingController.adminCancelBooking
+);
+
 // Update booking details
 router.patch(
     '/:id',

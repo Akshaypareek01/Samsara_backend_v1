@@ -13,6 +13,67 @@ const createTrainer = async (trainerBody) => {
 };
 
 /**
+ * Mongo filter for trainers visible to companies (active + accepting new bookings).
+ * Treats missing flags as available (legacy records).
+ *
+ * @returns {Object}
+ */
+const bookableTrainerMongoFilter = () => ({
+  status: { $ne: false },
+  acceptingBookings: { $ne: false },
+});
+
+/**
+ * Whether a trainer can receive new company bookings.
+ *
+ * @param {Object|null|undefined} trainer - Trainer document or lean object.
+ * @returns {boolean}
+ */
+const isTrainerBookable = (trainer) => {
+  if (!trainer) return false;
+  if (trainer.status === false) return false;
+  if (trainer.acceptingBookings === false) return false;
+  return true;
+};
+
+/**
+ * Builds a Mongoose filter from API query params.
+ *
+ * @param {Object} filter - Raw query fields from the client.
+ * @param {Object} [options]
+ * @param {boolean} [options.companyBookableOnly] - Force active + accepting bookings (company portal).
+ * @returns {Object}
+ */
+const buildTrainerQueryFilter = (filter = {}, options = {}) => {
+  const { companyBookableOnly = false } = options;
+  const mongo = companyBookableOnly ? bookableTrainerMongoFilter() : {};
+
+  if (!companyBookableOnly) {
+    if (filter.status !== undefined) {
+      mongo.status = filter.status === true || filter.status === 'true';
+    }
+    if (filter.acceptingBookings !== undefined) {
+      mongo.acceptingBookings = filter.acceptingBookings === true || filter.acceptingBookings === 'true';
+    }
+  }
+
+  if (filter.name) {
+    mongo.name = { $regex: String(filter.name).trim(), $options: 'i' };
+  }
+  if (filter.category) {
+    mongo.category = filter.category;
+  }
+  if (filter.specialistIn) {
+    mongo.specialistIn = filter.specialistIn;
+  }
+  if (filter.typeOfTraining) {
+    mongo.typeOfTraining = filter.typeOfTraining;
+  }
+
+  return mongo;
+};
+
+/**
  * Query for trainers
  * @param {Object} filter - Mongo filter
  * @param {Object} options - Query options
@@ -64,9 +125,20 @@ const updateTrainerById = async (id, updateBody) => {
   if (!trainer) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Trainer not found');
   }
-  Object.assign(trainer, updateBody);
-  await trainer.save();
-  return trainer;
+
+  // Partial $set updates only validate changed paths, so legacy specialistIn /
+  // typeOfTraining values on existing documents do not block toggles like acceptingBookings.
+  const updated = await Trainer.findByIdAndUpdate(
+    id,
+    { $set: updateBody },
+    { new: true, runValidators: true }
+  );
+
+  if (!updated) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Trainer not found');
+  }
+
+  return updated;
 };
 
 /**
@@ -136,6 +208,9 @@ const updateTrainerProfilePhoto = async (id, profilePhotoData) => {
 
 export default {
   createTrainer,
+  bookableTrainerMongoFilter,
+  isTrainerBookable,
+  buildTrainerQueryFilter,
   queryTrainers,
   getTrainerById,
   getTrainerByEmail,
