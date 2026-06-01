@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Samsara Wellness – Corporate Feedback Form</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange:     #E8621A;
+    --orange-lt:  #F58C4B;
+    --orange-pale:#FDF0E8;
+    --orange-mid: #FAD9C0;
+    --white:      #FFFFFF;
+    --off-white:  #FBF9F7;
+    --ink:        #1C1410;
+    --ink-muted:  #6B574C;
+    --border:     #F0CEBA;
+    --shadow:     rgba(232,98,26,0.10);
+  }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: var(--off-white);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--white);
+    border-bottom: 3px solid var(--orange);
+    padding: 28px 40px 20px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -8px; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--orange) 0%, var(--orange-lt) 60%, transparent 100%);
+    opacity: 0.3;
+  }
+  .header-logo {
+    width: 76px;
+    height: 76px;
+    border-radius: 0;
+    background: transparent;
+    object-fit: contain;
+    flex-shrink: 0;
+    box-shadow: none;
+  }
+  .header-text { flex: 1; }
+  .header-text h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+    line-height: 1.1;
+  }
+  .header-text h1 span { color: var(--orange); }
+  .header-text p {
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-top: 5px;
+  }
+  .header-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 0.88rem;
+    color: var(--ink-muted);
+    text-align: right;
+    line-height: 1.5;
+  }
+
+  /* ── WRAPPER ── */
+  .form-wrap {
+    max-width: 860px;
+    margin: 36px auto 0;
+    padding: 0 20px;
+  }
+
+  /* ── SECTION CARD ── */
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 16px var(--shadow);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .card-head {
+    background: var(--orange);
+    padding: 12px 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-head h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.04em;
+  }
+  .card-head .icon {
+    font-size: 1.1rem;
+    opacity: 0.85;
+  }
+  .card-body { padding: 24px 26px; }
+
+  /* ── EMPLOYEE DETAILS GRID ── */
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 28px; }
+  .field-group label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 5px;
+  }
+  .field-group input[type="text"],
+  .field-group input[type="email"],
+  .field-group input[type="date"] {
+    width: 100%;
+    border: none;
+    border-bottom: 1.5px solid var(--border);
+    padding: 7px 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.92rem;
+    color: var(--ink);
+    background: transparent;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-group input:focus { border-bottom-color: var(--orange); }
+  .field-group input[type="email"]:-webkit-autofill,
+  .field-group input[type="email"]:-webkit-autofill:hover,
+  .field-group input[type="email"]:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--off-white) inset;
+    transition: background-color 9999s ease-out 0s;
+  }
+
+  /* ── QUESTION ── */
+  .question { margin-bottom: 24px; }
+  .question:last-child { margin-bottom: 0; }
+  .q-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .q-num {
+    background: var(--orange);
+    color: white;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── CHECKBOX OPTIONS ── */
+  .options-grid { display: grid; gap: 8px; }
+  .options-grid.col-2 { grid-template-columns: 1fr 1fr; }
+  .options-grid.col-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .options-grid.col-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 7px 12px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    transition: all 0.18s;
+    user-select: none;
+  }
+  .check-item:hover { border-color: var(--orange-lt); background: var(--orange-pale); }
+  .check-item.selected { border-color: var(--orange); background: var(--orange-pale); }
+  .check-item input[type="checkbox"],
+  .check-item input[type="radio"] {
+    appearance: none; -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.18s;
+    background: white;
+  }
+  .check-item input[type="radio"] { border-radius: 50%; }
+  .check-item input[type="checkbox"]:checked,
+  .check-item input[type="radio"]:checked {
+    background: var(--orange);
+    border-color: var(--orange);
+  }
+  .check-item input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 0px;
+    width: 6px; height: 10px;
+    border: 2px solid white;
+    border-top: none; border-left: none;
+    transform: rotate(42deg);
+  }
+  .check-item input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: white;
+  }
+  .check-item span {
+    font-size: 0.86rem;
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .check-item.selected span { color: var(--orange); font-weight: 500; }
+
+  /* Other input inline */
+  .other-wrap { display: flex; align-items: center; gap: 8px; }
+  .other-wrap input[type="text"] {
+    flex: 1;
+    border: none;
+    border-bottom: 1.5px solid var(--border);
+    outline: none;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.84rem;
+    color: var(--ink);
+    background: transparent;
+    padding: 2px 0;
+  }
+  .other-wrap input[type="text"]:focus { border-color: var(--orange); }
+
+  /* ── TRAINER SELECTOR ── */
+  .trainer-selector { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .trainer-selector label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+  .trainer-dropdown {
+    appearance: none; -webkit-appearance: none;
+    padding: 10px 40px 10px 16px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
+    background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23E8621A' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 14px center;
+    cursor: pointer;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-width: 180px;
+  }
+  .trainer-dropdown:hover { border-color: var(--orange-lt); }
+  .trainer-dropdown:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(232,98,26,0.12); }
+
+  /* ── TRAINER BLOCKS ── */
+  .trainer-blocks { display: grid; gap: 20px; }
+  .trainer-blocks.two-col { grid-template-columns: 1fr 1fr; }
+
+  .trainer-block {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    display: none;
+  }
+  .trainer-block.visible { display: block; }
+  .trainer-block-head {
+    background: var(--orange-pale);
+    border-bottom: 1.5px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .trainer-block-head h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--orange);
+  }
+  .trainer-block-body { padding: 16px; }
+
+  .trainer-name-field {
+    margin-bottom: 16px;
+  }
+  .trainer-name-field label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 4px;
+  }
+  .trainer-name-field input {
+    width: 100%;
+    border: none;
+    border-bottom: 1.5px solid var(--border);
+    padding: 6px 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: transparent;
+    outline: none;
+  }
+  .trainer-name-field input:focus { border-bottom-color: var(--orange); }
+
+  /* ── RATING TABLE ── */
+  .rating-note {
+    font-size: 0.72rem;
+    color: var(--ink-muted);
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+  .rating-table { width: 100%; border-collapse: collapse; }
+  .rating-table thead tr {
+    background: var(--orange);
+  }
+  .rating-table thead th {
+    padding: 7px 6px;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+  .rating-table thead th:first-child { text-align: left; padding-left: 10px; }
+  .rating-table tbody tr { border-bottom: 1px solid var(--border); }
+  .rating-table tbody tr:nth-child(even) { background: var(--orange-pale); }
+  .rating-table tbody td {
+    padding: 8px 6px;
+    font-size: 0.8rem;
+    color: var(--ink);
+  }
+  .rating-table tbody td:first-child { padding-left: 10px; }
+  .rating-table tbody td:not(:first-child) { text-align: center; }
+
+  .rating-radio {
+    appearance: none; -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.18s;
+    background: white;
+  }
+  .rating-radio:hover { border-color: var(--orange-lt); }
+  .rating-radio:checked {
+    background: var(--orange);
+    border-color: var(--orange);
+  }
+  .rating-radio:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: white;
+  }
+
+  /* ── WRITE-IN FIELDS ── */
+  .write-in { margin-top: 14px; }
+  .write-in label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 5px;
+  }
+  .write-in input[type="text"] {
+    width: 100%;
+    border: none;
+    border-bottom: 1.5px solid var(--border);
+    padding: 6px 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: transparent;
+    outline: none;
+  }
+  .write-in input:focus { border-bottom-color: var(--orange); }
+
+  /* ── TEXTAREA ── */
+  textarea {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.88rem;
+    color: var(--ink);
+    resize: vertical;
+    outline: none;
+    min-height: 90px;
+    background: var(--off-white);
+    transition: border-color 0.2s;
+    margin-top: 8px;
+  }
+  textarea:focus { border-color: var(--orange); background: white; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 18px 0;
+  }
+
+  /* ── SUBMIT BTN ── */
+  .submit-wrap { text-align: center; margin-top: 8px; }
+  .btn-submit {
+    background: var(--orange);
+    color: white;
+    border: none;
+    padding: 14px 52px;
+    border-radius: 50px;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.94rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(232,98,26,0.3);
+    transition: all 0.2s;
+  }
+  .btn-submit:hover { background: #c5511a; box-shadow: 0 6px 28px rgba(232,98,26,0.4); transform: translateY(-1px); }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    margin-top: 32px;
+    padding: 22px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .footer p {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--ink-muted);
+  }
+  .footer a {
+    color: var(--orange);
+    text-decoration: none;
+    font-weight: 600;
+    font-style: normal;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    display: block;
+    margin-top: 6px;
+  }
+
+  /* ── SUCCESS TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 30px; right: 30px;
+    background: var(--orange);
+    color: white;
+    padding: 14px 26px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.35s ease;
+    z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error {
+    background: #8b1a1a;
+    bottom: 90px;
+    max-width: min(360px, calc(100vw - 40px));
+  }
+
+  /* ── MOBILE-FIRST RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .header {
+      padding: 12px 14px 10px;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    }
+    .header-logo { width: 52px; height: 52px; }
+    .header-text h1 { font-size: 1.12rem; }
+    .header-text p { font-size: 0.64rem; margin-top: 2px; }
+    .header-tagline { display: none; }
+    .form-wrap { padding: 0 10px; margin-top: 14px; }
+    .card { border-radius: 10px; margin-bottom: 14px; }
+    .card-head { padding: 10px 14px; }
+    .card-head h2 { font-size: 0.95rem; }
+    .card-body { padding: 14px 12px; }
+    .field-grid { grid-template-columns: 1fr; gap: 14px; }
+    .field-group input[type="text"],
+    .field-group input[type="email"],
+    .field-group input[type="date"] { font-size: 1rem; padding: 10px 0; }
+    .options-grid.col-2,
+    .options-grid.col-3,
+    .options-grid.col-4 { grid-template-columns: 1fr; gap: 10px; }
+    .check-item { padding: 13px 14px; border-radius: 10px; gap: 12px; min-height: 48px; }
+    .check-item input[type="checkbox"],
+    .check-item input[type="radio"] { width: 22px; height: 22px; flex-shrink: 0; }
+    .check-item input[type="checkbox"]:checked::after { left: 5px; top: 1px; width: 8px; height: 13px; }
+    .check-item input[type="radio"]:checked::after { left: 5px; top: 5px; width: 8px; height: 8px; }
+    .check-item span { font-size: 0.94rem; }
+    .q-label { font-size: 0.96rem; }
+    .trainer-selector { flex-direction: column; align-items: flex-start; gap: 7px; }
+    .trainer-dropdown { width: 100%; font-size: 1rem; padding: 13px 40px 13px 14px; }
+    .trainer-blocks.two-col { grid-template-columns: 1fr; }
+    .trainer-block-body { padding: 12px 10px; }
+    .trainer-name-field input { font-size: 1rem; padding: 10px 0; }
+    .rating-table { display: none; }
+    .rating-cards { display: block !important; }
+    .write-in { margin-top: 12px; }
+    .write-in input[type="text"] { font-size: 1rem; padding: 10px 0; }
+    textarea { font-size: 1rem; min-height: 110px; }
+    .submit-wrap {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px 16px;
+      background: white;
+      border-top: 1.5px solid var(--border);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.09);
+      z-index: 100;
+    }
+    .btn-submit { width: 100%; padding: 16px; font-size: 1rem; border-radius: 12px; }
+    body { padding-bottom: 90px; }
+    .footer { padding: 14px 16px; margin-top: 10px; }
+  }
+
+  @media (min-width: 641px) and (max-width: 900px) {
+    .form-wrap { padding: 0 16px; }
+    .options-grid.col-4 { grid-template-columns: 1fr 1fr; }
+    .options-grid.col-3 { grid-template-columns: 1fr 1fr; }
+    .trainer-blocks.two-col { grid-template-columns: 1fr; }
+  }
+
+  .rating-cards { display: none; }
+
+  /* ── RATING CARDS (mobile) ── */
+  .rating-card {
+    background: var(--off-white);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .rating-card-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .rating-card-stars {
+    display: flex;
+    gap: 8px;
+  }
+  .star-btn {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--ink-muted);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .star-btn:hover { border-color: var(--orange-lt); color: var(--orange); }
+  .star-btn.chosen { border-color: var(--orange); background: var(--orange); color: white; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <img class="header-logo" id="headerLogo" src="/v1/wellness-feedback/logo?v=6" width="76" height="76" alt="Samsara Wellness">
+  <div class="header-text">
+    <h1>Corporate Wellness Session<br><span>Feedback Form</span></h1>
+    <p>Conducted by Samsara Wellness</p>
+  </div>
+  <div class="header-tagline">
+    Yoga &bull; Ayurveda<br>Mental Wellbeing
+  </div>
+</div>
+
+<div class="form-wrap">
+
+  <!-- EMPLOYEE DETAILS -->
+  <div class="card">
+    <div class="card-head"><span class="icon">👤</span><h2>Employee Details</h2></div>
+    <div class="card-body">
+      <div class="field-grid">
+        <div class="field-group">
+          <label>Name <em style="font-style:italic;font-weight:400">(Optional)</em></label>
+          <input type="text" id="employeeName" name="employeeName" placeholder="Your name">
+        </div>
+        <div class="field-group">
+          <label>Email</label>
+          <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email">
+        </div>
+        <div class="field-group">
+          <label>Company Name</label>
+          <input type="text" id="companyName" name="companyName" placeholder="Organisation name">
+        </div>
+        <div class="field-group">
+          <label>Session Date</label>
+          <input type="date" id="sessionDate" name="sessionDate">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SESSION ATTENDED -->
+  <div class="card">
+    <div class="card-head"><span class="icon">🌿</span><h2>Session Feedback</h2></div>
+    <div class="card-body">
+      <div class="question">
+        <div class="q-label"><span class="q-num">Q1</span> Which session did you attend?</div>
+        <div class="options-grid col-2" id="sessions">
+          <label class="check-item">
+            <input type="checkbox" name="session" value="yoga"> <span>Yoga &amp; Mindfulness</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="session" value="mental"> <span>Mental Wellbeing Session</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="session" value="sound"> <span>Sound Healing</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="session" value="ayurveda"> <span>Ayurveda &amp; Lifestyle Wellness</span>
+          </label>
+          <label class="check-item">
+            <input type="checkbox" name="session" value="other">
+            <div class="other-wrap"><span>Other:</span><input type="text" id="sessionOther" name="sessionOther" placeholder="specify…"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAINER EVALUATION -->
+  <div class="card">
+    <div class="card-head"><span class="icon">🎯</span><h2>Trainer Evaluation</h2></div>
+    <div class="card-body">
+
+      <!-- Selector -->
+      <div class="trainer-selector">
+        <label for="trainerSelect">Select Trainer(s):</label>
+        <select class="trainer-dropdown" id="trainerSelect" onchange="setTrainer(this.value)">
+          <option value="trainer">Trainer</option>
+          <option value="both">Both Trainer</option>
+        </select>
+      </div>
+
+      <div class="trainer-blocks" id="trainerBlocks">
+
+        <!-- TRAINER 1 -->
+        <div class="trainer-block visible" id="block1">
+          <div class="trainer-block-head"><h3>🧘 Trainer</h3></div>
+          <div class="trainer-block-body">
+            <div class="trainer-name-field">
+              <label>Trainer Name</label>
+              <input type="text" id="trainer1Name" data-trainer-name="1" placeholder="Enter trainer's name">
+            </div>
+            <p class="rating-note">Rate the trainer &mdash; 1 = Poor, 5 = Excellent</p>
+            <table class="rating-table">
+              <thead>
+                <tr>
+                  <th>Criteria</th>
+                  <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                </tr>
+              </thead>
+              <tbody id="ratingBody1" data-trainer-ratings="1"></tbody>
+            </table>
+            <div class="rating-cards" id="ratingCards1"></div>
+            <div class="write-in">
+              <label>What did you like most about this trainer?</label>
+              <input type="text" id="trainer1Liked" data-trainer-liked="1" placeholder="Your thoughts…">
+            </div>
+            <div class="write-in">
+              <label>Suggestions for improvement</label>
+              <input type="text" id="trainer1Suggestions" data-trainer-suggestions="1" placeholder="Your suggestions…">
+            </div>
+          </div>
+        </div>
+
+        <!-- TRAINER 2 -->
+        <div class="trainer-block" id="block2">
+          <div class="trainer-block-head"><h3>🌸 Trainer 2</h3></div>
+          <div class="trainer-block-body">
+            <div class="trainer-name-field">
+              <label>Trainer Name</label>
+              <input type="text" id="trainer2Name" data-trainer-name="2" placeholder="Enter trainer's name">
+            </div>
+            <p class="rating-note">Rate the trainer &mdash; 1 = Poor, 5 = Excellent</p>
+            <table class="rating-table">
+              <thead>
+                <tr>
+                  <th>Criteria</th>
+                  <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+                </tr>
+              </thead>
+              <tbody id="ratingBody2" data-trainer-ratings="2"></tbody>
+            </table>
+            <div class="rating-cards" id="ratingCards2"></div>
+            <div class="write-in">
+              <label>What did you like most about this trainer?</label>
+              <input type="text" id="trainer2Liked" data-trainer-liked="2" placeholder="Your thoughts…">
+            </div>
+            <div class="write-in">
+              <label>Suggestions for improvement</label>
+              <input type="text" id="trainer2Suggestions" data-trainer-suggestions="2" placeholder="Your suggestions…">
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /trainer-blocks -->
+    </div>
+  </div>
+
+  <!-- OVERALL EXPERIENCE -->
+  <div class="card">
+    <div class="card-head"><span class="icon">✨</span><h2>Overall Session Experience</h2></div>
+    <div class="card-body">
+
+      <!-- Q2 -->
+      <div class="question">
+        <div class="q-label"><span class="q-num">Q2</span> How satisfied were you with the overall wellness session?</div>
+        <div class="options-grid col-2">
+          <label class="check-item"><input type="radio" name="overallSatisfaction" value="Excellent"> <span>Excellent</span></label>
+          <label class="check-item"><input type="radio" name="overallSatisfaction" value="Good"> <span>Good</span></label>
+          <label class="check-item"><input type="radio" name="overallSatisfaction" value="Average"> <span>Average</span></label>
+          <label class="check-item"><input type="radio" name="overallSatisfaction" value="Needs Improvement"> <span>Needs Improvement</span></label>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Q3 -->
+      <div class="question">
+        <div class="q-label"><span class="q-num">Q3</span> Which activities did you enjoy the most?</div>
+        <div class="options-grid col-3">
+          <label class="check-item"><input type="checkbox" name="enjoyedActivities" value="Yoga Practices"> <span>Yoga Practices</span></label>
+          <label class="check-item"><input type="checkbox" name="enjoyedActivities" value="Meditation"> <span>Meditation</span></label>
+          <label class="check-item"><input type="checkbox" name="enjoyedActivities" value="Breathing Techniques"> <span>Breathing Techniques</span></label>
+          <label class="check-item"><input type="checkbox" name="enjoyedActivities" value="Sound Healing"> <span>Sound Healing</span></label>
+          <label class="check-item"><input type="checkbox" name="enjoyedActivities" value="Interactive Activities"> <span>Interactive Activities</span></label>
+          <label class="check-item"><input type="checkbox" name="enjoyedActivities" value="Ayurveda Tips"> <span>Ayurveda Tips</span></label>
+          <label class="check-item"><input type="checkbox" name="enjoyedActivities" value="Mental Wellness Discussion"> <span>Mental Wellness Discussion</span></label>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Q4 -->
+      <div class="question">
+        <div class="q-label"><span class="q-num">Q4</span> Did the session help reduce stress or improve wellbeing?</div>
+        <div class="options-grid col-2">
+          <label class="check-item"><input type="radio" name="stressRelief" value="Yes, significantly"> <span>Yes, significantly</span></label>
+          <label class="check-item"><input type="radio" name="stressRelief" value="Somewhat"> <span>Somewhat</span></label>
+          <label class="check-item"><input type="radio" name="stressRelief" value="Neutral"> <span>Neutral</span></label>
+          <label class="check-item"><input type="radio" name="stressRelief" value="Not really"> <span>Not really</span></label>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Q5 -->
+      <div class="question">
+        <div class="q-label"><span class="q-num">Q5</span> Would you like more wellness sessions in your organisation?</div>
+        <div class="options-grid col-3">
+          <label class="check-item"><input type="radio" name="wantMoreSessions" value="Yes"> <span>Yes</span></label>
+          <label class="check-item"><input type="radio" name="wantMoreSessions" value="Maybe"> <span>Maybe</span></label>
+          <label class="check-item"><input type="radio" name="wantMoreSessions" value="No"> <span>No</span></label>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Q6 -->
+      <div class="question">
+        <div class="q-label"><span class="q-num">Q6</span> Preferred wellness topics for future sessions</div>
+        <div class="options-grid col-4">
+          <label class="check-item"><input type="checkbox" name="preferredTopics" value="Stress Management"> <span>Stress Management</span></label>
+          <label class="check-item"><input type="checkbox" name="preferredTopics" value="Yoga for Desk Workers"> <span>Yoga for Desk Workers</span></label>
+          <label class="check-item"><input type="checkbox" name="preferredTopics" value="Sleep & Recovery"> <span>Sleep &amp; Recovery</span></label>
+          <label class="check-item"><input type="checkbox" name="preferredTopics" value="Mental Wellbeing"> <span>Mental Wellbeing</span></label>
+          <label class="check-item"><input type="checkbox" name="preferredTopics" value="Women's Wellness"> <span>Women's Wellness</span></label>
+          <label class="check-item"><input type="checkbox" name="preferredTopics" value="Nutrition & Ayurveda"> <span>Nutrition &amp; Ayurveda</span></label>
+          <label class="check-item"><input type="checkbox" name="preferredTopics" value="Work-Life Balance"> <span>Work-Life Balance</span></label>
+          <label class="check-item"><input type="checkbox" name="preferredTopics" value="Emotional Wellness"> <span>Emotional Wellness</span></label>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Q7 -->
+      <div class="question">
+        <div class="q-label"><span class="q-num">Q7</span> Additional comments or suggestions</div>
+        <textarea id="additionalComments" name="additionalComments" placeholder="Share your thoughts, ideas, or any feedback you'd like us to know…"></textarea>
+      </div>
+
+      <div class="submit-wrap">
+        <button type="button" class="btn-submit" id="submitBtn" onclick="submitForm()">Submit Feedback</button>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /form-wrap -->
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>Thank You for Your Valuable Feedback</p>
+  <a href="https://www.samsarawellness.in" target="_blank">www.samsarawellness.in</a>
+</div>
+
+<div class="toast" id="toast">✅ Thank you! Your feedback has been submitted.</div>
+<div class="toast error" id="toastError"></div>
+
+<script>
+const API_BASE = window.location.origin + '/v1/wellness-feedback';
+const RATING_KEYS = ['knowledge', 'communication', 'engagement', 'energy', 'usefulness'];
+
+// ── Trainer selection ─────────────────────────────────────────────────────
+function setTrainer(mode) {
+
+  const b1 = document.getElementById('block1');
+  const b2 = document.getElementById('block2');
+  const wrap = document.getElementById('trainerBlocks');
+
+  b1.classList.remove('visible');
+  b2.classList.remove('visible');
+  wrap.classList.remove('two-col');
+
+  if (mode === 'both') {
+    b1.classList.add('visible');
+    b2.classList.add('visible');
+    wrap.classList.add('two-col');
+  } else {
+    b1.classList.add('visible');
+  }
+}
+
+// ── Rating table rows ──────────────────────────────────────────────────────
+const criteria = [
+  'Knowledge & Expertise',
+  'Communication Skills',
+  'Engagement with Audience',
+  'Session Energy & Delivery',
+  'Practical Usefulness',
+];
+
+function buildRatingTable(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  const prefix = tbodyId;
+  criteria.forEach((c, ci) => {
+    const tr = document.createElement('tr');
+    let html = '<td>' + c + '</td>';
+    for (let i = 1; i <= 5; i++) {
+      html += '<td><input class="rating-radio" type="radio" name="' + prefix + '_c' + ci + '" value="' + i + '"></td>';
+    }
+    tr.innerHTML = html;
+    tbody.appendChild(tr);
+  });
+}
+
+function buildRatingCards(containerId, tableBodyId) {
+  const container = document.getElementById(containerId);
+  const prefix = tableBodyId;
+  criteria.forEach((c, ci) => {
+    const card = document.createElement('div');
+    card.className = 'rating-card';
+    let html = '<div class="rating-card-label">' + c + '</div><div class="rating-card-stars">';
+    for (let i = 1; i <= 5; i++) {
+      html += '<button type="button" class="star-btn" data-name="' + prefix + '_c' + ci + '" data-val="' + i + '">' + i + '</button>';
+    }
+    html += '</div>';
+    card.innerHTML = html;
+    container.appendChild(card);
+  });
+  // Sync star buttons with hidden radio
+  container.querySelectorAll('.star-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const name = this.dataset.name;
+      container.querySelectorAll('.star-btn[data-name="' + name + '"]').forEach(b => b.classList.remove('chosen'));
+      this.classList.add('chosen');
+      // also tick the radio in the table
+      const radio = document.querySelector('input[name="' + name + '"][value="' + this.dataset.val + '"]');
+      if (radio) radio.checked = true;
+    });
+  });
+}
+
+buildRatingTable('ratingBody1');
+buildRatingTable('ratingBody2');
+buildRatingCards('ratingCards1', 'ratingBody1');
+buildRatingCards('ratingCards2', 'ratingBody2');
+
+// ── Check-item visual toggle ───────────────────────────────────────────────
+document.querySelectorAll('.check-item input[type="checkbox"], .check-item input[type="radio"]').forEach(inp => {
+  inp.addEventListener('change', () => {
+    // for radio: unmark siblings
+    if (inp.type === 'radio') {
+      document.querySelectorAll('input[name="' + inp.name + '"]').forEach(r => {
+        r.closest('.check-item').classList.remove('selected');
+      });
+    }
+    if (inp.checked) {
+      inp.closest('.check-item').classList.add('selected');
+    } else {
+      inp.closest('.check-item').classList.remove('selected');
+    }
+  });
+});
+
+function getCheckedValues(name) {
+  return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked')).map((el) => el.value);
+}
+
+function getRadioValue(name) {
+  const selected = document.querySelector('input[name="' + name + '"]:checked');
+  return selected ? selected.value : '';
+}
+
+/**
+ * Collect trainer ratings from dynamically built rating tables.
+ * @param {number} trainerNumber - 1 or 2
+ * @returns {Object}
+ */
+function collectTrainerRatings(trainerNumber) {
+  const tbodyId = trainerNumber === 1 ? 'ratingBody1' : 'ratingBody2';
+  const prefix = tbodyId;
+  const ratings = {};
+  RATING_KEYS.forEach((key, index) => {
+    const selected = document.querySelector('input[name="' + prefix + '_c' + index + '"]:checked');
+    if (selected) ratings[key] = Number(selected.value);
+  });
+  return ratings;
+}
+
+/**
+ * Build trainer feedback blocks based on selected trainer mode.
+ * @returns {Array<Object>}
+ */
+function collectTrainers() {
+  const mode = document.getElementById('trainerSelect').value;
+  const trainerNumbers = mode === 'both' ? [1, 2] : [1];
+  return trainerNumbers.map((num) => ({
+    trainerNumber: num,
+    name: document.querySelector('[data-trainer-name="' + num + '"]')?.value?.trim() || '',
+    ratings: collectTrainerRatings(num),
+    likedMost: document.querySelector('[data-trainer-liked="' + num + '"]')?.value?.trim() || '',
+    suggestions: document.querySelector('[data-trainer-suggestions="' + num + '"]')?.value?.trim() || '',
+  }));
+}
+
+/**
+ * Collect full form payload for API submission.
+ * @returns {Object}
+ */
+function collectFormPayload() {
+  const sessionDateValue = document.getElementById('sessionDate').value;
+  return {
+    employeeName: document.getElementById('employeeName').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    companyName: document.getElementById('companyName').value.trim(),
+    sessionDate: sessionDateValue || null,
+    sessionsAttended: getCheckedValues('session'),
+    sessionOther: document.getElementById('sessionOther').value.trim(),
+    trainerMode: document.getElementById('trainerSelect').value,
+    trainers: collectTrainers(),
+    overallSatisfaction: getRadioValue('overallSatisfaction'),
+    enjoyedActivities: getCheckedValues('enjoyedActivities'),
+    stressRelief: getRadioValue('stressRelief'),
+    wantMoreSessions: getRadioValue('wantMoreSessions'),
+    preferredTopics: getCheckedValues('preferredTopics'),
+    additionalComments: document.getElementById('additionalComments').value.trim(),
+  };
+}
+
+function showToast(el, message) {
+  el.textContent = message;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4200);
+}
+
+/**
+ * Validate required answers before submit.
+ * @param {Object} payload
+ * @returns {string|null}
+ */
+function validatePayload(payload) {
+  if (!payload.overallSatisfaction) return 'Please answer Q2 (overall satisfaction).';
+  if (!payload.stressRelief) return 'Please answer Q4 (stress / wellbeing).';
+  if (!payload.wantMoreSessions) return 'Please answer Q5 (more sessions).';
+  return null;
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+async function submitForm() {
+  const toast = document.getElementById('toast');
+  const toastError = document.getElementById('toastError');
+  const submitBtn = document.getElementById('submitBtn');
+  const payload = collectFormPayload();
+  const validationError = validatePayload(payload);
+
+  if (validationError) {
+    showToast(toastError, validationError);
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting…';
+
+  try {
+    const response = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Submission failed. Please try again.');
+    }
+
+    showToast(toast, data.message || '✅ Thank you! Your feedback has been submitted.');
+    document.querySelector('.form-wrap').style.opacity = '0.55';
+    submitBtn.textContent = 'Submitted';
+  } catch (error) {
+    showToast(toastError, error.message || 'Could not submit feedback.');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Feedback';
+  }
+}
+</script>
+</body>
+</html>

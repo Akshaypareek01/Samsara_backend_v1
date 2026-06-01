@@ -1,4 +1,6 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import xss from 'xss-clean';
 import mongoSanitize from 'express-mongo-sanitize';
@@ -15,6 +17,8 @@ import { errorConverter, errorHandler } from './middlewares/error.js';
 import ApiError from './utils/ApiError.js';
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 if (config.env !== 'test') {
   app.use(morgan.successHandler);
@@ -41,7 +45,8 @@ app.use(helmet({
         "https://source.zoom.us",
         "https://*.zoom.us",
         "https://us05st1.zoom.us",
-        "https://st1.zoom.us"
+        "https://st1.zoom.us",
+        "https://fonts.googleapis.com"
       ],
       imgSrc: [
         "'self'",
@@ -60,6 +65,7 @@ app.use(helmet({
       fontSrc: [
         "'self'",
         "https://source.zoom.us",
+        "https://fonts.gstatic.com",
         "data:"
       ],
       frameSrc: [
@@ -108,6 +114,9 @@ passport.use('jwt', jwtStrategy);
 if (config.env === 'production') {
   app.use('/v1/auth', authLimiter);
 }
+
+// public static assets (feedback form HTML, join-meeting page, etc.)
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // v1 api routes
 app.use('/v1', routes);

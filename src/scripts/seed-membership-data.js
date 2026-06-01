@@ -3,7 +3,8 @@ import config from '../config/config.js';
 import { MembershipPlan, CouponCode } from '../models/index.js';
 
 /**
- * Seed membership plans and coupon codes for testing
+ * Seed Basic membership tiers (Lifetime internal, Beta limited-time optional) + sample coupons for testing.
+ * Destructive for plans/coupons: clears MembershipPlan & CouponCode first.
  */
 async function seedMembershipData() {
   try {
@@ -28,30 +29,6 @@ async function seedMembershipData() {
     const basicAccessPlanFeatures = [
       'One Yoga Class per day',
       'One Meditation Class per day',
-      'Weekend Online Wellness Events',
-      'Pre-Recorded Guided Meditation',
-      'Meditation Music Library',
-      'Personal Dosha Analysis',
-      'PCOS/PCOD Assessment',
-      'Thyroid Assessment',
-      'Menopause Assessment',
-      'Health Tracker',
-      'Body Tracker',
-      'Period Tracker',
-      'Mood Tracker',
-      'PCOS/PCOD Diet & Nutrition Plan',
-      'Thyroid Diet & Nutrition Plan',
-      'Menopause Diet & Nutrition Plan',
-    ];
-
-    /**
-     * Premium Access Plan – shared features (from product spec)
-     * Same categories as Basic + unlimited daily access + 12 Personal Training/year
-     */
-    const premiumAccessPlanFeatures = [
-      'Unlimited Yoga Classes',
-      'Unlimited Meditation Classes',
-      '12 Personal Training (per year)',
       'Weekend Online Wellness Events',
       'Pre-Recorded Guided Meditation',
       'Meditation Music Library',
@@ -100,9 +77,9 @@ async function seedMembershipData() {
       },
       {
         name: 'Basic Access – Quarterly Plan',
-        description: 'Basic Access Plan billed every 3 months (INR ₹7197.6 / USD $156).',
-        basePrice: 7197.6,
-        usdBasePrice: 156,
+        description: 'Basic Access Plan billed every 3 months (INR ₹7199 / USD $155.99).',
+        basePrice: 7199,
+        usdBasePrice: 155.99,
         currency: 'INR',
         validityDays: 90,
         features: basicAccessPlanFeatures,
@@ -115,15 +92,15 @@ async function seedMembershipData() {
         metadata: {
           billingCycle: 'quarterly',
           accessTier: 'Basic Access',
-          effectiveMonthlyInr: 2399.2,
+          effectiveMonthlyInr: 2400,
           effectiveMonthlyUsd: 52,
         },
       },
       {
         name: 'Basic Access – Half-Yearly Plan',
-        description: 'Basic Access Plan billed every 6 months (INR ₹12595.8 / USD $273).',
-        basePrice: 12595.8,
-        usdBasePrice: 273,
+        description: 'Basic Access Plan billed every 6 months (INR ₹9999 / USD $274.99).',
+        basePrice: 9999,
+        usdBasePrice: 274.99,
         currency: 'INR',
         validityDays: 180,
         features: basicAccessPlanFeatures,
@@ -136,15 +113,15 @@ async function seedMembershipData() {
         metadata: {
           billingCycle: 'half-yearly',
           accessTier: 'Basic Access',
-          effectiveMonthlyInr: 2099.3,
-          effectiveMonthlyUsd: 45.5,
+          effectiveMonthlyInr: 1667,
+          effectiveMonthlyUsd: 45.83,
         },
       },
       {
         name: 'Basic Access – Yearly Plan',
-        description: 'Basic Access Plan billed annually (INR ₹19793.4 / USD $429). Best value.',
-        basePrice: 19793.4,
-        usdBasePrice: 429,
+        description: 'Basic Access Plan billed annually (INR ₹11899 / USD $439). Best value.',
+        basePrice: 11899,
+        usdBasePrice: 439,
         currency: 'INR',
         validityDays: 365,
         features: basicAccessPlanFeatures,
@@ -158,93 +135,8 @@ async function seedMembershipData() {
           billingCycle: 'yearly',
           bestValue: true,
           accessTier: 'Basic Access',
-          effectiveMonthlyInr: 1649.45,
-          effectiveMonthlyUsd: 35.75,
-        },
-      },
-      // --- Premium Access Plan (4 billing tiers) ---
-      {
-        name: 'Premium Access – Monthly Plan',
-        description: 'Premium Access Plan billed monthly. Premium features included.',
-        basePrice: 4999,
-        currency: 'INR',
-        validityDays: 30,
-        features: premiumAccessPlanFeatures,
-        planType: 'premium',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: taxConfigBasic,
-        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
-        metadata: {
-          billingCycle: 'monthly',
-          accessTier: 'Premium Access',
-        },
-      },
-      {
-        name: 'Premium Access – Quarterly Plan',
-        description: 'Premium Access Plan – Save 10%. Effective ₹4,499/month.',
-        basePrice: 13497,
-        currency: 'INR',
-        validityDays: 90,
-        features: premiumAccessPlanFeatures,
-        planType: 'premium',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: taxConfigBasic,
-        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
-        metadata: {
-          billingCycle: 'quarterly',
-          discountPercentage: 10,
-          originalPrice: 14997,
-          effectiveMonthlyPrice: 4499,
-          savingsOverPeriod: 1500,
-          savingsPeriodLabel: '3 months',
-          accessTier: 'Premium Access',
-        },
-      },
-      {
-        name: 'Premium Access – Half-Yearly Plan',
-        description: 'Premium Access Plan – Save 20%. Effective ₹3,999/month.',
-        basePrice: 23994,
-        currency: 'INR',
-        validityDays: 180,
-        features: premiumAccessPlanFeatures,
-        planType: 'premium',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: taxConfigBasic,
-        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
-        metadata: {
-          billingCycle: 'half-yearly',
-          discountPercentage: 20,
-          originalPrice: 29994,
-          effectiveMonthlyPrice: 3999,
-          savingsOverPeriod: 6000,
-          savingsPeriodLabel: '6 months',
-          accessTier: 'Premium Access',
-        },
-      },
-      {
-        name: 'Premium Access – Yearly Plan',
-        description: 'Premium Access Plan – Save 35%. Best Value. Effective ₹3,249/month.',
-        basePrice: 38988,
-        currency: 'INR',
-        validityDays: 365,
-        features: premiumAccessPlanFeatures,
-        planType: 'premium',
-        maxUsers: 1,
-        isActive: true,
-        taxConfig: taxConfigBasic,
-        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
-        metadata: {
-          billingCycle: 'yearly',
-          discountPercentage: 35,
-          originalPrice: 59988,
-          effectiveMonthlyPrice: 3249,
-          savingsOverPeriod: 21000,
-          savingsPeriodLabel: 'per year',
-          bestValue: true,
-          accessTier: 'Premium Access',
+          effectiveMonthlyInr: 992,
+          effectiveMonthlyUsd: 36.58,
         },
       },
       // --- Internal teacher plan (not listed publicly) ---

@@ -36,6 +36,7 @@
     "test:r2": "node test-r2-connection.js",
     "test:r2-upload": "node test-r2-upload.js",
     "seed:membership": "cross-env NODE_ENV=development node src/scripts/seed-membership-data.js",
+    "migrate:basic-plans": "cross-env NODE_ENV=development node src/scripts/migrate-basic-plan-dual-currency.js",
     "export:trainers-teachers": "cross-env NODE_ENV=development node src/scripts/export-trainers-teachers.js",
     "fix:company-user-index": "cross-env NODE_ENV=development node src/scripts/fix-company-user-email-index.js",
     "migrate:trainer-qualifications": "cross-env NODE_ENV=development node src/scripts/migrate-trainer-qualifications.js",

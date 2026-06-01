@@ -51,6 +51,7 @@ import bookingRoute from './booking.router.js';
 import roleRoute from './role.route.js';
 import webhookRoute from './webhook.route.js';
 import referralRoute from './referral.route.js';
+import wellnessFeedbackRoute from './wellness-feedback.route.js';
 
 const router = express.Router();
 
@@ -254,6 +255,10 @@ const defaultRoutes = [
   {
     path: '/webhooks',
     route: webhookRoute,
+  },
+  {
+    path: '/wellness-feedback',
+    route: wellnessFeedbackRoute,
   },
 ];
 

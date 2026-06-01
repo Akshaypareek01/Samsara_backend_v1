@@ -1,9 +1,12 @@
 import mongoose from 'mongoose';
+import path from 'path';
+import { pathToFileURL } from 'url';
 import config from '../config/config.js';
 import { MembershipPlan, CouponCode } from '../models/index.js';
 
 /**
- * One-off migration: dual-currency Basic plans, delete Trial Plan, hide Lifetime from public catalog.
+ * One-off migration: dual-currency Basic plans, hide Premium from public catalog,
+ * delete Trial Plan, hide Lifetime from public catalog.
  * Run after deploying the schema with `usdBasePrice` and `isPublic`.
  */
 async function migrateBasicPlanDualCurrency() {
@@ -43,13 +46,13 @@ async function migrateBasicPlanDualCurrency() {
       { name: 'Basic Access – Quarterly Plan' },
       {
         $set: {
-          basePrice: 7197.6,
-          usdBasePrice: 156,
+          basePrice: 7199,
+          usdBasePrice: 155.99,
           isPublic: true,
-          description: 'Basic Access Plan billed every 3 months (INR ₹7197.6 / USD $156).',
+          description: 'Basic Access Plan billed every 3 months (INR ₹7199 / USD $155.99).',
           'metadata.billingCycle': 'quarterly',
           'metadata.accessTier': 'Basic Access',
-          'metadata.effectiveMonthlyInr': 2399.2,
+          'metadata.effectiveMonthlyInr': 2400,
           'metadata.effectiveMonthlyUsd': 52,
         },
         $unset: {
@@ -66,14 +69,14 @@ async function migrateBasicPlanDualCurrency() {
       { name: 'Basic Access – Half-Yearly Plan' },
       {
         $set: {
-          basePrice: 12595.8,
-          usdBasePrice: 273,
+          basePrice: 12599,
+          usdBasePrice: 274.99,
           isPublic: true,
-          description: 'Basic Access Plan billed every 6 months (INR ₹12595.8 / USD $273).',
+          description: 'Basic Access Plan billed every 6 months (INR ₹12599 / USD $274.99).',
           'metadata.billingCycle': 'half-yearly',
           'metadata.accessTier': 'Basic Access',
-          'metadata.effectiveMonthlyInr': 2099.3,
-          'metadata.effectiveMonthlyUsd': 45.5,
+          'metadata.effectiveMonthlyInr': 2100,
+          'metadata.effectiveMonthlyUsd': 45.83,
         },
         $unset: {
           'metadata.discountPercentage': '',
@@ -89,15 +92,15 @@ async function migrateBasicPlanDualCurrency() {
       { name: 'Basic Access – Yearly Plan' },
       {
         $set: {
-          basePrice: 19793.4,
-          usdBasePrice: 429,
+          basePrice: 19799,
+          usdBasePrice: 439,
           isPublic: true,
-          description: 'Basic Access Plan billed annually (INR ₹19793.4 / USD $429). Best value.',
+          description: 'Basic Access Plan billed annually (INR ₹19799 / USD $439). Best value.',
           'metadata.billingCycle': 'yearly',
           'metadata.bestValue': true,
           'metadata.accessTier': 'Basic Access',
-          'metadata.effectiveMonthlyInr': 1649.45,
-          'metadata.effectiveMonthlyUsd': 35.75,
+          'metadata.effectiveMonthlyInr': 1650,
+          'metadata.effectiveMonthlyUsd': 36.58,
         },
         $unset: {
           'metadata.discountPercentage': '',
@@ -110,6 +113,12 @@ async function migrateBasicPlanDualCurrency() {
     );
 
     console.log('Basic Access updates:', { monthly, quarterly, halfYearly, yearly });
+
+    const hidePremium = await MembershipPlan.updateMany(
+      { planType: 'premium' },
+      { $set: { isPublic: false } },
+    );
+    console.log(`Premium plans hidden from public catalog (modified ${hidePremium.modifiedCount})`);
 
     const lifetime = await MembershipPlan.updateOne(
       { name: 'Lifetime Plan' },
@@ -131,7 +140,11 @@ async function migrateBasicPlanDualCurrency() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const invokedDirect =
+  typeof process.argv[1] === 'string' &&
+  pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
+
+if (invokedDirect) {
   migrateBasicPlanDualCurrency().catch((e) => {
     console.error(e);
     process.exit(1);
