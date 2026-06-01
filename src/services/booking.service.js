@@ -2,6 +2,13 @@ import httpStatus from 'http-status';
 import { Booking, Trainer, Company } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import mongoose from 'mongoose';
+import {
+  getBookingChangedFieldLabels,
+  notifyBookingCreated,
+  notifyBookingStatusChanged,
+  notifyBookingUpdated,
+  queueBookingNotification,
+} from './bookingNotification.service.js';
 
 /**
  * Create a booking
@@ -58,7 +65,9 @@ const createBooking = async (bookingBody) => {
     }
 
     const booking = await Booking.create(bookingBody);
-    return booking.populate(['company', 'trainer']);
+    const populated = await booking.populate(['company', 'trainer']);
+    queueBookingNotification(notifyBookingCreated(populated));
+    return populated;
 };
 
 /**
@@ -121,13 +130,17 @@ const updateBookingStatus = async (id, status, trainerNotes) => {
         );
     }
 
+    const previousStatus = booking.status;
+
     booking.status = status;
     if (trainerNotes) {
         booking.trainerNotes = trainerNotes;
     }
 
     await booking.save();
-    return booking.populate(['company', 'trainer']);
+    const populated = await booking.populate(['company', 'trainer']);
+    queueBookingNotification(notifyBookingStatusChanged(populated, previousStatus));
+    return populated;
 };
 
 /**
@@ -166,9 +179,14 @@ const cancelBooking = async (id, userId, userType, cancellationReason) => {
         );
     }
 
+    const previousStatus = booking.status;
     booking.status = 'cancelled';
     await booking.save();
-    return booking.populate(['company', 'trainer']);
+    const populated = await booking.populate(['company', 'trainer']);
+    queueBookingNotification(
+        notifyBookingStatusChanged(populated, previousStatus, { cancelledBy: userType })
+    );
+    return populated;
 };
 
 /**
@@ -193,6 +211,7 @@ const adminCancelBooking = async (id, adminId, adminNotes) => {
         );
     }
 
+    const previousStatus = booking.status;
     booking.status = 'cancelled';
     booking.adminNotes = notes;
     booking.cancellationReason = notes;
@@ -200,7 +219,11 @@ const adminCancelBooking = async (id, adminId, adminNotes) => {
     booking.approvedAt = new Date();
 
     await booking.save();
-    return booking.populate(['company', 'trainer', 'approvedBy']);
+    const populated = await booking.populate(['company', 'trainer', 'approvedBy']);
+    queueBookingNotification(
+        notifyBookingStatusChanged(populated, previousStatus, { cancelledBy: 'admin' })
+    );
+    return populated;
 };
 
 /**
@@ -235,6 +258,14 @@ const getCompanyBookings = async (companyId, filter, options) => {
  */
 const updateBookingById = async (id, updateBody) => {
     const booking = await getBookingById(id);
+    const beforeSnapshot = {
+        bookingDate: booking.bookingDate,
+        startTime: booking.startTime,
+        duration: booking.duration,
+        trainer: booking.trainer,
+        typeOfTraining: [...(booking.typeOfTraining || [])],
+        notes: booking.notes,
+    };
 
     // If updating date/time, check availability
     if (
@@ -268,7 +299,10 @@ const updateBookingById = async (id, updateBody) => {
 
     Object.assign(booking, updateBody);
     await booking.save();
-    return booking.populate(['company', 'trainer']);
+    const populated = await booking.populate(['company', 'trainer']);
+    const changedFields = getBookingChangedFieldLabels(beforeSnapshot, populated);
+    queueBookingNotification(notifyBookingUpdated(populated, changedFields));
+    return populated;
 };
 
 /**
@@ -305,6 +339,8 @@ const approveBookingAndConfirmPayment = async (id, adminId, paymentDetails, admi
         );
     }
 
+    const previousStatus = booking.status;
+
     booking.status = 'confirmed';
     booking.isApprovedByAdmin = true;
     booking.approvedBy = adminId;
@@ -320,7 +356,9 @@ const approveBookingAndConfirmPayment = async (id, adminId, paymentDetails, admi
     }
 
     await booking.save();
-    return booking.populate(['company', 'trainer', 'approvedBy']);
+    const populated = await booking.populate(['company', 'trainer', 'approvedBy']);
+    queueBookingNotification(notifyBookingStatusChanged(populated, previousStatus));
+    return populated;
 };
 
 /**
@@ -367,6 +405,7 @@ const rejectBooking = async (id, adminId, adminNotes) => {
         );
     }
 
+    const previousStatus = booking.status;
     booking.status = 'rejected';
     booking.approvedBy = adminId;
     booking.approvedAt = new Date();
@@ -376,7 +415,9 @@ const rejectBooking = async (id, adminId, adminNotes) => {
     }
 
     await booking.save();
-    return booking.populate(['company', 'trainer', 'approvedBy']);
+    const populated = await booking.populate(['company', 'trainer', 'approvedBy']);
+    queueBookingNotification(notifyBookingStatusChanged(populated, previousStatus));
+    return populated;
 };
 
 /**
