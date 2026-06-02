@@ -51,11 +51,20 @@ const assignMembershipByEmailAndPlan = {
   })
 };
 
+/** Admin CRM: attach membership using user id + plan id */
+const assignMembershipByUserAndPlan = {
+  body: Joi.object().keys({
+    userId: Joi.string().required(),
+    planId: Joi.string().required()
+  })
+};
+
 export const membershipValidation = {
   createMembership,
   updateMembership,
   cancelMembership,
   assignMembershipWithCoupon,
   verifyIosReceipt,
-  assignMembershipByEmailAndPlan
+  assignMembershipByEmailAndPlan,
+  assignMembershipByUserAndPlan
 };

@@ -8,6 +8,7 @@ import {
   assignLifetimePlan,
   assignWithCoupon,
   assignByEmailAndPlanName,
+  assignByUserAndPlan,
 } from '../../controllers/admin-membership.controller.js';
 
 const router = express.Router();
@@ -17,6 +18,12 @@ router.get('/users/:userId/history', auth(), getUserMembershipHistory);
 
 router.post('/users/:userId/assign-lifetime', auth(), assignLifetimePlan);
 router.post('/assign-with-coupon', auth(), assignWithCoupon);
+router.post(
+  '/assign',
+  auth(),
+  validate(membershipValidation.assignMembershipByUserAndPlan),
+  assignByUserAndPlan
+);
 
 // Intentionally unauthenticated (internal/script use). Do not expose publicly without network controls.
 router.post(

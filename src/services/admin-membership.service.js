@@ -3,6 +3,7 @@ import {
   assignLifetimePlan,
   assignMembershipWithCoupon,
   assignMembershipByEmailAndPlanName,
+  assignMembershipByUserAndPlan,
 } from './membership.service.js';
 
 /**
@@ -46,3 +47,6 @@ export const adminAssignMembershipWithCoupon = async ({
  */
 export const adminAssignMembershipByEmailAndPlanName = ({ email, planName }) =>
   assignMembershipByEmailAndPlanName(email, planName);
+
+export const adminAssignMembershipByUserAndPlan = ({ userId, planId }) =>
+  assignMembershipByUserAndPlan(userId, planId);

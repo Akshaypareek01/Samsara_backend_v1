@@ -449,44 +449,27 @@ const findUserByEmailInsensitive = async (rawEmail) => {
 };
 
 /**
- * Admin: attach a membership to a user identified by email and plan by human-readable name.
- * Lifetime delegates to teacher complimentary assignment.
- * Other plans are granted manually (paymentProvider manual, waived amount) if the user has no overlapping active membership.
- *
- * @param {string} email - User email
- * @param {string} planName - Must match MembershipPlan.name
+ * Admin: grant membership to a user for a plan (no payment; CRM / scripts).
+ * @param {import('mongoose').Types.ObjectId} userId
+ * @param {import('../models/membership-plan.model.js').default} membershipPlan
+ * @param {string} [source] - metadata.source value
  * @returns {Promise<import('../models/membership.model.js').default>}
  */
-const assignMembershipByEmailAndPlanName = async (email, planName) => {
-  const trimmedEmail = String(email || '').trim();
-  const trimmedPlanName = String(planName || '').trim();
-
-  if (!trimmedEmail || !trimmedPlanName) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'email and planName are required');
-  }
-
-  const user = await findUserByEmailInsensitive(trimmedEmail);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found for this email');
-  }
-
-  const userId = user._id;
-
-  if (trimmedPlanName === 'Trial Plan') {
+const grantAdminMembershipToUser = async (userId, membershipPlan, source = 'admin_assign') => {
+  if (membershipPlan.name === 'Trial Plan') {
     throw new ApiError(httpStatus.GONE, 'Trial Plan has been discontinued');
   }
 
-  if (trimmedPlanName === 'Lifetime Plan') {
+  if (membershipPlan.name === 'Lifetime Plan') {
     return assignLifetimePlan(userId);
   }
 
-  const membershipPlan = await MembershipPlan.findOne({
-    name: trimmedPlanName,
-    isActive: true,
-  });
+  if (!membershipPlan.isActive) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Membership plan is not active');
+  }
 
-  if (!membershipPlan) {
-    throw new ApiError(httpStatus.NOT_FOUND, `No active membership plan named "${trimmedPlanName}"`);
+  if (!membershipPlan.isAvailable()) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Membership plan is not currently available');
   }
 
   const existingActiveMembership = await Membership.findOne({
@@ -529,13 +512,68 @@ const assignMembershipByEmailAndPlanName = async (email, planName) => {
     autoRenewal: false,
     metadata: {
       assignedAt: new Date(),
-      source: 'admin_assign_by_email',
+      source,
     },
   });
 
   await membership.save();
   console.info(`Manual membership assigned via admin: userId=${userId}, plan="${membershipPlan.name}"`);
   return membership;
+};
+
+/**
+ * Admin CRM: assign membership by user id and plan id.
+ * @param {import('mongoose').Types.ObjectId|string} userId
+ * @param {import('mongoose').Types.ObjectId|string} planId
+ * @returns {Promise<import('../models/membership.model.js').default>}
+ */
+const assignMembershipByUserAndPlan = async (userId, planId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  const membershipPlan = await MembershipPlan.findById(planId);
+  if (!membershipPlan) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Membership plan not found');
+  }
+
+  return grantAdminMembershipToUser(user._id, membershipPlan, 'admin_crm_assign');
+};
+
+/**
+ * Admin: attach a membership to a user identified by email and plan by human-readable name.
+ * @param {string} email - User email
+ * @param {string} planName - Must match MembershipPlan.name
+ * @returns {Promise<import('../models/membership.model.js').default>}
+ */
+const assignMembershipByEmailAndPlanName = async (email, planName) => {
+  const trimmedEmail = String(email || '').trim();
+  const trimmedPlanName = String(planName || '').trim();
+
+  if (!trimmedEmail || !trimmedPlanName) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'email and planName are required');
+  }
+
+  const user = await findUserByEmailInsensitive(trimmedEmail);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found for this email');
+  }
+
+  if (trimmedPlanName === 'Lifetime Plan') {
+    return assignLifetimePlan(user._id);
+  }
+
+  const membershipPlan = await MembershipPlan.findOne({
+    name: trimmedPlanName,
+    isActive: true,
+  });
+
+  if (!membershipPlan) {
+    throw new ApiError(httpStatus.NOT_FOUND, `No active membership plan named "${trimmedPlanName}"`);
+  }
+
+  return grantAdminMembershipToUser(user._id, membershipPlan, 'admin_assign_by_email');
 };
 
 export {
@@ -550,4 +588,5 @@ export {
   verifyAppleReceipt,
   processAppleSubscription,
   assignMembershipByEmailAndPlanName,
+  assignMembershipByUserAndPlan,
 };

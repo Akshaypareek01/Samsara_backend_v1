@@ -6,6 +6,7 @@ import {
   adminAssignLifetimePlan,
   adminAssignMembershipWithCoupon,
   adminAssignMembershipByEmailAndPlanName,
+  adminAssignMembershipByUserAndPlan,
 } from '../services/admin-membership.service.js';
 
 export const getUserMembershipOverview = catchAsync(async (req, res) => {
@@ -46,6 +47,16 @@ export const assignWithCoupon = catchAsync(async (req, res) => {
  */
 export const assignByEmailAndPlanName = catchAsync(async (req, res) => {
   const membership = await adminAssignMembershipByEmailAndPlanName(req.body);
+
+  res.status(httpStatus.CREATED).send({
+    success: true,
+    message: 'Membership assigned successfully',
+    data: membership,
+  });
+});
+
+export const assignByUserAndPlan = catchAsync(async (req, res) => {
+  const membership = await adminAssignMembershipByUserAndPlan(req.body);
 
   res.status(httpStatus.CREATED).send({
     success: true,
