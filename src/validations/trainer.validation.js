@@ -77,40 +77,90 @@ const profileDetailKeys = {
   certification: certificationListSchema,
 };
 
+/** Required personal details for public trainer registration */
+const registrationProfileDetailKeys = {
+  dateOfBirth: Joi.date().required().max('now').messages({
+    'any.required': 'Date of birth is required',
+    'date.base': 'Please enter a valid date of birth',
+    'date.max': 'Date of birth cannot be in the future',
+  }),
+  city: Joi.string().trim().required().messages({
+    'any.required': 'City is required',
+    'string.empty': 'City is required',
+  }),
+  pinCode: Joi.string()
+    .pattern(/^[0-9]{6}$/)
+    .required()
+    .messages({
+      'any.required': 'PIN code is required',
+      'string.empty': 'PIN code is required',
+      'string.pattern.base': 'PIN code must be exactly 6 digits',
+    }),
+  experience: Joi.string()
+    .valid(...experienceEnum)
+    .required()
+    .messages({
+      'any.required': 'Years of experience is required',
+      'any.only': 'Please select a valid experience range',
+      'string.empty': 'Years of experience is required',
+    }),
+  education: educationListSchema,
+  certification: certificationListSchema,
+};
+
 const createTrainer = {
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
+    email: Joi.string().required().trim().email().messages({
+      'any.required': 'Email is required',
+      'string.empty': 'Email is required',
+      'string.email': 'Please enter a valid email address',
+    }),
     mobile: Joi.string()
       .required()
       .pattern(/^[0-9]{10}$/)
-      .message('Mobile number must be exactly 10 digits'),
-    name: Joi.string().required().trim(),
-    title: Joi.string().required().trim(),
-    bio: Joi.string().required().max(2000).trim(),
+      .messages({
+        'any.required': 'Mobile number is required',
+        'string.empty': 'Mobile number is required',
+        'string.pattern.base': 'Mobile number must be exactly 10 digits',
+      }),
+    name: Joi.string().required().trim().messages({
+      'any.required': 'Full name is required',
+      'string.empty': 'Full name is required',
+    }),
+    title: Joi.string().required().trim().messages({
+      'any.required': 'Professional title is required',
+      'string.empty': 'Professional title is required',
+    }),
+    bio: Joi.string().required().max(2000).trim().messages({
+      'any.required': 'Bio is required',
+      'string.empty': 'Bio is required',
+      'string.max': 'Bio must be 2000 characters or less',
+    }),
     category: Joi.string()
       .valid(...categoryEnum)
       .required()
       .messages({
         'any.only': `Category must be one of: ${categoryEnum.join(', ')}`,
         'any.required': 'Trainer category is required',
+        'string.empty': 'Trainer category is required',
       }),
     specialistIn: Joi.array()
       .items(Joi.string().valid(...specialistInEnum))
       .min(1)
       .required()
       .messages({
-        'array.min': 'At least one specialty is required',
-        'any.required': 'Specialist field is required',
+        'array.min': 'Select at least one Training For option',
+        'any.required': 'Training For is required',
       }),
     typeOfTraining: Joi.array()
       .items(Joi.string().valid(...typeOfTrainingEnum))
       .min(1)
       .required()
       .messages({
-        'array.min': 'At least one type of training is required',
-        'any.required': 'Type of training is required',
+        'array.min': 'Select at least one specialization',
+        'any.required': 'Specializations are required',
       }),
-    ...profileDetailKeys,
+    ...registrationProfileDetailKeys,
     images: Joi.array()
       .items(
         Joi.object().keys({

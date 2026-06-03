@@ -1,32 +1,138 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
 
+const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+
+/**
+ * Normalize a user-entered domain (strip protocol, www, path).
+ *
+ * @param {string} raw
+ * @returns {string}
+ */
+const normalizeCompanyDomain = (raw) => {
+  let value = String(raw || '').trim().toLowerCase();
+  value = value.replace(/^https?:\/\//, '');
+  value = value.replace(/^www\./, '');
+  value = value.split('/')[0] ?? '';
+  return value;
+};
+
+const contactPersonSchema = (label) =>
+  Joi.object().keys({
+    name: Joi.string().required().trim().messages({
+      'any.required': `${label} name is required`,
+      'string.empty': `${label} name is required`,
+    }),
+    email: Joi.string().required().trim().email().messages({
+      'any.required': `${label} email is required`,
+      'string.empty': `${label} email is required`,
+      'string.email': 'Please enter a valid email address',
+    }),
+    mobileNumber: Joi.string()
+      .required()
+      .pattern(/^[0-9]{10}$/)
+      .messages({
+        'any.required': `${label} mobile number is required`,
+        'string.empty': `${label} mobile number is required`,
+        'string.pattern.base': 'Mobile number must be exactly 10 digits',
+      }),
+    designation: Joi.string().required().trim().messages({
+      'any.required': `${label} designation is required`,
+      'string.empty': `${label} designation is required`,
+    }),
+  });
+
 const createCompany = {
-  body: Joi.object().keys({
-    companyName: Joi.string().allow('', null).optional(),
-    companyLogo: Joi.string().uri().allow('', null).optional(),
-    email: Joi.string().email().allow('', null).optional(),
-    domain: Joi.string().allow('', null).optional(),
-    numberOfEmployees: Joi.number().integer().min(0).optional(),
-    gstNumber: Joi.string().allow('', null).optional(),
-    address: Joi.string().allow('', null).optional(),
-    city: Joi.string().allow('', null).optional(),
-    pincode: Joi.string().allow('', null).optional(),
-    country: Joi.string().allow('', null).optional(),
-    contactPerson1: Joi.object().keys({
-      name: Joi.string().optional(),
-      email: Joi.string().email().optional(),
-      mobileNumber: Joi.string().optional(),
-      designation: Joi.string().optional(),
-    }).optional(),
-    contactPerson2: Joi.object().keys({
-      name: Joi.string().optional(),
-      email: Joi.string().email().optional(),
-      mobileNumber: Joi.string().optional(),
-      designation: Joi.string().optional(),
-    }).optional(),
-    status: Joi.boolean().optional(),
-  }),
+  body: Joi.object()
+    .keys({
+      companyName: Joi.string().required().trim().messages({
+        'any.required': 'Company name is required',
+        'string.empty': 'Company name is required',
+      }),
+      companyLogo: Joi.string().uri().required().messages({
+        'any.required': 'Company logo is required',
+        'string.empty': 'Company logo is required',
+        'string.uri': 'Company logo must be a valid URL',
+      }),
+      email: Joi.string().required().trim().email().messages({
+        'any.required': 'Company email is required',
+        'string.empty': 'Company email is required',
+        'string.email': 'Please enter a valid email address',
+      }),
+      domain: Joi.string()
+        .required()
+        .trim()
+        .custom((value, helpers) => {
+          const normalized = normalizeCompanyDomain(value);
+          if (!normalized) {
+            return helpers.error('any.required');
+          }
+          if (normalized.includes('@')) {
+            return helpers.message('Enter a domain only (e.g. example.com), not an email address');
+          }
+          if (!DOMAIN_REGEX.test(normalized)) {
+            return helpers.message('Please enter a valid domain (e.g. example.com)');
+          }
+          return normalized;
+        })
+        .messages({
+          'any.required': 'Company domain is required',
+          'string.empty': 'Company domain is required',
+        }),
+      numberOfEmployees: Joi.number().integer().min(1).required().messages({
+        'any.required': 'Number of employees is required',
+        'number.base': 'Number of employees is required',
+        'number.min': 'Enter a valid employee count (minimum 1)',
+      }),
+      gstNumber: Joi.string()
+        .required()
+        .trim()
+        .uppercase()
+        .pattern(GST_REGEX)
+        .messages({
+          'any.required': 'GST number is required',
+          'string.empty': 'GST number is required',
+          'string.pattern.base': 'Please enter a valid 15-character GSTIN',
+        }),
+      address: Joi.string().required().trim().messages({
+        'any.required': 'Address is required',
+        'string.empty': 'Address is required',
+      }),
+      city: Joi.string().required().trim().messages({
+        'any.required': 'City is required',
+        'string.empty': 'City is required',
+      }),
+      pincode: Joi.string()
+        .required()
+        .pattern(/^[0-9]{6}$/)
+        .messages({
+          'any.required': 'Pincode is required',
+          'string.empty': 'Pincode is required',
+          'string.pattern.base': 'Pincode must be exactly 6 digits',
+        }),
+      country: Joi.string().required().trim().messages({
+        'any.required': 'Country is required',
+        'string.empty': 'Country is required',
+      }),
+      contactPerson1: contactPersonSchema('Primary contact').required().messages({
+        'any.required': 'Primary contact person is required',
+      }),
+      contactPerson2: contactPersonSchema('Secondary contact').required().messages({
+        'any.required': 'Secondary contact person is required',
+      }),
+      status: Joi.boolean().optional(),
+    })
+    .custom((value, helpers) => {
+      const emailDomain = String(value.email || '')
+        .split('@')[1]
+        ?.toLowerCase();
+      const companyDomain = normalizeCompanyDomain(value.domain);
+      if (emailDomain && companyDomain && emailDomain !== companyDomain) {
+        return helpers.message(`Company email must use your domain (@${companyDomain})`);
+      }
+      return value;
+    }),
 };
 
 const getCompanies = {
