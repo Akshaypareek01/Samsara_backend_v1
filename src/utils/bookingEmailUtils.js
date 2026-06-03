@@ -1,3 +1,5 @@
+import config from '../config/config.js';
+
 /**
  * Formatting helpers for booking notification emails.
  */
@@ -196,10 +198,10 @@ export function buildBookingEmailText(greeting, intro, booking, ctaUrl) {
 }
 
 /**
- * Frontend base URL for dashboard links.
+ * CRM portal base URL for company/trainer/admin dashboard links in booking emails.
  *
  * @returns {string} Base URL without trailing slash.
  */
 export function getFrontendBaseUrl() {
-  return (process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:3000').replace(/\/$/, '');
+  return String(config.frontend.url).replace(/\/$/, '');
 }

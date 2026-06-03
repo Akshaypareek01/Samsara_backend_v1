@@ -49,6 +49,11 @@ const envVarsSchema = Joi.object()
     // RevenueCat
     REVENUECAT_SECRET_KEY: Joi.string().description('RevenueCat Secret API Key (sk_...)'),
     USD_TO_INR_RATE: Joi.number().positive().default(83).description('USD catalogue total × this → INR charged on Razorpay (international)'),
+    FRONTEND_URL: Joi.string()
+      .uri()
+      .optional()
+      .description('CRM portal base URL (company/trainer/admin links in emails)'),
+    CLIENT_URL: Joi.string().uri().optional().description('Alias for FRONTEND_URL'),
   })
   .unknown();
 
@@ -136,6 +141,14 @@ const config = {
   },
   fx: {
     usdToInr: envVars.USD_TO_INR_RATE,
+  },
+  frontend: {
+    url:
+      envVars.FRONTEND_URL ||
+      envVars.CLIENT_URL ||
+      (envVars.NODE_ENV === 'production'
+        ? 'https://corporate.samsarawellness.in'
+        : 'http://localhost:3000'),
   },
 };
 
