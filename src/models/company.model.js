@@ -10,6 +10,7 @@ const companySchema = new mongoose.Schema(
     domain: { type: String },
     numberOfEmployees: { type: Number },
     gstNumber: { type: String },
+    panNumber: { type: String },
     address: { type: String },
     city: { type: String },
     pincode: { type: String },

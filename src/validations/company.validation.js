@@ -3,6 +3,7 @@ import { objectId } from './custom.validation.js';
 
 const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 
 /**
  * Normalize a user-entered domain (strip protocol, www, path).
@@ -95,6 +96,16 @@ const createCompany = {
           'string.empty': 'GST number is required',
           'string.pattern.base': 'Please enter a valid 15-character GSTIN',
         }),
+      panNumber: Joi.string()
+        .required()
+        .trim()
+        .uppercase()
+        .pattern(PAN_REGEX)
+        .messages({
+          'any.required': 'PAN number is required',
+          'string.empty': 'PAN number is required',
+          'string.pattern.base': 'Please enter a valid 10-character PAN (e.g. ABCDE1234F)',
+        }),
       address: Joi.string().required().trim().messages({
         'any.required': 'Address is required',
         'string.empty': 'Address is required',
@@ -178,6 +189,7 @@ const updateCompany = {
       domain: Joi.string().allow('', null).optional(),
       numberOfEmployees: Joi.number().integer().min(0).optional(),
       gstNumber: Joi.string().allow('', null).optional(),
+      panNumber: Joi.string().trim().uppercase().pattern(PAN_REGEX).allow('', null).optional(),
       address: Joi.string().allow('', null).optional(),
       city: Joi.string().allow('', null).optional(),
       pincode: Joi.string().allow('', null).optional(),
@@ -230,6 +242,7 @@ const updateProfile = {
       domain: Joi.string().allow('', null).optional(),
       numberOfEmployees: Joi.number().integer().min(0).optional(),
       gstNumber: Joi.string().allow('', null).optional(),
+      panNumber: Joi.string().trim().uppercase().pattern(PAN_REGEX).allow('', null).optional(),
       address: Joi.string().allow('', null).optional(),
       city: Joi.string().allow('', null).optional(),
       pincode: Joi.string().allow('', null).optional(),
