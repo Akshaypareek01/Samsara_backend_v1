@@ -49,3 +49,16 @@ export const TRAINER_EXPERIENCE_ENUM = [
   '12 to 15 years',
   'Above 15 years',
 ];
+
+/** Cities where trainers operate (order matches company portal filters). */
+export const TRAINER_CITY_ENUM = [
+  'Bangalore',
+  'Chennai',
+  'Delhi',
+  'Gurgaon',
+  'Hyderabad',
+  'Mumbai',
+  'Navi Mumbai',
+  'Noida',
+  'Pune',
+];

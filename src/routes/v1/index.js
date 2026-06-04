@@ -52,6 +52,7 @@ import roleRoute from './role.route.js';
 import webhookRoute from './webhook.route.js';
 import referralRoute from './referral.route.js';
 import wellnessFeedbackRoute from './wellness-feedback.route.js';
+import platformAccountDetailsRoute from './platform-account-details.route.js';
 
 const router = express.Router();
 
@@ -259,6 +260,10 @@ const defaultRoutes = [
   {
     path: '/wellness-feedback',
     route: wellnessFeedbackRoute,
+  },
+  {
+    path: '/account-details',
+    route: platformAccountDetailsRoute,
   },
 ];
 

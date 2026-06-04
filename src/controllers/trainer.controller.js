@@ -15,8 +15,19 @@ const createTrainer = catchAsync(async (req, res) => {
  * Get all trainers with pagination and filtering
  */
 const getAllTrainers = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['name', 'category', 'specialistIn', 'typeOfTraining', 'status', 'acceptingBookings']);
+  const filter = pick(req.query, [
+    'name',
+    'category',
+    'specialistIn',
+    'typeOfTraining',
+    'city',
+    'status',
+    'acceptingBookings',
+  ]);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  if (!options.sortBy) {
+    options.sortBy = 'createdAt:desc';
+  }
   const companyBookableOnly = req.user?.role === 'company';
   const mongoFilter = trainerService.buildTrainerQueryFilter(filter, { companyBookableOnly });
   const result = await trainerService.queryTrainers(mongoFilter, options);

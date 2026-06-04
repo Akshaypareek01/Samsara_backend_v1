@@ -69,6 +69,9 @@ const buildTrainerQueryFilter = (filter = {}, options = {}) => {
   if (filter.typeOfTraining) {
     mongo.typeOfTraining = filter.typeOfTraining;
   }
+  if (filter.city) {
+    mongo.city = String(filter.city).trim();
+  }
 
   return mongo;
 };

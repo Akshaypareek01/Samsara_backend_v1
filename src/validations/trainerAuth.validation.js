@@ -7,6 +7,7 @@ import {
   TRAINER_SPECIALIST_IN_CURRENT,
   TRAINER_TYPE_OF_TRAINING_ALL,
   TRAINER_TYPE_OF_TRAINING_CURRENT,
+  TRAINER_CITY_ENUM,
 } from '../constants/trainerProfileEnums.js';
 import {
   MAX_TRAINER_CERTIFICATION_ENTRIES,
@@ -64,7 +65,10 @@ const certificationListSchema = Joi.alternatives()
 // Personal/profile detail keys shared by register and updateProfile payloads
 const profileDetailKeys = {
   dateOfBirth: Joi.date().allow(null),
-  city: Joi.string().trim().allow('', null),
+  city: Joi.string()
+    .trim()
+    .valid(...TRAINER_CITY_ENUM)
+    .allow('', null),
   pinCode: Joi.string()
     .pattern(/^[0-9]{6}$/)
     .allow('', null)
@@ -82,10 +86,15 @@ const registrationProfileDetailKeys = {
     'date.base': 'Please enter a valid date of birth',
     'date.max': 'Date of birth cannot be in the future',
   }),
-  city: Joi.string().trim().required().messages({
-    'any.required': 'City is required',
-    'string.empty': 'City is required',
-  }),
+  city: Joi.string()
+    .trim()
+    .valid(...TRAINER_CITY_ENUM)
+    .required()
+    .messages({
+      'any.required': 'City is required',
+      'string.empty': 'City is required',
+      'any.only': 'Please select a valid city',
+    }),
   pinCode: Joi.string()
     .pattern(/^[0-9]{6}$/)
     .required()
