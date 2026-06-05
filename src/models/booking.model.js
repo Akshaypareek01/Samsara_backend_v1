@@ -51,6 +51,10 @@ const bookingSchema = new mongoose.Schema(
                 message: 'At least one type of training is required',
             },
         },
+        eapTraining: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'EapTraining',
+        },
         status: {
             type: String,
             enum: ['pending_approval', 'approved', 'confirmed', 'rejected', 'cancelled', 'completed'],

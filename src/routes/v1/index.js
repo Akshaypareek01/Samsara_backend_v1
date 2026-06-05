@@ -53,6 +53,7 @@ import webhookRoute from './webhook.route.js';
 import referralRoute from './referral.route.js';
 import wellnessFeedbackRoute from './wellness-feedback.route.js';
 import platformAccountDetailsRoute from './platform-account-details.route.js';
+import eapTrainingRoute from './eap-training.route.js';
 
 const router = express.Router();
 
@@ -264,6 +265,10 @@ const defaultRoutes = [
   {
     path: '/account-details',
     route: platformAccountDetailsRoute,
+  },
+  {
+    path: '/eap-trainings',
+    route: eapTrainingRoute,
   },
 ];
 

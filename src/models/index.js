@@ -48,6 +48,7 @@ import Trainer from './trainer.model.js';
 import Booking from './booking.model.js';
 import Role from './role.model.js';
 import WellnessFeedback from './wellness-feedback.model.js';
+import EapTraining from './eap-training.model.js';
 import PlatformAccountDetails from './platform-account-details.model.js';
 
 export {
@@ -103,6 +104,7 @@ export {
   Booking,
   Role,
   WellnessFeedback,
+  EapTraining,
   PlatformAccountDetails
 };
 

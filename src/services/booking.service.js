@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import { Booking, Trainer, Company } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import mongoose from 'mongoose';
+import { validateEapTrainingForBooking } from './eap-training.service.js';
 import {
   getBookingChangedFieldLabels,
   notifyBookingCreated,
@@ -28,17 +29,6 @@ const createBooking = async (bookingBody) => {
         throw new ApiError(httpStatus.NOT_FOUND, 'Company not found');
     }
 
-    // Verify training types are valid for this trainer
-    const invalidTypes = bookingBody.typeOfTraining.filter(
-        (type) => !trainer.typeOfTraining.includes(type)
-    );
-    if (invalidTypes.length > 0) {
-        throw new ApiError(
-            httpStatus.BAD_REQUEST,
-            `Invalid training types for this trainer: ${invalidTypes.join(', ')}`
-        );
-    }
-
     if (trainer.status === false) {
         throw new ApiError(httpStatus.BAD_REQUEST, 'This trainer is inactive and cannot accept bookings.');
     }
@@ -47,6 +37,27 @@ const createBooking = async (bookingBody) => {
             httpStatus.BAD_REQUEST,
             'This trainer is not accepting new bookings at the moment.'
         );
+    }
+
+    let eapTrainingDoc = null;
+    if (bookingBody.eapTraining) {
+        eapTrainingDoc = await validateEapTrainingForBooking(
+            bookingBody.eapTraining,
+            bookingBody.trainer,
+            bookingBody.duration
+        );
+        bookingBody.typeOfTraining = [eapTrainingDoc.title];
+    } else {
+        // Verify training types are valid for this trainer
+        const invalidTypes = bookingBody.typeOfTraining.filter(
+            (type) => !trainer.typeOfTraining.includes(type)
+        );
+        if (invalidTypes.length > 0) {
+            throw new ApiError(
+                httpStatus.BAD_REQUEST,
+                `Invalid training types for this trainer: ${invalidTypes.join(', ')}`
+            );
+        }
     }
 
     // Check if time slot is available
@@ -65,7 +76,7 @@ const createBooking = async (bookingBody) => {
     }
 
     const booking = await Booking.create(bookingBody);
-    const populated = await booking.populate(['company', 'trainer']);
+    const populated = await booking.populate(['company', 'trainer', 'eapTraining']);
     queueBookingNotification(notifyBookingCreated(populated));
     return populated;
 };
@@ -84,7 +95,7 @@ const queryBookings = async (filter, options) => {
     // Add populate option by default
     const queryOptions = {
         ...options,
-        populate: options.populate || 'company,trainer',
+        populate: options.populate || 'company,trainer,eapTraining',
     };
     const bookings = await Booking.paginate(filter, queryOptions);
     return bookings;
@@ -96,7 +107,7 @@ const queryBookings = async (filter, options) => {
  * @returns {Promise<Booking>}
  */
 const getBookingById = async (id) => {
-    const booking = await Booking.findById(id).populate(['company', 'trainer']);
+    const booking = await Booking.findById(id).populate(['company', 'trainer', 'eapTraining']);
     if (!booking) {
         throw new ApiError(httpStatus.NOT_FOUND, 'Booking not found');
     }
@@ -138,7 +149,7 @@ const updateBookingStatus = async (id, status, trainerNotes) => {
     }
 
     await booking.save();
-    const populated = await booking.populate(['company', 'trainer']);
+    const populated = await booking.populate(['company', 'trainer', 'eapTraining']);
     queueBookingNotification(notifyBookingStatusChanged(populated, previousStatus));
     return populated;
 };
@@ -182,7 +193,7 @@ const cancelBooking = async (id, userId, userType, cancellationReason) => {
     const previousStatus = booking.status;
     booking.status = 'cancelled';
     await booking.save();
-    const populated = await booking.populate(['company', 'trainer']);
+    const populated = await booking.populate(['company', 'trainer', 'eapTraining']);
     queueBookingNotification(
         notifyBookingStatusChanged(populated, previousStatus, { cancelledBy: userType })
     );
@@ -299,7 +310,7 @@ const updateBookingById = async (id, updateBody) => {
 
     Object.assign(booking, updateBody);
     await booking.save();
-    const populated = await booking.populate(['company', 'trainer']);
+    const populated = await booking.populate(['company', 'trainer', 'eapTraining']);
     const changedFields = getBookingChangedFieldLabels(beforeSnapshot, populated);
     queueBookingNotification(notifyBookingUpdated(populated, changedFields));
     return populated;

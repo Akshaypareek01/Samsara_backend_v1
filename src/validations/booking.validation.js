@@ -32,7 +32,8 @@ const createBooking = {
             .messages({
                 'array.min': 'At least one type of training is required',
             }),
-        notes: Joi.string().max(1000).trim().optional(),
+        notes: Joi.string().max(1000).trim().empty('').optional(),
+        eapTraining: Joi.string().custom(objectId).optional(),
     }),
 };
 
@@ -66,7 +67,7 @@ const updateBookingStatus = {
             .messages({
                 'any.only': 'Status must be one of: approved, completed',
             }),
-        trainerNotes: Joi.string().max(1000).trim().optional(),
+        trainerNotes: Joi.string().max(1000).trim().empty('').optional(),
     }),
 };
 
@@ -80,8 +81,8 @@ const updateBooking = {
             startTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/),
             duration: Joi.number().min(0.5).max(24),
             typeOfTraining: Joi.array().items(Joi.string().trim().min(1).max(300)).min(1),
-            notes: Joi.string().max(1000).trim(),
-            trainerNotes: Joi.string().max(1000).trim(),
+            notes: Joi.string().max(1000).trim().empty(''),
+            trainerNotes: Joi.string().max(1000).trim().empty(''),
         })
         .min(1),
 };
@@ -119,7 +120,7 @@ const cancelBooking = {
         id: Joi.string().custom(objectId).required(),
     }),
     body: Joi.object().keys({
-        cancellationReason: Joi.string().trim().min(1).max(1000).optional(),
+        cancellationReason: Joi.string().trim().min(1).max(1000).empty('').optional(),
     }),
 };
 
@@ -139,7 +140,7 @@ const approveBookingAndConfirmPayment = {
         transactionId: Joi.string().required().trim(),
         paymentType: Joi.string().valid(...paymentTypeEnum).required(),
         paymentAmount: Joi.number().required().min(0),
-        adminNotes: Joi.string().max(1000).trim().optional(),
+        adminNotes: Joi.string().max(1000).trim().empty('').optional(),
     }),
 };
 
@@ -148,7 +149,7 @@ const rejectBooking = {
         id: Joi.string().custom(objectId).required(),
     }),
     body: Joi.object().keys({
-        adminNotes: Joi.string().max(1000).trim().optional(),
+        adminNotes: Joi.string().max(1000).trim().empty('').optional(),
     }),
 };
 

@@ -62,6 +62,8 @@ const buildTrainerQueryFilter = (filter = {}, options = {}) => {
   }
   if (filter.category) {
     mongo.category = filter.category;
+  } else if (filter.excludeCategory) {
+    mongo.category = { $ne: filter.excludeCategory };
   }
   if (filter.specialistIn) {
     mongo.specialistIn = filter.specialistIn;

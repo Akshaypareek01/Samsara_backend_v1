@@ -18,6 +18,7 @@ const getAllTrainers = catchAsync(async (req, res) => {
   const filter = pick(req.query, [
     'name',
     'category',
+    'excludeCategory',
     'specialistIn',
     'typeOfTraining',
     'city',

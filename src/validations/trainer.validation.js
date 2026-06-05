@@ -195,6 +195,7 @@ const getTrainers = {
   query: Joi.object().keys({
     name: Joi.string(),
     category: Joi.string().valid(...categoryEnum),
+    excludeCategory: Joi.string().valid(...categoryEnum),
     specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
     typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
     city: Joi.string().valid(...TRAINER_CITY_ENUM),
