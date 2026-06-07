@@ -12,6 +12,12 @@ router.get(
   eapTrainingController.listMine
 );
 
+router.get(
+  '/landing',
+  auth(),
+  eapTrainingController.getCompanyLanding
+);
+
 router
   .route('/')
   .get(auth(), validate(eapTrainingValidation.listEapTrainings), eapTrainingController.listEapTrainings)

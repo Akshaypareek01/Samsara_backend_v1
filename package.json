@@ -41,6 +41,8 @@
     "fix:company-user-index": "cross-env NODE_ENV=development node src/scripts/fix-company-user-email-index.js",
     "migrate:trainer-qualifications": "cross-env NODE_ENV=development node src/scripts/migrate-trainer-qualifications.js",
     "migrate:trainer-qualifications:dry-run": "cross-env NODE_ENV=development node src/scripts/migrate-trainer-qualifications.js --dry-run",
+    "clear:trainers": "cross-env NODE_ENV=development node src/scripts/clear-all-trainers.js",
+    "clear:trainers:apply": "cross-env NODE_ENV=development node src/scripts/clear-all-trainers.js --apply",
     "free-port": "bash scripts/free-backend-port.sh"
   },
   "keywords": [

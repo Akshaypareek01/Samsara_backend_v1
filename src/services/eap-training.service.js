@@ -1,8 +1,12 @@
 import httpStatus from 'http-status';
 import { EapTraining, Trainer } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
+import trainerService from './trainer.service.js';
 
 const EAP_TRAINER_CATEGORY = 'EAP Trainer';
+
+/** Featured row size on the company EAP landing page. */
+const FEATURED_LANDING_LIMIT = 6;
 
 const TRAINER_DETAIL_FIELDS =
   'name title bio specialistIn city experience profilePhoto status acceptingBookings category';
@@ -267,6 +271,32 @@ const queryEapTrainings = async (filter, options) => {
  * @param {string} trainerId
  * @param {number} durationHours
  */
+/**
+ * Featured EAP trainers and trainings for the company landing (newest first).
+ *
+ * @param {number} [limit]
+ */
+const getCompanyEapLanding = async (limit = FEATURED_LANDING_LIMIT) => {
+  const trainerFilter = trainerService.buildTrainerQueryFilter(
+    { category: EAP_TRAINER_CATEGORY },
+    { companyBookableOnly: true }
+  );
+
+  const [trainersPage, trainingsPage] = await Promise.all([
+    trainerService.queryTrainers(trainerFilter, {
+      page: 1,
+      limit,
+      sortBy: 'createdAt:desc',
+    }),
+    queryCompanyEapTrainings({}, { page: 1, limit, sortBy: 'createdAt:desc' }),
+  ]);
+
+  return {
+    trainers: trainersPage.results ?? [],
+    trainings: trainingsPage.results ?? [],
+  };
+};
+
 const validateEapTrainingForBooking = async (eapTrainingId, trainerId, durationHours) => {
   const training = await getEapTrainingById(eapTrainingId);
   if (training.trainer._id?.toString() !== trainerId.toString() && training.trainer.toString?.() !== trainerId.toString()) {
@@ -289,8 +319,10 @@ export {
   deleteEapTrainingById,
   queryEapTrainings,
   queryCompanyEapTrainings,
+  getCompanyEapLanding,
   validateEapTrainingForBooking,
   EAP_TRAINER_CATEGORY,
+  FEATURED_LANDING_LIMIT,
 };
 
 export default {
@@ -301,6 +333,8 @@ export default {
   deleteEapTrainingById,
   queryEapTrainings,
   queryCompanyEapTrainings,
+  getCompanyEapLanding,
   validateEapTrainingForBooking,
   EAP_TRAINER_CATEGORY,
+  FEATURED_LANDING_LIMIT,
 };

@@ -27,6 +27,17 @@ const createEapTraining = catchAsync(async (req, res) => {
 });
 
 /**
+ * GET /eap-trainings/landing — newest featured EAP trainers + trainings for company home row.
+ */
+const getCompanyLanding = catchAsync(async (req, res) => {
+  if (req.user.role !== 'company') {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Company access only');
+  }
+  const landing = await eapTrainingService.getCompanyEapLanding();
+  res.send(landing);
+});
+
+/**
  * GET /eap-trainings — company list (optional trainerId filter).
  */
 const listEapTrainings = catchAsync(async (req, res) => {
@@ -34,6 +45,9 @@ const listEapTrainings = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  if (!options.sortBy) {
+    options.sortBy = 'createdAt:desc';
+  }
 
   if (req.user.role === 'company') {
     const query = pick(req.query, ['trainerId', 'search', 'trainerName', 'duration']);
@@ -93,6 +107,7 @@ const deleteEapTraining = catchAsync(async (req, res) => {
 export {
   listMine,
   createEapTraining,
+  getCompanyLanding,
   listEapTrainings,
   getEapTraining,
   updateEapTraining,
