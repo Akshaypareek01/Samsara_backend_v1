@@ -63,6 +63,14 @@ const certificationListSchema = Joi.alternatives()
     )
   );
 
+const accountDetailsSchema = Joi.object().keys({
+  upiId: Joi.string().trim().allow('', null).optional(),
+  bankName: Joi.string().trim().allow('', null).optional(),
+  accountNumber: Joi.string().trim().allow('', null).optional(),
+  ifscCode: Joi.string().trim().uppercase().allow('', null).optional(),
+  accountHolderName: Joi.string().trim().allow('', null).optional(),
+});
+
 // Personal/profile detail keys shared by create and update payloads
 const profileDetailKeys = {
   dateOfBirth: Joi.date().allow(null),
@@ -237,6 +245,7 @@ const updateMe = {
       }),
       status: Joi.boolean(),
       acceptingBookings: Joi.boolean(),
+      accountDetails: accountDetailsSchema.optional(),
     })
     .min(1),
 };
@@ -268,6 +277,7 @@ const updateTrainer = {
       }),
       status: Joi.boolean(),
       acceptingBookings: Joi.boolean(),
+      accountDetails: accountDetailsSchema.optional(),
     })
     .min(1),
 };

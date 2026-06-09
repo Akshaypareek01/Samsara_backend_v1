@@ -136,6 +136,23 @@ const trainerSchema = new mongoose.Schema(
         default: null,
       },
     },
+    /** Payout account details — only exposed on GET /trainers/me (select: false). */
+    accountDetails: {
+      type: {
+        upiId: { type: String, trim: true, default: '' },
+        bankName: { type: String, trim: true, default: '' },
+        accountNumber: { type: String, trim: true, default: '' },
+        ifscCode: { type: String, trim: true, uppercase: true, default: '' },
+        accountHolderName: { type: String, trim: true, default: '' },
+      },
+      default: () => ({}),
+      select: false,
+    },
+    /** Denormalized aggregate from TrainerRating collection. */
+    ratingSummary: {
+      averageRating: { type: Number, default: 0 },
+      totalReviews: { type: Number, default: 0 },
+    },
     status: {
       type: Boolean,
       default: true,

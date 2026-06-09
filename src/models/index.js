@@ -50,6 +50,7 @@ import Role from './role.model.js';
 import WellnessFeedback from './wellness-feedback.model.js';
 import EapTraining from './eap-training.model.js';
 import PlatformAccountDetails from './platform-account-details.model.js';
+import TrainerRating from './trainer-rating.model.js';
 
 export {
   Token,
@@ -105,6 +106,7 @@ export {
   Role,
   WellnessFeedback,
   EapTraining,
-  PlatformAccountDetails
+  PlatformAccountDetails,
+  TrainerRating,
 };
 

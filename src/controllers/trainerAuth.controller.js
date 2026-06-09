@@ -80,7 +80,7 @@ const resetPassword = catchAsync(async (req, res) => {
  * Get current trainer profile
  */
 const getMe = catchAsync(async (req, res) => {
-  const trainer = await trainerService.getTrainerById(req.user.id);
+  const trainer = await trainerService.getTrainerById(req.user.id, { includeAccountDetails: true });
   if (!trainer) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Trainer not found');
   }

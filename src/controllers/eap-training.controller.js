@@ -45,6 +45,12 @@ const listEapTrainings = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
   }
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  if (options.page) {
+    options.page = parseInt(String(options.page), 10);
+  }
+  if (options.limit) {
+    options.limit = parseInt(String(options.limit), 10);
+  }
   if (!options.sortBy) {
     options.sortBy = 'createdAt:desc';
   }

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { toJSON, paginate } from './plugins/index.js';
 
-const EAP_DURATION_OPTIONS = [1, 2, 4, 6];
+const EAP_DURATION_OPTIONS = [1, 2, 4, 24];
 
 const syllabusEntrySchema = new mongoose.Schema(
   {
@@ -10,13 +10,11 @@ const syllabusEntrySchema = new mongoose.Schema(
       required: true,
       enum: EAP_DURATION_OPTIONS,
     },
-    points: {
-      type: [String],
+    description: {
+      type: String,
       required: true,
-      validate: {
-        validator: (v) => Array.isArray(v) && v.length > 0 && v.every((p) => String(p).trim().length > 0),
-        message: 'Each duration must have at least one point',
-      },
+      trim: true,
+      minlength: 1,
     },
   },
   { _id: false }
@@ -52,7 +50,7 @@ const eapTrainingSchema = new mongoose.Schema(
             v.every((h) => EAP_DURATION_OPTIONS.includes(h))
           );
         },
-        message: 'durationOptions must contain at least one of: 1, 2, 4, 6',
+        message: 'durationOptions must contain at least one of: 1, 2, 4, 24',
       },
     },
     syllabus: {

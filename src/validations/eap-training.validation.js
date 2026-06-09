@@ -1,16 +1,13 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
 
-const DURATION_VALUES = [1, 2, 4, 6];
+const DURATION_VALUES = [1, 2, 4, 24];
 
 const syllabusEntrySchema = Joi.object().keys({
   durationHours: Joi.number()
     .valid(...DURATION_VALUES)
     .required(),
-  points: Joi.array()
-    .items(Joi.string().trim().min(1).max(500))
-    .min(1)
-    .required(),
+  description: Joi.string().trim().min(1).max(5000).required(),
 });
 
 const trainingBodySchema = Joi.object().keys({

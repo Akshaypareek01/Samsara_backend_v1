@@ -106,14 +106,16 @@ const assertEapTrainer = (trainer) => {
 };
 
 /**
- * Normalize syllabus points (trim, drop empty).
+ * Normalize syllabus descriptions (trim; accept legacy points arrays).
  *
- * @param {Array<{ durationHours: number, points: string[] }>} syllabus
+ * @param {Array<{ durationHours: number, description?: string, points?: string[] }>} syllabus
  */
 const normalizeSyllabus = (syllabus) =>
   syllabus.map((entry) => ({
     durationHours: entry.durationHours,
-    points: entry.points.map((p) => String(p).trim()).filter(Boolean),
+    description: String(
+      entry.description ?? entry.points?.filter(Boolean).map((p) => String(p).trim()).join('\n') ?? ''
+    ).trim(),
   }));
 
 /**

@@ -54,6 +54,7 @@ import referralRoute from './referral.route.js';
 import wellnessFeedbackRoute from './wellness-feedback.route.js';
 import platformAccountDetailsRoute from './platform-account-details.route.js';
 import eapTrainingRoute from './eap-training.route.js';
+import trainerRatingRoute from './trainer-rating.route.js';
 
 const router = express.Router();
 
@@ -269,6 +270,10 @@ const defaultRoutes = [
   {
     path: '/eap-trainings',
     route: eapTrainingRoute,
+  },
+  {
+    path: '/trainer-ratings',
+    route: trainerRatingRoute,
   },
 ];
 

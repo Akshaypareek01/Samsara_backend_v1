@@ -93,12 +93,34 @@ const queryTrainers = async (filter, options) => {
 };
 
 /**
+ * Normalize trainer payout account details for persistence.
+ *
+ * @param {object} incoming - Partial account details from the client.
+ * @param {object} [current] - Existing stored account details.
+ * @returns {object}
+ */
+const normalizeAccountDetails = (incoming = {}, current = {}) => ({
+  upiId: (incoming.upiId ?? current.upiId ?? '').trim(),
+  bankName: (incoming.bankName ?? current.bankName ?? '').trim(),
+  accountNumber: (incoming.accountNumber ?? current.accountNumber ?? '').trim(),
+  ifscCode: (incoming.ifscCode ?? current.ifscCode ?? '').trim().toUpperCase(),
+  accountHolderName: (incoming.accountHolderName ?? current.accountHolderName ?? '').trim(),
+});
+
+/**
  * Get trainer by id
  * @param {ObjectId} id
+ * @param {Object} [options]
+ * @param {boolean} [options.includeAccountDetails] - Include payout account details (select: false field).
  * @returns {Promise<Trainer>}
  */
-const getTrainerById = async (id) => {
-  return Trainer.findById(id);
+const getTrainerById = async (id, options = {}) => {
+  const { includeAccountDetails = false } = options;
+  let query = Trainer.findById(id);
+  if (includeAccountDetails) {
+    query = query.select('+accountDetails');
+  }
+  return query;
 };
 
 /**
@@ -126,18 +148,30 @@ const getTrainerByMobile = async (mobile) => {
  * @returns {Promise<Trainer>}
  */
 const updateTrainerById = async (id, updateBody) => {
-  const trainer = await getTrainerById(id);
+  const includeAccountDetails = updateBody.accountDetails !== undefined;
+  const trainer = await getTrainerById(id, { includeAccountDetails });
   if (!trainer) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Trainer not found');
   }
 
+  if (includeAccountDetails) {
+    updateBody.accountDetails = normalizeAccountDetails(
+      updateBody.accountDetails,
+      trainer.accountDetails
+    );
+  }
+
   // Partial $set updates only validate changed paths, so legacy specialistIn /
   // typeOfTraining values on existing documents do not block toggles like acceptingBookings.
-  const updated = await Trainer.findByIdAndUpdate(
+  let updateQuery = Trainer.findByIdAndUpdate(
     id,
     { $set: updateBody },
     { new: true, runValidators: true }
   );
+  if (includeAccountDetails) {
+    updateQuery = updateQuery.select('+accountDetails');
+  }
+  const updated = await updateQuery;
 
   if (!updated) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Trainer not found');
