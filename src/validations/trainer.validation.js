@@ -63,12 +63,23 @@ const certificationListSchema = Joi.alternatives()
     )
   );
 
+const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+const panDocumentSchema = Joi.object()
+  .keys({
+    key: Joi.string().trim().allow('', null),
+    path: Joi.string().trim().allow('', null),
+  })
+  .optional();
+
 const accountDetailsSchema = Joi.object().keys({
   upiId: Joi.string().trim().allow('', null).optional(),
   bankName: Joi.string().trim().allow('', null).optional(),
   accountNumber: Joi.string().trim().allow('', null).optional(),
   ifscCode: Joi.string().trim().uppercase().allow('', null).optional(),
   accountHolderName: Joi.string().trim().allow('', null).optional(),
+  panNumber: Joi.string().trim().uppercase().pattern(PAN_REGEX).allow('', null).optional(),
+  panDocument: panDocumentSchema,
 });
 
 // Personal/profile detail keys shared by create and update payloads

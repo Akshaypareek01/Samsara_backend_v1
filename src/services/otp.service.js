@@ -1,6 +1,7 @@
 import httpStatus from 'http-status';
 import { OTP } from '../models/index.js';
 import { sendEmail } from './email.service.js';
+import { buildOtpEmailContent } from '../utils/emailTemplates.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -40,20 +41,22 @@ const createOTP = async (email, type) => {
 };
 
 /**
- * Send OTP via email
+ * Send OTP via email with branded HTML template.
  * @param {string} email
  * @param {string} otp
  * @param {string} type
+ * @param {Object} [options]
+ * @param {'company'|'trainer'|'user'} [options.portal] - Portal context for CTA copy.
  * @returns {Promise}
  */
-const sendOTPEmail = async (email, otp, type) => {
-  const subject = type === 'registration' ? 'Email Verification OTP' : 'Login OTP';
-  const text = `Your ${type === 'registration' ? 'verification' : 'login'} OTP is: ${otp}
-  
-This OTP will expire in 10 minutes.
-If you didn't request this, please ignore this email.`;
+const sendOTPEmail = async (email, otp, type, options = {}) => {
+  const { subject, text, html } = buildOtpEmailContent({
+    otp,
+    type,
+    portal: options.portal || 'company',
+  });
 
-  await sendEmail(email, subject, text);
+  await sendEmail(email, subject, text, html);
 };
 
 /**
@@ -86,21 +89,25 @@ const verifyOTP = async (email, otp, type) => {
 /**
  * Send OTP for registration
  * @param {string} email
+ * @param {Object} [options]
+ * @param {'company'|'trainer'|'user'} [options.portal]
  * @returns {Promise}
  */
-const sendRegistrationOTP = async (email) => {
+const sendRegistrationOTP = async (email, options = {}) => {
   const otpDoc = await createOTP(email, 'registration');
-  await sendOTPEmail(email, otpDoc.otp, 'registration');
+  await sendOTPEmail(email, otpDoc.otp, 'registration', options);
 };
 
 /**
  * Send OTP for login
  * @param {string} email
+ * @param {Object} [options]
+ * @param {'company'|'trainer'|'user'} [options.portal]
  * @returns {Promise}
  */
-const sendLoginOTP = async (email) => {
+const sendLoginOTP = async (email, options = {}) => {
   const otpDoc = await createOTP(email, 'login');
-  await sendOTPEmail(email, otpDoc.otp, 'login');
+  await sendOTPEmail(email, otpDoc.otp, 'login', options);
 };
 
 /**

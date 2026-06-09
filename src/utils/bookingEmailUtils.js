@@ -1,4 +1,4 @@
-import config from '../config/config.js';
+import { buildAlertEmailContent } from './emailTemplates.js';
 
 /**
  * Formatting helpers for booking notification emails.
@@ -143,6 +143,64 @@ export function buildBookingDetailLines(booking) {
 }
 
 /**
+ * Map booking detail lines to alert email detail rows.
+ *
+ * @param {string[]} lines - Plain detail lines.
+ * @returns {Array<{label: string, value: string}>} Structured detail rows.
+ */
+function mapBookingDetails(lines) {
+  return lines.map((line) => {
+    const separatorIndex = line.indexOf(':');
+    if (separatorIndex === -1) {
+      return { label: 'Detail', value: line };
+    }
+    return {
+      label: line.slice(0, separatorIndex).trim(),
+      value: line.slice(separatorIndex + 1).trim(),
+    };
+  });
+}
+
+/**
+ * Pick alert tone from booking status for visual accent.
+ *
+ * @param {string} status - Booking status.
+ * @returns {'info'|'success'|'warning'|'danger'} Email tone.
+ */
+function getBookingAlertTone(status) {
+  if (status === 'confirmed' || status === 'completed') return 'success';
+  if (status === 'rejected' || status === 'cancelled') return 'danger';
+  if (status === 'pending_approval' || status === 'approved') return 'warning';
+  return 'info';
+}
+
+/**
+ * Build branded HTML and text bodies for booking emails.
+ *
+ * @param {string} greeting - Opening line.
+ * @param {string} intro - Intro paragraph.
+ * @param {Object} booking - Populated booking document.
+ * @param {string} [ctaLabel] - Optional CTA button label.
+ * @param {string} [ctaUrl] - Optional CTA URL.
+ * @returns {{ text: string, html: string }} Email bodies.
+ */
+export function buildBookingEmailBodies(greeting, intro, booking, ctaLabel, ctaUrl) {
+  const message = [greeting, intro].filter(Boolean).join(' ');
+  const details = mapBookingDetails(buildBookingDetailLines(booking));
+  const title = `Booking update — ${getBookingReference(booking)}`;
+
+  return buildAlertEmailContent({
+    title,
+    message,
+    preheader: intro,
+    details,
+    ctaLabel,
+    ctaUrl,
+    tone: getBookingAlertTone(booking.status),
+  });
+}
+
+/**
  * Build simple HTML body for booking emails.
  *
  * @param {string} greeting - Opening line.
@@ -153,24 +211,7 @@ export function buildBookingDetailLines(booking) {
  * @returns {string} HTML email body.
  */
 export function buildBookingEmailHtml(greeting, intro, booking, ctaLabel, ctaUrl) {
-  const details = buildBookingDetailLines(booking)
-    .map((line) => `<li>${line.replace(/</g, '&lt;')}</li>`)
-    .join('');
-
-  const ctaBlock =
-    ctaLabel && ctaUrl
-      ? `<p style="margin-top:20px;"><a href="${ctaUrl}" style="display:inline-block;padding:10px 16px;background:#6c5ce7;color:#fff;text-decoration:none;border-radius:6px;">${ctaLabel}</a></p>`
-      : '';
-
-  return `
-    <div style="font-family:Arial,sans-serif;color:#1f2937;line-height:1.5;max-width:560px;">
-      <p>${greeting.replace(/</g, '&lt;')}</p>
-      <p>${intro.replace(/</g, '&lt;')}</p>
-      <ul style="padding-left:18px;">${details}</ul>
-      ${ctaBlock}
-      <p style="margin-top:24px;color:#6b7280;font-size:13px;">This is an automated message from Samsara CRM. Please do not reply to this email.</p>
-    </div>
-  `.trim();
+  return buildBookingEmailBodies(greeting, intro, booking, ctaLabel, ctaUrl).html;
 }
 
 /**
@@ -183,25 +224,7 @@ export function buildBookingEmailHtml(greeting, intro, booking, ctaLabel, ctaUrl
  * @returns {string} Plain-text email body.
  */
 export function buildBookingEmailText(greeting, intro, booking, ctaUrl) {
-  const lines = [
-    greeting,
-    '',
-    intro,
-    '',
-    ...buildBookingDetailLines(booking),
-  ];
-  if (ctaUrl) {
-    lines.push('', `Open dashboard: ${ctaUrl}`);
-  }
-  lines.push('', '—', 'This is an automated message from Samsara CRM.');
-  return lines.join('\n');
+  return buildBookingEmailBodies(greeting, intro, booking, ctaUrl ? 'View booking' : undefined, ctaUrl).text;
 }
 
-/**
- * CRM portal base URL for company/trainer/admin dashboard links in booking emails.
- *
- * @returns {string} Base URL without trailing slash.
- */
-export function getFrontendBaseUrl() {
-  return String(config.frontend.url).replace(/\/$/, '');
-}
+export { getFrontendBaseUrl } from './emailTemplates.js';

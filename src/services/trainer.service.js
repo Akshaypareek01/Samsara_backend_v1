@@ -105,6 +105,11 @@ const normalizeAccountDetails = (incoming = {}, current = {}) => ({
   accountNumber: (incoming.accountNumber ?? current.accountNumber ?? '').trim(),
   ifscCode: (incoming.ifscCode ?? current.ifscCode ?? '').trim().toUpperCase(),
   accountHolderName: (incoming.accountHolderName ?? current.accountHolderName ?? '').trim(),
+  panNumber: (incoming.panNumber ?? current.panNumber ?? '').trim().toUpperCase(),
+  panDocument: {
+    key: (incoming.panDocument?.key ?? current.panDocument?.key ?? '').trim(),
+    path: (incoming.panDocument?.path ?? current.panDocument?.path ?? '').trim(),
+  },
 });
 
 /**

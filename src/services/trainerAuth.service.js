@@ -21,7 +21,7 @@ const sendLoginOTPForTrainer = async (email) => {
     throw new ApiError(httpStatus.FORBIDDEN, 'Your account has been deactivated');
   }
 
-  await sendLoginOTP(email);
+  await sendLoginOTP(email, { portal: 'trainer' });
   return { message: 'OTP sent successfully to your email' };
 };
 

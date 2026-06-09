@@ -31,7 +31,7 @@ const sendLoginOTPForUser = async (email) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Account not found. Please register first.');
   }
 
-  await sendLoginOTP(email);
+  await sendLoginOTP(email, { portal: 'user' });
   return { message: 'OTP sent successfully to your email' };
 };
 

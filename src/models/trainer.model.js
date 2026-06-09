@@ -144,6 +144,11 @@ const trainerSchema = new mongoose.Schema(
         accountNumber: { type: String, trim: true, default: '' },
         ifscCode: { type: String, trim: true, uppercase: true, default: '' },
         accountHolderName: { type: String, trim: true, default: '' },
+        panNumber: { type: String, trim: true, uppercase: true, default: '' },
+        panDocument: {
+          key: { type: String, default: '' },
+          path: { type: String, default: '' },
+        },
       },
       default: () => ({}),
       select: false,

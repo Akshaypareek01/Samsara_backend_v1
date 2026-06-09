@@ -128,7 +128,7 @@ const sendLoginOTPForCompany = async (email) => {
     throw new ApiError(httpStatus.FORBIDDEN, 'Company account is inactive. Please contact support.');
   }
 
-  await sendLoginOTP(email);
+  await sendLoginOTP(email, { portal: 'company' });
   return { message: 'OTP sent successfully to your email' };
 };
 
