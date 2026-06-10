@@ -40,7 +40,13 @@ export const TRAINER_TYPE_OF_TRAINING_ALL = [
   ...new Set([...TRAINER_TYPE_OF_TRAINING_CURRENT, ...TRAINER_TYPE_OF_TRAINING_LEGACY]),
 ];
 
-export const TRAINER_CATEGORY_ENUM = ['Yoga Trainer', 'Sound Healer', 'Psychologist', 'EAP Trainer'];
+export const TRAINER_CATEGORY_ENUM = [
+  'Yoga Trainer',
+  'Sound Healer',
+  'Psychologist',
+  'Women Health Trainer',
+  'EAP Trainer',
+];
 
 export const TRAINER_EXPERIENCE_ENUM = [
   '3 to 5 years',
