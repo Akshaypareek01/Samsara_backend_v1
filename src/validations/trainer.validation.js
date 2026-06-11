@@ -64,6 +64,29 @@ const certificationListSchema = Joi.alternatives()
   );
 
 const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+const PERSON_NAME_REGEX = /^[A-Za-z\s.'-]+$/;
+const TIME_SLOT_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+const weeklyAvailabilitySchema = Joi.array()
+  .items(
+    Joi.object().keys({
+      dayOfWeek: Joi.number().integer().min(0).max(6).required(),
+      slots: Joi.array()
+        .items(
+          Joi.object().keys({
+            startTime: Joi.string().pattern(TIME_SLOT_REGEX).required().messages({
+              'string.pattern.base': 'Start time must be in HH:MM format (24-hour)',
+            }),
+            endTime: Joi.string().pattern(TIME_SLOT_REGEX).required().messages({
+              'string.pattern.base': 'End time must be in HH:MM format (24-hour)',
+            }),
+          })
+        )
+        .min(1)
+        .required(),
+    })
+  )
+  .optional();
 
 const panDocumentSchema = Joi.object()
   .keys({
@@ -151,10 +174,15 @@ const createTrainer = {
         'string.empty': 'Mobile number is required',
         'string.pattern.base': 'Mobile number must be exactly 10 digits',
       }),
-    name: Joi.string().required().trim().messages({
-      'any.required': 'Full name is required',
-      'string.empty': 'Full name is required',
-    }),
+    name: Joi.string()
+      .required()
+      .trim()
+      .pattern(PERSON_NAME_REGEX)
+      .messages({
+        'any.required': 'Full name is required',
+        'string.empty': 'Full name is required',
+        'string.pattern.base': "Name must contain only letters, spaces, and . ' -",
+      }),
     title: Joi.string().required().trim().messages({
       'any.required': 'Professional title is required',
       'string.empty': 'Professional title is required',
@@ -207,6 +235,7 @@ const createTrainer = {
       .optional(),
     status: Joi.boolean().optional(),
     acceptingBookings: Joi.boolean().optional(),
+    weeklyAvailability: weeklyAvailabilitySchema,
   }),
 };
 
@@ -256,6 +285,7 @@ const updateMe = {
       }),
       status: Joi.boolean(),
       acceptingBookings: Joi.boolean(),
+      weeklyAvailability: weeklyAvailabilitySchema,
       accountDetails: accountDetailsSchema.optional(),
     })
     .min(1),
@@ -288,6 +318,7 @@ const updateTrainer = {
       }),
       status: Joi.boolean(),
       acceptingBookings: Joi.boolean(),
+      weeklyAvailability: weeklyAvailabilitySchema,
       accountDetails: accountDetailsSchema.optional(),
     })
     .min(1),

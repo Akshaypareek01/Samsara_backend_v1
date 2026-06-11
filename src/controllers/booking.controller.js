@@ -78,7 +78,9 @@ const getMyBookingsSummary = catchAsync(async (req, res) => {
  * Get a booking by ID
  */
 const getBookingById = catchAsync(async (req, res) => {
-    const booking = await bookingService.getBookingById(req.params.id);
+    const booking = await bookingService.getBookingById(req.params.id, {
+        trainerPortal: req.user.role === 'trainer',
+    });
     if (req.user.role === 'company') {
         const ownerId =
             booking.company && typeof booking.company === 'object' && booking.company._id

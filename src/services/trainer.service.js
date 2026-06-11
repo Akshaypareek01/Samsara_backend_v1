@@ -58,7 +58,16 @@ const buildTrainerQueryFilter = (filter = {}, options = {}) => {
   }
 
   if (filter.name) {
-    mongo.name = { $regex: String(filter.name).trim(), $options: 'i' };
+    const term = String(filter.name).trim();
+    if (term) {
+      const regex = { $regex: term, $options: 'i' };
+      mongo.$or = [
+        { name: regex },
+        { title: regex },
+        { specialistIn: regex },
+        { typeOfTraining: regex },
+      ];
+    }
   }
   if (filter.category) {
     mongo.category = filter.category;

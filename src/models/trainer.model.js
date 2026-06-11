@@ -13,6 +13,7 @@ import {
   normalizeCertificationList,
   normalizeEducationList,
 } from '../utils/trainerQualificationUtils.js';
+import { normalizeWeeklyAvailability } from '../utils/trainerAvailabilityUtils.js';
 
 const trainerSchema = new mongoose.Schema(
   {
@@ -167,6 +168,21 @@ const trainerSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    /** Recurring weekly windows when the trainer accepts sessions (optional). */
+    weeklyAvailability: {
+      type: [
+        {
+          dayOfWeek: { type: Number, min: 0, max: 6, required: true },
+          slots: [
+            {
+              startTime: { type: String, trim: true, required: true },
+              endTime: { type: String, trim: true, required: true },
+            },
+          ],
+        },
+      ],
+      default: () => [],
+    },
   },
   {
     timestamps: true,
@@ -185,6 +201,9 @@ function normalizeLegacyQualificationsOnInit(doc) {
   if (doc.certification != null && !Array.isArray(doc.certification)) {
     doc.certification = normalizeCertificationList(doc.certification);
   }
+  if (doc.weeklyAvailability == null || !Array.isArray(doc.weeklyAvailability)) {
+    doc.weeklyAvailability = [];
+  }
 }
 
 trainerSchema.post('init', normalizeLegacyQualificationsOnInit);
@@ -195,6 +214,9 @@ trainerSchema.pre('save', function preSaveNormalizeQualifications(next) {
   }
   if (this.certification !== undefined) {
     this.certification = filterFilledCertificationEntries(normalizeCertificationList(this.certification));
+  }
+  if (this.weeklyAvailability !== undefined) {
+    this.weeklyAvailability = normalizeWeeklyAvailability(this.weeklyAvailability);
   }
   next();
 });

@@ -1,9 +1,23 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
+import { TRAINER_CITY_ENUM } from '../constants/trainerProfileEnums.js';
 
 const DOMAIN_REGEX = /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
 const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+const PERSON_NAME_REGEX = /^[A-Za-z\s.'-]+$/;
+const COMPANY_COUNTRY_ENUM = ['India'];
+
+const personNameSchema = (label) =>
+  Joi.string()
+    .required()
+    .trim()
+    .pattern(PERSON_NAME_REGEX)
+    .messages({
+      'any.required': `${label} is required`,
+      'string.empty': `${label} is required`,
+      'string.pattern.base': `${label} must contain only letters, spaces, and . ' -`,
+    });
 
 /**
  * Normalize a user-entered domain (strip protocol, www, path).
@@ -21,10 +35,7 @@ const normalizeCompanyDomain = (raw) => {
 
 const contactPersonSchema = (label) =>
   Joi.object().keys({
-    name: Joi.string().required().trim().messages({
-      'any.required': `${label} name is required`,
-      'string.empty': `${label} name is required`,
-    }),
+    name: personNameSchema(`${label} name`),
     email: Joi.string().required().trim().email().messages({
       'any.required': `${label} email is required`,
       'string.empty': `${label} email is required`,
@@ -47,10 +58,7 @@ const contactPersonSchema = (label) =>
 const createCompany = {
   body: Joi.object()
     .keys({
-      companyName: Joi.string().required().trim().messages({
-        'any.required': 'Company name is required',
-        'string.empty': 'Company name is required',
-      }),
+      companyName: personNameSchema('Company name'),
       companyLogo: Joi.string().uri().required().messages({
         'any.required': 'Company logo is required',
         'string.empty': 'Company logo is required',
@@ -110,10 +118,14 @@ const createCompany = {
         'any.required': 'Address is required',
         'string.empty': 'Address is required',
       }),
-      city: Joi.string().required().trim().messages({
-        'any.required': 'City is required',
-        'string.empty': 'City is required',
-      }),
+      city: Joi.string()
+        .required()
+        .valid(...TRAINER_CITY_ENUM)
+        .messages({
+          'any.required': 'City is required',
+          'string.empty': 'City is required',
+          'any.only': 'Please select a valid city',
+        }),
       pincode: Joi.string()
         .required()
         .pattern(/^[0-9]{6}$/)
@@ -122,10 +134,14 @@ const createCompany = {
           'string.empty': 'Pincode is required',
           'string.pattern.base': 'Pincode must be exactly 6 digits',
         }),
-      country: Joi.string().required().trim().messages({
-        'any.required': 'Country is required',
-        'string.empty': 'Country is required',
-      }),
+      country: Joi.string()
+        .required()
+        .valid(...COMPANY_COUNTRY_ENUM)
+        .messages({
+          'any.required': 'Country is required',
+          'string.empty': 'Country is required',
+          'any.only': 'Please select a valid country',
+        }),
       contactPerson1: contactPersonSchema('Primary contact').required().messages({
         'any.required': 'Primary contact person is required',
       }),

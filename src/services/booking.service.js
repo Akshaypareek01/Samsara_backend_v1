@@ -10,6 +10,10 @@ import {
   notifyBookingUpdated,
   queueBookingNotification,
 } from './bookingNotification.service.js';
+import {
+  AVAILABILITY_OUTSIDE_MESSAGE,
+  isWithinWeeklyAvailability,
+} from '../utils/trainerAvailabilityUtils.js';
 
 /**
  * Create a booking
@@ -60,10 +64,22 @@ const createBooking = async (bookingBody) => {
         }
     }
 
-    // Check if time slot is available
+    const bookingDate = new Date(bookingBody.bookingDate);
+    if (
+        !isWithinWeeklyAvailability(
+            trainer,
+            bookingDate,
+            bookingBody.startTime,
+            bookingBody.duration
+        )
+    ) {
+        throw new ApiError(httpStatus.BAD_REQUEST, AVAILABILITY_OUTSIDE_MESSAGE);
+    }
+
+    // Check if time slot is available (no overlapping bookings)
     const isAvailable = await Booking.isTimeSlotAvailable(
         bookingBody.trainer,
-        new Date(bookingBody.bookingDate),
+        bookingDate,
         bookingBody.startTime,
         bookingBody.duration
     );
@@ -102,12 +118,33 @@ const queryBookings = async (filter, options) => {
 };
 
 /**
- * Get booking by id
- * @param {ObjectId} id
- * @returns {Promise<Booking>}
+ * Populate paths for a booking document.
+ *
+ * @param {import('mongoose').Query} query - Booking query.
+ * @param {object} [opts]
+ * @param {boolean} [opts.trainerPortal] - Limit company fields for trainer viewers.
  */
-const getBookingById = async (id) => {
-    const booking = await Booking.findById(id).populate(['company', 'trainer', 'eapTraining']);
+const applyBookingPopulates = (query, opts = {}) => {
+    if (opts.trainerPortal) {
+        return query.populate([
+            { path: 'company', select: 'companyName companyLogo' },
+            { path: 'trainer' },
+            { path: 'eapTraining' },
+        ]);
+    }
+    return query.populate(['company', 'trainer', 'eapTraining']);
+};
+
+/**
+ * Get booking by id with role-appropriate populated fields.
+ *
+ * @param {import('mongoose').Types.ObjectId|string} id - Booking id.
+ * @param {object} [opts]
+ * @param {boolean} [opts.trainerPortal] - Limit company fields for trainer viewers.
+ * @returns {Promise<import('../models/booking.model.js').default>}
+ */
+const getBookingById = async (id, opts = {}) => {
+    const booking = await applyBookingPopulates(Booking.findById(id), opts);
     if (!booking) {
         throw new ApiError(httpStatus.NOT_FOUND, 'Booking not found');
     }
@@ -290,10 +327,18 @@ const updateBookingById = async (id, updateBody) => {
             : booking.bookingDate;
         const checkStartTime = updateBody.startTime || booking.startTime;
         const checkDuration = updateBody.duration || booking.duration;
-        const checkTrainer = updateBody.trainer || booking.trainer;
+        const checkTrainerId = updateBody.trainer || booking.trainer;
+        const trainerDoc = await Trainer.findById(checkTrainerId);
+        if (!trainerDoc) {
+            throw new ApiError(httpStatus.NOT_FOUND, 'Trainer not found');
+        }
+
+        if (!isWithinWeeklyAvailability(trainerDoc, checkDate, checkStartTime, checkDuration)) {
+            throw new ApiError(httpStatus.BAD_REQUEST, AVAILABILITY_OUTSIDE_MESSAGE);
+        }
 
         const isAvailable = await Booking.isTimeSlotAvailable(
-            checkTrainer,
+            checkTrainerId,
             checkDate,
             checkStartTime,
             checkDuration,
@@ -396,7 +441,17 @@ const getTrainerApprovedBookings = async (trainerId, filter, options) => {
         status: { $ne: 'rejected' },
         ...filter,
     };
-    return queryBookings(trainerFilter, options);
+    const trainerOptions = {
+        ...options,
+        populate:
+            options.populate ||
+            [
+                { path: 'company', select: 'companyName companyLogo' },
+                { path: 'trainer' },
+                { path: 'eapTraining' },
+            ],
+    };
+    return Booking.paginate(trainerFilter, trainerOptions);
 };
 
 /**
