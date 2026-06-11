@@ -435,23 +435,49 @@ const getPendingApprovals = async (filter, options) => {
  * @param {Object} options - Query options
  * @returns {Promise<QueryResult>}
  */
+/**
+ * Strip company booking refs to name + logo only (trainer portal privacy).
+ *
+ * @param {object|null} company - Populated company subdocument.
+ * @returns {object|null}
+ */
+const sanitizeCompanyRefForTrainerPortal = (company) => {
+    if (!company || typeof company !== 'object') {
+        return company;
+    }
+    return {
+        _id: company._id,
+        companyName: company.companyName || company.name,
+        companyLogo: company.companyLogo,
+    };
+};
+
+/**
+ * Redact company details on paginated booking results for trainers.
+ *
+ * @param {import('../models/plugins/paginate.plugin.js').QueryResult} result
+ * @returns {typeof result}
+ */
+const redactTrainerBookingListCompanies = (result) => {
+    if (!result?.results?.length) {
+        return result;
+    }
+    result.results = result.results.map((booking) => {
+        const doc = booking.toObject ? booking.toObject() : { ...booking };
+        doc.company = sanitizeCompanyRefForTrainerPortal(doc.company);
+        return doc;
+    });
+    return result;
+};
+
 const getTrainerApprovedBookings = async (trainerId, filter, options) => {
     const trainerFilter = {
         trainer: trainerId,
         status: { $ne: 'rejected' },
         ...filter,
     };
-    const trainerOptions = {
-        ...options,
-        populate:
-            options.populate ||
-            [
-                { path: 'company', select: 'companyName companyLogo' },
-                { path: 'trainer' },
-                { path: 'eapTraining' },
-            ],
-    };
-    return Booking.paginate(trainerFilter, trainerOptions);
+    const result = await queryBookings(trainerFilter, options);
+    return redactTrainerBookingListCompanies(result);
 };
 
 /**
