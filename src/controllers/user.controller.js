@@ -81,6 +81,15 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+/**
+ * Bulk delete users (admin CRM).
+ */
+const bulkDeleteUsers = catchAsync(async (req, res) => {
+  const { userIds } = req.body;
+  const result = await userService.bulkDeleteUsersById(userIds);
+  res.status(httpStatus.OK).json(result);
+});
+
 // Update current user's profile
 const updateProfile = catchAsync(async (req, res) => {
   const user = await userService.updateUserById(req.user.id, req.body);
@@ -858,6 +867,7 @@ export {
   getUser,
   updateUser,
   deleteUser,
+  bulkDeleteUsers,
   updateProfile,
   getProfile,
   updateProfileImage,

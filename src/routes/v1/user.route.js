@@ -28,6 +28,10 @@ router
 router.route('/role/:role').get(auth(), userController.getUsersByRole);
 
 router
+  .route('/bulk-delete')
+  .post(auth(), validate(userValidation.bulkDeleteUsers), userController.bulkDeleteUsers);
+
+router
   .route('/:userId')
   .get(auth(), validate(userValidation.getUser), userController.getUser)
   .patch(auth(), validate(userValidation.updateUser), userController.updateUser)

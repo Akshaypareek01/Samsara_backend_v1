@@ -273,6 +273,28 @@ const deleteUserById = async (userId) => {
 };
 
 /**
+ * Delete multiple users by id (admin bulk action).
+ *
+ * @param {import('mongoose').Types.ObjectId[]|string[]} userIds
+ * @returns {Promise<{ deleted: number, failed: Array<{ userId: string, message: string }> }>}
+ */
+const bulkDeleteUsersById = async (userIds) => {
+  const result = { deleted: 0, failed: [] };
+  for (const userId of userIds) {
+    try {
+      await deleteUserById(userId);
+      result.deleted += 1;
+    } catch (err) {
+      result.failed.push({
+        userId: String(userId),
+        message: err.message || 'Delete failed',
+      });
+    }
+  }
+  return result;
+};
+
+/**
  * Get users by role
  * @param {string} role - User role (user, teacher)
  * @param {Object} options - Query options
@@ -294,6 +316,7 @@ export {
   getUserByEmail,
   updateUserById,
   deleteUserById,
+  bulkDeleteUsersById,
   getUsersByRole,
   ensureReferralCodeForUser,
   normalizeIncomingReferralCode,

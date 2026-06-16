@@ -29,6 +29,51 @@ const getUser = {
   }),
 };
 
+/** Profile + admin fields allowed when updating a user by id (CRM admin). */
+const adminUserProfileKeys = {
+  mobile: Joi.string().min(10).max(15).allow(''),
+  emergencyMobile: Joi.string().min(10).max(15).allow(''),
+  gender: Joi.string().allow(''),
+  dob: Joi.string().allow(''),
+  age: Joi.string().allow(''),
+  Address: Joi.string().allow(''),
+  city: Joi.string().allow(''),
+  pincode: Joi.string().allow(''),
+  country: Joi.string().allow(''),
+  height: Joi.string().allow(''),
+  weight: Joi.string().allow(''),
+  targetWeight: Joi.string().allow(''),
+  bodyshape: Joi.string().allow(''),
+  weeklyyogaplan: Joi.string().allow(''),
+  practicetime: Joi.string().allow(''),
+  focusarea: Joi.array().items(Joi.string()),
+  goal: Joi.array().items(Joi.string()),
+  health_issues: Joi.array().items(Joi.string()),
+  howyouknowus: Joi.string().allow(''),
+  PriorExperience: Joi.string().allow(''),
+  description: Joi.string().allow(''),
+  achievements: Joi.array().items(Joi.string()),
+  userCategory: Joi.string().valid('Personal', 'Corporate'),
+  teacherCategory: Joi.string().valid(
+    'Fitness Coach',
+    'Ayurveda Specialist',
+    'Mental Health Specialist',
+    'Yoga Trainer',
+    'Sound Healing',
+    'Psychologist',
+    'General Trainer'
+  ),
+  teachingExperience: Joi.string().allow(''),
+  expertise: Joi.array().items(Joi.string()),
+  qualification: Joi.array().items(Joi.object()),
+  additional_courses: Joi.array().items(Joi.object()),
+  company_name: Joi.string().allow(''),
+  companyId: Joi.string().allow(''),
+  corporate_id: Joi.string().allow(''),
+  status: Joi.boolean(),
+  active: Joi.boolean(),
+};
+
 const updateUser = {
   params: Joi.object().keys({
     userId: Joi.required().custom(objectId),
@@ -41,6 +86,7 @@ const updateUser = {
       profileImage: Joi.string().uri().allow('').optional(),
       AboutMe: Joi.string().allow('').optional(),
       notificationToken: Joi.string().min(1).max(500).optional(),
+      ...adminUserProfileKeys,
     })
     .min(1),
 };
@@ -49,50 +95,9 @@ const updateProfile = {
   body: Joi.object()
     .keys({
       name: Joi.string().max(20),
-      mobile: Joi.string().min(10).max(15),
-      emergencyMobile: Joi.string().min(10).max(15),
-      gender: Joi.string(),
-      dob: Joi.string(),
-      age: Joi.string(),
-      Address: Joi.string(),
-      city: Joi.string(),
-      pincode: Joi.string(),
-      country: Joi.string(),
-      height: Joi.string(),
-      weight: Joi.string(),
-      targetWeight: Joi.string(),
-      bodyshape: Joi.string(),
-      weeklyyogaplan: Joi.string(),
-      practicetime: Joi.string(),
-      focusarea: Joi.array().items(Joi.string()),
-      goal: Joi.array().items(Joi.string()),
-      health_issues: Joi.array().items(Joi.string()),
-      howyouknowus: Joi.string(),
-      PriorExperience: Joi.string(),
-      description: Joi.string(),
-      achievements: Joi.array().items(Joi.string()),
-      // User category (for regular users)
-      userCategory: Joi.string().valid('Personal', 'Corporate'),
-      // Teacher specific fields
-      teacherCategory: Joi.string().valid(
-        'Fitness Coach',
-        'Ayurveda Specialist',
-        'Mental Health Specialist',
-        'Yoga Trainer',
-        'Sound Healing',
-        'Psychologist',
-        'General Trainer'
-      ),
-      teachingExperience: Joi.string(),
-      expertise: Joi.array().items(Joi.string()),
-      qualification: Joi.array().items(Joi.object()),
-      additional_courses: Joi.array().items(Joi.object()),
-      // Company related fields (for corporate users)
-      company_name: Joi.string().custom(objectId),
-      companyId: Joi.string(),
-      corporate_id: Joi.string(),
       profileImage: Joi.string().uri().allow('').optional(),
       AboutMe: Joi.string().allow('').optional(),
+      ...adminUserProfileKeys,
     })
     .min(1),
 };
@@ -109,10 +114,26 @@ const deleteUser = {
   }),
 };
 
+const bulkDeleteUsers = {
+  body: Joi.object().keys({
+    userIds: Joi.array().items(Joi.string().custom(objectId)).min(1).max(50).required(),
+  }),
+};
+
 const updateNotificationToken = {
   body: Joi.object().keys({
     notificationToken: Joi.string().required().min(1).max(500),
   }),
 };
 
-export { createUser, getUsers, getUser, updateUser, updateProfile, updateProfileImage, deleteUser, updateNotificationToken };
+export {
+  createUser,
+  getUsers,
+  getUser,
+  updateUser,
+  updateProfile,
+  updateProfileImage,
+  deleteUser,
+  bulkDeleteUsers,
+  updateNotificationToken,
+};
