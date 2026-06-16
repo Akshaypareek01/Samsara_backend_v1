@@ -3,6 +3,7 @@ import validator from 'validator';
 import { toJSON, paginate } from './plugins/index.js';
 import {
   TRAINER_CATEGORY_ENUM,
+  TRAINER_CITY_ENUM,
   TRAINER_EXPERIENCE_ENUM,
   TRAINER_SPECIALIST_IN_ALL,
   TRAINER_TYPE_OF_TRAINING_ALL,
@@ -14,6 +15,7 @@ import {
   normalizeEducationList,
 } from '../utils/trainerQualificationUtils.js';
 import { normalizeWeeklyAvailability } from '../utils/trainerAvailabilityUtils.js';
+import { normalizeTrainerCategories } from '../utils/trainerCategoryUtils.js';
 
 const trainerSchema = new mongoose.Schema(
   {
@@ -54,9 +56,13 @@ const trainerSchema = new mongoose.Schema(
       trim: true,
     },
     category: {
-      type: String,
+      type: [String],
       enum: TRAINER_CATEGORY_ENUM,
-      trim: true,
+      required: [true, 'Trainer category is required'],
+      validate: {
+        validator: (v) => Array.isArray(v) && v.length >= 1,
+        message: 'At least one trainer category is required',
+      },
     },
     // Audience the trainer works with (UI label: "Training For")
     specialistIn: {
@@ -82,9 +88,15 @@ const trainerSchema = new mongoose.Schema(
     dateOfBirth: {
       type: Date,
     },
+    /** @deprecated Legacy single city — prefer `cities`. Removed after data migration. */
     city: {
       type: String,
       trim: true,
+    },
+    cities: {
+      type: [String],
+      enum: TRAINER_CITY_ENUM,
+      default: [],
     },
     pinCode: {
       type: String,
@@ -204,6 +216,15 @@ function normalizeLegacyQualificationsOnInit(doc) {
   if (doc.weeklyAvailability == null || !Array.isArray(doc.weeklyAvailability)) {
     doc.weeklyAvailability = [];
   }
+  if ((!doc.cities || doc.cities.length === 0) && doc.city) {
+    const legacyCity = String(doc.city).trim();
+    if (legacyCity) {
+      doc.cities = [legacyCity];
+    }
+  }
+  if (doc.category != null && !Array.isArray(doc.category)) {
+    doc.category = normalizeTrainerCategories(doc.category);
+  }
 }
 
 trainerSchema.post('init', normalizeLegacyQualificationsOnInit);
@@ -217,6 +238,17 @@ trainerSchema.pre('save', function preSaveNormalizeQualifications(next) {
   }
   if (this.weeklyAvailability !== undefined) {
     this.weeklyAvailability = normalizeWeeklyAvailability(this.weeklyAvailability);
+  }
+  if (Array.isArray(this.cities) && this.cities.length > 0) {
+    this.city = undefined;
+  } else if (this.city) {
+    const legacyCity = String(this.city).trim();
+    if (legacyCity) {
+      this.cities = [legacyCity];
+    }
+  }
+  if (this.category !== undefined) {
+    this.category = normalizeTrainerCategories(this.category);
   }
   next();
 });

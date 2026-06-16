@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import { EapTraining, Trainer } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import trainerService from './trainer.service.js';
+import { trainerHasCategory } from '../utils/trainerCategoryUtils.js';
 
 const EAP_TRAINER_CATEGORY = 'EAP Trainer';
 
@@ -9,7 +10,7 @@ const EAP_TRAINER_CATEGORY = 'EAP Trainer';
 const FEATURED_LANDING_LIMIT = 6;
 
 const TRAINER_DETAIL_FIELDS =
-  'name title bio specialistIn city experience profilePhoto status acceptingBookings category';
+  'name title bio specialistIn cities experience profilePhoto status acceptingBookings category';
 
 /**
  * Base filter for trainers visible in the company EAP catalog.
@@ -85,7 +86,7 @@ const assertTrainingBookableForCompany = (training) => {
   if (!trainer || typeof trainer !== 'object') {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Trainer information unavailable');
   }
-  if (trainer.category !== EAP_TRAINER_CATEGORY) {
+  if (!trainerHasCategory(trainer, EAP_TRAINER_CATEGORY)) {
     throw new ApiError(httpStatus.NOT_FOUND, 'EAP training not found');
   }
   if (trainer.status === false || trainer.acceptingBookings === false) {
@@ -100,7 +101,7 @@ const assertEapTrainer = (trainer) => {
   if (!trainer) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Trainer not found');
   }
-  if (trainer.category !== EAP_TRAINER_CATEGORY) {
+  if (!trainerHasCategory(trainer, EAP_TRAINER_CATEGORY)) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Only EAP Trainers can manage EAP trainings');
   }
 };

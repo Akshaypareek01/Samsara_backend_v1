@@ -4,9 +4,9 @@ import config from '../config/config.js';
 const BRAND = {
   name: 'Samsara Wellness',
   legalName: 'Samsaraa WellTek Pvt Ltd',
-  primary: '#845EDF',
-  primaryDark: '#6B47C7',
-  primaryLight: '#F3EEFF',
+  primary: '#ed662e',
+  primaryDark: '#c95520',
+  primaryLight: '#fff4ef',
   text: '#1F2937',
   muted: '#6B7280',
   border: '#E5E7EB',
@@ -69,6 +69,39 @@ export function getPortalLoginUrl(portal) {
   return `${getFrontendBaseUrl()}${path}`;
 }
 
+/** Brand tokens for consumer app emails (same as CRM portal orange). */
+export const APP_EMAIL_BRAND = BRAND;
+
+/**
+ * Inline CSS that forces light-mode rendering in dark-mode email clients.
+ *
+ * @param {typeof BRAND} brand - Brand color tokens.
+ * @returns {string} Style block HTML.
+ */
+function buildLightModeGuardStyles(brand) {
+  return `
+  <style>
+    :root { color-scheme: light only; supported-color-schemes: light; }
+    @media (prefers-color-scheme: dark) {
+      body, .email-root, .email-card, .email-body, .email-footer, .email-header,
+      .email-card td, .email-card p, .email-card h1, .email-card a, .email-card li {
+        background-color: ${brand.white} !important;
+        color: ${brand.text} !important;
+      }
+      .email-root { background-color: ${brand.background} !important; }
+      .email-card { background-color: ${brand.white} !important; }
+      .email-header {
+        background: linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%) !important;
+      }
+      .email-header p, .email-header .email-brand-name { color: ${brand.white} !important; }
+      .email-footer { background-color: ${brand.background} !important; }
+      .email-footer p { color: ${brand.muted} !important; }
+      .email-footer a { color: ${brand.primary} !important; }
+      .email-cta a { background-color: ${brand.primary} !important; color: ${brand.white} !important; }
+    }
+  </style>`;
+}
+
 /**
  * Build a branded HTML email wrapper with header, body, and footer.
  *
@@ -79,9 +112,22 @@ export function getPortalLoginUrl(portal) {
  * @param {string} [options.ctaLabel] - Primary button label.
  * @param {string} [options.ctaUrl] - Primary button URL.
  * @param {string} [options.footerNote] - Extra footer copy.
+ * @param {typeof BRAND} [options.brand] - Optional brand color overrides.
+ * @param {string|null} [options.tagline] - Header tagline; omit with null to hide.
+ * @param {boolean} [options.showPortalLink] - Show CRM portal link in footer.
  * @returns {string} Full HTML document.
  */
-export function buildEmailLayout({ preheader, title, contentHtml, ctaLabel, ctaUrl, footerNote }) {
+export function buildEmailLayout({
+  preheader,
+  title,
+  contentHtml,
+  ctaLabel,
+  ctaUrl,
+  footerNote,
+  brand = BRAND,
+  tagline = 'Corporate wellness, simplified',
+  showPortalLink = true,
+}) {
   const safePreheader = escapeHtml(preheader);
   const safeTitle = escapeHtml(title);
   const logoUrl = getLogoUrl();
@@ -91,9 +137,9 @@ export function buildEmailLayout({ preheader, title, contentHtml, ctaLabel, ctaU
     ctaLabel && ctaUrl
       ? `
         <tr>
-          <td style="padding:28px 32px 8px 32px;text-align:center;">
+          <td class="email-cta" style="padding:28px 32px 8px 32px;text-align:center;" bgcolor="${brand.white}">
             <a href="${escapeHtml(ctaUrl)}"
-               style="display:inline-block;padding:14px 28px;background:${BRAND.primary};color:${BRAND.white};text-decoration:none;border-radius:10px;font-size:16px;font-weight:700;letter-spacing:0.2px;box-shadow:0 8px 20px rgba(132,94,223,0.28);">
+               style="display:inline-block;padding:14px 28px;background:${brand.primary};color:${brand.white};text-decoration:none;border-radius:10px;font-size:16px;font-weight:700;letter-spacing:0.2px;">
               ${escapeHtml(ctaLabel)}
             </a>
           </td>
@@ -102,7 +148,16 @@ export function buildEmailLayout({ preheader, title, contentHtml, ctaLabel, ctaU
       : '';
 
   const footerExtra = footerNote
-    ? `<p style="margin:12px 0 0 0;font-size:12px;line-height:1.6;color:${BRAND.muted};">${escapeHtml(footerNote)}</p>`
+    ? `<p style="margin:12px 0 0 0;font-size:12px;line-height:1.6;color:${brand.muted};">${escapeHtml(footerNote)}</p>`
+    : '';
+
+  const taglineBlock =
+    tagline === null
+      ? ''
+      : `<p style="margin:8px 0 0 0;font-size:13px;line-height:1.5;color:rgba(255,255,255,0.9);">${escapeHtml(tagline)}</p>`;
+
+  const portalLinkBlock = showPortalLink
+    ? `<br /><a href="${portalUrl}" style="color:${brand.primary};text-decoration:none;font-weight:600;">${portalUrl.replace(/^https?:\/\//, '')}</a>`
     : '';
 
   return `<!DOCTYPE html>
@@ -111,37 +166,39 @@ export function buildEmailLayout({ preheader, title, contentHtml, ctaLabel, ctaU
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light" />
   <title>${safeTitle}</title>
+  ${buildLightModeGuardStyles(brand)}
 </head>
-<body style="margin:0;padding:0;background:${BRAND.background};font-family:Arial,Helvetica,sans-serif;color:${BRAND.text};">
+<body class="email-root" style="margin:0;padding:0;background:${brand.background};font-family:Arial,Helvetica,sans-serif;color:${brand.text};">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${safePreheader}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.background};padding:24px 12px;">
+  <table class="email-root" role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${brand.background}" style="background:${brand.background};padding:24px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:${BRAND.white};border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};box-shadow:0 10px 30px rgba(15,23,42,0.06);">
+        <table class="email-card" role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="${brand.white}" style="max-width:600px;width:100%;background:${brand.white};border-radius:16px;overflow:hidden;border:1px solid ${brand.border};box-shadow:0 10px 30px rgba(15,23,42,0.06);">
           <tr>
-            <td style="padding:28px 32px 20px 32px;background:linear-gradient(135deg,${BRAND.primary} 0%,${BRAND.primaryDark} 100%);text-align:center;">
-              <img src="${logoUrl}" alt="${BRAND.name}" width="72" height="72" style="display:block;margin:0 auto 14px auto;border-radius:12px;border:2px solid rgba(255,255,255,0.35);" />
-              <p style="margin:0;font-size:22px;line-height:1.3;font-weight:700;color:${BRAND.white};letter-spacing:0.2px;">${BRAND.name}</p>
-              <p style="margin:8px 0 0 0;font-size:13px;line-height:1.5;color:rgba(255,255,255,0.9);">Corporate wellness, simplified</p>
+            <td class="email-header" bgcolor="${brand.primary}" style="padding:28px 32px 20px 32px;background:linear-gradient(135deg,${brand.primary} 0%,${brand.primaryDark} 100%);text-align:center;">
+              <img src="${logoUrl}" alt="${escapeHtml(brand.name)}" width="72" height="72" style="display:block;margin:0 auto 14px auto;border-radius:12px;border:2px solid rgba(255,255,255,0.35);" />
+              <p class="email-brand-name" style="margin:0;font-size:22px;line-height:1.3;font-weight:700;color:${brand.white};letter-spacing:0.2px;font-family:'Times New Roman',Times,serif;">${escapeHtml(brand.name)}</p>
+              ${taglineBlock}
             </td>
           </tr>
           <tr>
-            <td style="padding:32px 32px 8px 32px;">
-              <h1 style="margin:0 0 16px 0;font-size:24px;line-height:1.35;font-weight:700;color:${BRAND.text};">${safeTitle}</h1>
+            <td class="email-body" bgcolor="${brand.white}" style="padding:32px 32px 8px 32px;background:${brand.white};">
+              <h1 style="margin:0 0 16px 0;font-size:24px;line-height:1.35;font-weight:700;color:${brand.text};">${safeTitle}</h1>
               ${contentHtml}
             </td>
           </tr>
           ${ctaBlock}
           <tr>
-            <td style="padding:24px 32px 28px 32px;border-top:1px solid ${BRAND.border};background:${BRAND.background};">
-              <p style="margin:0;font-size:12px;line-height:1.6;color:${BRAND.muted};text-align:center;">
-                This is an automated message from ${BRAND.name}. Please do not reply to this email.
+            <td class="email-footer" bgcolor="${brand.background}" style="padding:24px 32px 28px 32px;border-top:1px solid ${brand.border};background:${brand.background};">
+              <p style="margin:0;font-size:12px;line-height:1.6;color:${brand.muted};text-align:center;">
+                This is an automated message from ${escapeHtml(brand.name)}. Please do not reply to this email.
               </p>
               ${footerExtra}
-              <p style="margin:14px 0 0 0;font-size:12px;line-height:1.6;color:${BRAND.muted};text-align:center;">
-                &copy; ${new Date().getFullYear()} ${BRAND.legalName}. All rights reserved.<br />
-                <a href="${portalUrl}" style="color:${BRAND.primary};text-decoration:none;font-weight:600;">${portalUrl.replace(/^https?:\/\//, '')}</a>
+              <p style="margin:14px 0 0 0;font-size:12px;line-height:1.6;color:${brand.muted};text-align:center;">
+                &copy; ${new Date().getFullYear()} ${escapeHtml(brand.legalName)}. All rights reserved.${portalLinkBlock}
               </p>
             </td>
           </tr>
@@ -356,6 +413,101 @@ export function buildActionEmailContent({ action, token }) {
     ctaLabel: isReset ? 'Reset password' : 'Verify email',
     ctaUrl: actionUrl,
     footerNote: 'This link expires shortly for your security.',
+  });
+
+  return { subject, text, html };
+}
+
+/** Official mobile app store URLs for Samsara Wellness. */
+export const APP_STORE_LINKS = {
+  ios: 'https://apps.apple.com/in/app/samsara-wellness/id6749355131',
+  android: 'https://play.google.com/store/apps/details?id=com.samsarawellnessyogav3.app',
+};
+
+/**
+ * Build the app launch email asking users to download the new app and re-register.
+ *
+ * @param {Object} params - Email payload.
+ * @param {string} [params.recipientName] - User display name for greeting.
+ * @returns {{ subject: string, text: string, html: string }} Email content.
+ */
+export function buildAppLaunchResetEmailContent({ recipientName = 'there' } = {}) {
+  const brand = APP_EMAIL_BRAND;
+  const safeName = escapeHtml(recipientName || 'there');
+  const title = 'Samsara Wellness is live — create your account again';
+  const subject = `${brand.name} is live on App Store & Google Play`;
+
+  const text = [
+    `Hi ${recipientName || 'there'},`,
+    '',
+    'Great news — Samsara Wellness is now officially live on the App Store and Google Play.',
+    '',
+    'We have refreshed our platform for the public launch. Please download the latest version of the app and sign up again to set up your account properly.',
+    '',
+    'Download the app:',
+    `iPhone / iPad: ${APP_STORE_LINKS.ios}`,
+    `Android: ${APP_STORE_LINKS.android}`,
+    '',
+    'What to do next:',
+    '1. Download the updated app from your store.',
+    '2. Open the app and create a new account with your email.',
+    '3. Complete your profile and explore live yoga, meditation, and wellness features.',
+    '',
+    `— Team ${brand.name}`,
+  ].join('\n');
+
+  const storeButtonsHtml = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 8px 0;">
+      <tr>
+        <td align="center" style="padding:0 8px 12px 8px;">
+          <a href="${escapeHtml(APP_STORE_LINKS.ios)}"
+             style="display:inline-block;min-width:220px;padding:14px 22px;background:${brand.primaryDark};color:${brand.white};text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;">
+            Download on App Store
+          </a>
+        </td>
+      </tr>
+      <tr>
+        <td align="center" style="padding:0 8px 4px 8px;">
+          <a href="${escapeHtml(APP_STORE_LINKS.android)}"
+             style="display:inline-block;min-width:220px;padding:14px 22px;background:${brand.primary};color:${brand.white};text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;box-shadow:0 8px 20px rgba(237,102,46,0.28);">
+            Get it on Google Play
+          </a>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const contentHtml = `
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:${brand.text};">
+      Hi <strong>${safeName}</strong>,
+    </p>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:1.7;color:${brand.text};">
+      Great news — <strong>${brand.name}</strong> is now officially live on the
+      <strong>App Store</strong> and <strong>Google Play</strong>.
+    </p>
+    <p style="margin:0 0 16px 0;padding:16px 18px;background:${brand.primaryLight};border-left:4px solid ${brand.primary};border-radius:10px;font-size:14px;line-height:1.7;color:${brand.text};">
+      We refreshed our platform for the public launch. Please download the latest app version and
+      <strong>create your account again</strong> so your profile, preferences, and membership setup work correctly.
+    </p>
+    ${storeButtonsHtml}
+    <p style="margin:8px 0 12px 0;font-size:15px;line-height:1.7;color:${brand.text};font-weight:700;">
+      What to do next
+    </p>
+    <ol style="margin:0 0 0 0;padding-left:22px;font-size:14px;line-height:1.8;color:${brand.text};">
+      <li>Download the updated app from your store.</li>
+      <li>Open the app and sign up with your email.</li>
+      <li>Complete your profile and explore live yoga, meditation, and wellness features.</li>
+    </ol>
+  `;
+
+  const html = buildEmailLayout({
+    preheader: 'Download the new Samsara Wellness app and create your account again.',
+    title,
+    contentHtml,
+    brand,
+    tagline: 'Yoga • Meditation • Wellness',
+    showPortalLink: false,
+    footerNote: 'Thank you for being part of our wellness journey.',
   });
 
   return { subject, text, html };

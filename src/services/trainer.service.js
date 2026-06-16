@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import { Trainer } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import pick from '../utils/pick.js';
+import { normalizeTrainerCategories } from '../utils/trainerCategoryUtils.js';
 
 /**
  * Create a trainer
@@ -9,7 +10,11 @@ import pick from '../utils/pick.js';
  * @returns {Promise<Trainer>}
  */
 const createTrainer = async (trainerBody) => {
-  return Trainer.create(trainerBody);
+  const body = { ...trainerBody };
+  if (body.category !== undefined) {
+    body.category = normalizeTrainerCategories(body.category);
+  }
+  return Trainer.create(body);
 };
 
 /**
@@ -72,7 +77,7 @@ const buildTrainerQueryFilter = (filter = {}, options = {}) => {
   if (filter.category) {
     mongo.category = filter.category;
   } else if (filter.excludeCategory) {
-    mongo.category = { $ne: filter.excludeCategory };
+    mongo.category = { $nin: [filter.excludeCategory] };
   }
   if (filter.specialistIn) {
     mongo.specialistIn = filter.specialistIn;
@@ -81,7 +86,7 @@ const buildTrainerQueryFilter = (filter = {}, options = {}) => {
     mongo.typeOfTraining = filter.typeOfTraining;
   }
   if (filter.city) {
-    mongo.city = String(filter.city).trim();
+    mongo.cities = String(filter.city).trim();
   }
 
   return mongo;
@@ -175,6 +180,10 @@ const updateTrainerById = async (id, updateBody) => {
     );
   }
 
+  if (updateBody.category !== undefined) {
+    updateBody.category = normalizeTrainerCategories(updateBody.category);
+  }
+
   // Partial $set updates only validate changed paths, so legacy specialistIn /
   // typeOfTraining values on existing documents do not block toggles like acceptingBookings.
   let updateQuery = Trainer.findByIdAndUpdate(
@@ -218,6 +227,13 @@ const addTrainerImage = async (id, imageData) => {
   const trainer = await getTrainerById(id);
   if (!trainer) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Trainer not found');
+  }
+  const MAX_TRAINER_GALLERY_IMAGES = 6;
+  if (trainer.images.length >= MAX_TRAINER_GALLERY_IMAGES) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      `You can upload at most ${MAX_TRAINER_GALLERY_IMAGES} gallery photos`
+    );
   }
   trainer.images.push(imageData);
   await trainer.save();

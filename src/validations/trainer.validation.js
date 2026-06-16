@@ -14,6 +14,7 @@ import {
   MAX_TRAINER_EDUCATION_ENTRIES,
   normalizeQualificationListForValidation,
 } from '../utils/trainerQualificationUtils.js';
+import { normalizeTrainerCategories } from '../utils/trainerCategoryUtils.js';
 
 const categoryEnum = TRAINER_CATEGORY_ENUM;
 const specialistInEnum = TRAINER_SPECIALIST_IN_CURRENT;
@@ -21,6 +22,66 @@ const specialistInUpdateEnum = TRAINER_SPECIALIST_IN_ALL;
 const typeOfTrainingEnum = TRAINER_TYPE_OF_TRAINING_CURRENT;
 const typeOfTrainingUpdateEnum = TRAINER_TYPE_OF_TRAINING_ALL;
 const experienceEnum = TRAINER_EXPERIENCE_ENUM;
+
+/** Maximum training gallery images per trainer profile. */
+const MAX_TRAINER_GALLERY_IMAGES = 6;
+
+const trainerGalleryImageSchema = Joi.object().keys({
+  key: Joi.string().required(),
+  path: Joi.string().required(),
+  _id: Joi.any().strip(),
+});
+
+const trainerGalleryImagesSchema = Joi.array()
+  .items(trainerGalleryImageSchema)
+  .max(MAX_TRAINER_GALLERY_IMAGES)
+  .messages({
+    'array.max': `You can upload at most ${MAX_TRAINER_GALLERY_IMAGES} gallery photos`,
+  });
+
+/** Cities where the trainer operates (deduped, valid enum values). */
+const citiesSchema = Joi.array()
+  .items(Joi.string().valid(...TRAINER_CITY_ENUM))
+  .unique()
+  .messages({
+    'array.unique': 'Duplicate cities are not allowed',
+    'any.only': 'Please select valid cities',
+  });
+
+const optionalCitiesSchema = citiesSchema.min(1).messages({
+  'array.min': 'Select at least one city',
+});
+
+const registrationCitiesSchema = citiesSchema.min(1).required().messages({
+  'any.required': 'At least one city is required',
+  'array.min': 'Select at least one city',
+  'any.only': 'Please select valid cities',
+});
+
+/** Trainer category — accepts legacy single string or array; normalizes to string[]. */
+const categoryInputSchema = Joi.alternatives()
+  .try(
+    Joi.string().valid(...categoryEnum),
+    Joi.array().items(Joi.string().valid(...categoryEnum)).min(1).unique()
+  )
+  .custom((value) => {
+    const normalized = normalizeTrainerCategories(value);
+    if (normalized.length === 0) {
+      throw new Error('Trainer category is required');
+    }
+    return normalized;
+  })
+  .messages({
+    'any.only': `Category must be one of: ${categoryEnum.join(', ')}`,
+    'array.min': 'Select at least one trainer category',
+    'array.unique': 'Duplicate categories are not allowed',
+  });
+
+const categoryRequiredSchema = categoryInputSchema.required().messages({
+  'any.required': 'Trainer category is required',
+});
+
+const categoryOptionalSchema = categoryInputSchema.optional();
 
 // Shared optional sub-schemas reused across create/update validators
 const educationSchema = Joi.object().keys({
@@ -108,10 +169,7 @@ const accountDetailsSchema = Joi.object().keys({
 // Personal/profile detail keys shared by create and update payloads
 const profileDetailKeys = {
   dateOfBirth: Joi.date().allow(null),
-  city: Joi.string()
-    .trim()
-    .valid(...TRAINER_CITY_ENUM)
-    .allow('', null),
+  cities: optionalCitiesSchema,
   pinCode: Joi.string()
     .pattern(/^[0-9]{6}$/)
     .allow('', null)
@@ -130,15 +188,7 @@ const registrationProfileDetailKeys = {
     'date.base': 'Please enter a valid date of birth',
     'date.max': 'Date of birth cannot be in the future',
   }),
-  city: Joi.string()
-    .trim()
-    .valid(...TRAINER_CITY_ENUM)
-    .required()
-    .messages({
-      'any.required': 'City is required',
-      'string.empty': 'City is required',
-      'any.only': 'Please select a valid city',
-    }),
+  cities: registrationCitiesSchema,
   pinCode: Joi.string()
     .pattern(/^[0-9]{6}$/)
     .required()
@@ -192,14 +242,7 @@ const createTrainer = {
       'string.empty': 'Bio is required',
       'string.max': 'Bio must be 2000 characters or less',
     }),
-    category: Joi.string()
-      .valid(...categoryEnum)
-      .required()
-      .messages({
-        'any.only': `Category must be one of: ${categoryEnum.join(', ')}`,
-        'any.required': 'Trainer category is required',
-        'string.empty': 'Trainer category is required',
-      }),
+    category: categoryRequiredSchema,
     specialistIn: Joi.array()
       .items(Joi.string().valid(...specialistInEnum))
       .min(1)
@@ -217,15 +260,7 @@ const createTrainer = {
         'any.required': 'Specializations are required',
       }),
     ...registrationProfileDetailKeys,
-    images: Joi.array()
-      .items(
-        Joi.object().keys({
-          key: Joi.string().required(),
-          path: Joi.string().required(),
-          _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
-        })
-      )
-      .optional(),
+    images: trainerGalleryImagesSchema.optional(),
     profilePhoto: Joi.object()
       .keys({
         key: Joi.string().allow(null, ''),
@@ -267,17 +302,11 @@ const updateMe = {
       name: Joi.string().trim(),
       title: Joi.string().trim(),
       bio: Joi.string().max(2000).trim(),
-      category: Joi.string().valid(...categoryEnum),
+      category: categoryOptionalSchema,
       specialistIn: Joi.array().items(Joi.string().valid(...specialistInUpdateEnum)).min(1),
       typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingUpdateEnum)).min(1),
       ...profileDetailKeys,
-      images: Joi.array().items(
-        Joi.object().keys({
-          key: Joi.string().required(),
-          path: Joi.string().required(),
-          _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
-        })
-      ),
+      images: trainerGalleryImagesSchema,
       profilePhoto: Joi.object().keys({
         key: Joi.string().allow(null, ''),
         path: Joi.string().allow(null, ''),
@@ -300,17 +329,11 @@ const updateTrainer = {
       name: Joi.string().trim(),
       title: Joi.string().trim(),
       bio: Joi.string().max(2000).trim(),
-      category: Joi.string().valid(...categoryEnum),
+      category: categoryOptionalSchema,
       specialistIn: Joi.array().items(Joi.string().valid(...specialistInUpdateEnum)).min(1),
       typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingUpdateEnum)).min(1),
       ...profileDetailKeys,
-      images: Joi.array().items(
-        Joi.object().keys({
-          key: Joi.string().required(),
-          path: Joi.string().required(),
-          _id: Joi.any().strip(), // Allow _id but strip it (MongoDB auto-generates this)
-        })
-      ),
+      images: trainerGalleryImagesSchema,
       profilePhoto: Joi.object().keys({
         key: Joi.string().allow(null, ''),
         path: Joi.string().allow(null, ''),
