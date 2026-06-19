@@ -45,6 +45,7 @@ import BloodReport from './bloodReport.model.js';
 import NotificationPreferences from './notificationPreferences.model.js';
 import { WhatsAppConversation } from './whatsapp-conversation.model.js';
 import Trainer from './trainer.model.js';
+import TrainerLead from './trainer-lead.model.js';
 import Booking from './booking.model.js';
 import Role from './role.model.js';
 import WellnessFeedback from './wellness-feedback.model.js';
@@ -102,6 +103,7 @@ export {
   NotificationPreferences,
   WhatsAppConversation,
   Trainer,
+  TrainerLead,
   Booking,
   Role,
   WellnessFeedback,

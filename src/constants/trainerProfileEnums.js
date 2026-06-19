@@ -56,13 +56,22 @@ export const TRAINER_EXPERIENCE_ENUM = [
   'Above 15 years',
 ];
 
+/** Experience ranges offered on the quick/partial trainer lead-capture form. */
+export const TRAINER_LEAD_EXPERIENCE_ENUM = ['2 to 4 years', '5 to 8 years', '8 to 12 years', 'Above 12 years'];
+
 /** Cities where trainers operate (order matches company portal filters). */
 export const TRAINER_CITY_ENUM = [
+  'Ahmedabad',
   'Bangalore',
   'Chennai',
+  'Cochin',
   'Delhi',
+  'Goa',
   'Gurgaon',
   'Hyderabad',
+  'Indore',
+  'Jaipur',
+  'Kolkata',
   'Mumbai',
   'Navi Mumbai',
   'Noida',
