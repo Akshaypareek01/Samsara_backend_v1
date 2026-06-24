@@ -38,6 +38,18 @@ export function getCompanyName(company) {
 }
 
 /**
+ * Resolve the primary contact person's name for a company, falling back
+ * to the secondary contact when the primary is not set.
+ *
+ * @param {Object|string|null|undefined} company - Company document or id.
+ * @returns {string} Contact person label.
+ */
+export function getCompanyContactName(company) {
+  if (!company || typeof company !== 'object') return '';
+  return company.contactPerson1?.name || company.contactPerson2?.name || '';
+}
+
+/**
  * Resolve trainer display name from a populated or raw trainer ref.
  *
  * @param {Object|string|null|undefined} trainer - Trainer document or id.
@@ -127,6 +139,9 @@ export function buildBookingDetailLines(booking) {
   const lines = [
     `Reference: ${getBookingReference(booking)}`,
     `Company: ${getCompanyName(booking.company)}`,
+    ...(getCompanyContactName(booking.company)
+      ? [`Contact person: ${getCompanyContactName(booking.company)}`]
+      : []),
     `Trainer: ${getTrainerName(booking.trainer)}`,
     `Date: ${formatBookingDate(booking.bookingDate)}`,
     `Time: ${timeRange}`,

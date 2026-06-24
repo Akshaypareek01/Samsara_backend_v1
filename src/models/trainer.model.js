@@ -162,6 +162,11 @@ const trainerSchema = new mongoose.Schema(
           key: { type: String, default: '' },
           path: { type: String, default: '' },
         },
+        gstNumber: { type: String, trim: true, uppercase: true, default: '' },
+        gstDocument: {
+          key: { type: String, default: '' },
+          path: { type: String, default: '' },
+        },
       },
       default: () => ({}),
       select: false,

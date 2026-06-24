@@ -124,6 +124,11 @@ const normalizeAccountDetails = (incoming = {}, current = {}) => ({
     key: (incoming.panDocument?.key ?? current.panDocument?.key ?? '').trim(),
     path: (incoming.panDocument?.path ?? current.panDocument?.path ?? '').trim(),
   },
+  gstNumber: (incoming.gstNumber ?? current.gstNumber ?? '').trim().toUpperCase(),
+  gstDocument: {
+    key: (incoming.gstDocument?.key ?? current.gstDocument?.key ?? '').trim(),
+    path: (incoming.gstDocument?.path ?? current.gstDocument?.path ?? '').trim(),
+  },
 });
 
 /**

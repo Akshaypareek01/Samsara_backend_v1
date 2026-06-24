@@ -125,6 +125,7 @@ const certificationListSchema = Joi.alternatives()
   );
 
 const PAN_REGEX = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 const PERSON_NAME_REGEX = /^[A-Za-z\s.'-]+$/;
 const TIME_SLOT_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -156,6 +157,13 @@ const panDocumentSchema = Joi.object()
   })
   .optional();
 
+const gstDocumentSchema = Joi.object()
+  .keys({
+    key: Joi.string().trim().allow('', null),
+    path: Joi.string().trim().allow('', null),
+  })
+  .optional();
+
 const accountDetailsSchema = Joi.object().keys({
   upiId: Joi.string().trim().allow('', null).optional(),
   bankName: Joi.string().trim().allow('', null).optional(),
@@ -164,6 +172,8 @@ const accountDetailsSchema = Joi.object().keys({
   accountHolderName: Joi.string().trim().allow('', null).optional(),
   panNumber: Joi.string().trim().uppercase().pattern(PAN_REGEX).allow('', null).optional(),
   panDocument: panDocumentSchema,
+  gstNumber: Joi.string().trim().uppercase().pattern(GST_REGEX).allow('', null).optional(),
+  gstDocument: gstDocumentSchema,
 });
 
 // Personal/profile detail keys shared by create and update payloads
