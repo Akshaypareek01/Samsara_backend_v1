@@ -129,23 +129,22 @@ const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 const PERSON_NAME_REGEX = /^[A-Za-z\s.'-]+$/;
 const TIME_SLOT_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
+const weeklyAvailabilitySlotSchema = Joi.object().keys({
+  startTime: Joi.string().pattern(TIME_SLOT_REGEX).required().messages({
+    'string.pattern.base': 'Start time must be in HH:MM format (24-hour)',
+  }),
+  endTime: Joi.string().pattern(TIME_SLOT_REGEX).required().messages({
+    'string.pattern.base': 'End time must be in HH:MM format (24-hour)',
+  }),
+  _id: Joi.any().strip(),
+});
+
 const weeklyAvailabilitySchema = Joi.array()
   .items(
     Joi.object().keys({
       dayOfWeek: Joi.number().integer().min(0).max(6).required(),
-      slots: Joi.array()
-        .items(
-          Joi.object().keys({
-            startTime: Joi.string().pattern(TIME_SLOT_REGEX).required().messages({
-              'string.pattern.base': 'Start time must be in HH:MM format (24-hour)',
-            }),
-            endTime: Joi.string().pattern(TIME_SLOT_REGEX).required().messages({
-              'string.pattern.base': 'End time must be in HH:MM format (24-hour)',
-            }),
-          })
-        )
-        .min(1)
-        .required(),
+      slots: Joi.array().items(weeklyAvailabilitySlotSchema).min(1).required(),
+      _id: Joi.any().strip(),
     })
   )
   .optional();
