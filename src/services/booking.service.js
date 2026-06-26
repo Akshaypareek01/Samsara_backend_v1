@@ -210,14 +210,12 @@ const cancelBooking = async (id, userId, userType, cancellationReason) => {
         throw new ApiError(httpStatus.FORBIDDEN, 'You can only cancel your own bookings');
     }
 
-    if (userType === 'company') {
+    if (userType === 'company' || userType === 'trainer') {
         const reason = typeof cancellationReason === 'string' ? cancellationReason.trim() : '';
         if (!reason) {
             throw new ApiError(httpStatus.BAD_REQUEST, 'Cancellation reason is required');
         }
         booking.cancellationReason = reason;
-    } else if (cancellationReason && String(cancellationReason).trim()) {
-        booking.cancellationReason = String(cancellationReason).trim();
     }
 
     if (!['pending_approval', 'approved'].includes(booking.status)) {
@@ -582,6 +580,7 @@ const getActorBookingMonthSummary = async (actorId, monthStr, role) => {
             isPaid: Boolean(b.paymentStatus?.isPaid),
             duration: b.duration,
             typeOfTraining: b.typeOfTraining || [],
+            cancellationReason: b.cancellationReason || undefined,
         });
     }
 
