@@ -1,6 +1,6 @@
 import httpStatus from 'http-status';
 import pick from '../utils/pick.js';
-import { User, BodyStatus } from '../models/index.js';
+import { User, BodyStatus, Company } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
 import { assignLifetimePlan } from './membership.service.js';
@@ -167,6 +167,68 @@ const createUser = async (userBody) => {
 };
 
 /**
+ * Build Mongo filter for admin user list queries.
+ *
+ * @param {Record<string, unknown>} query - Express query params.
+ * @returns {Promise<Object>} Mongo filter object.
+ */
+const buildUserListFilter = async (query) => {
+  const filter = pick(query, ['name', 'role', 'userCategory', 'city']);
+
+  if (query.mobile && String(query.mobile).trim()) {
+    filter.mobile = { $regex: String(query.mobile).trim(), $options: 'i' };
+  }
+  if (query.companyId && String(query.companyId).trim()) {
+    filter.companyId = { $regex: String(query.companyId).trim(), $options: 'i' };
+  }
+  if (query.corporate_id && String(query.corporate_id).trim()) {
+    filter.corporate_id = { $regex: String(query.corporate_id).trim(), $options: 'i' };
+  }
+  if (query.status !== undefined && query.status !== '') {
+    filter.status = query.status === 'true' || query.status === true;
+  }
+
+  const andClauses = [];
+
+  if (query.search && String(query.search).trim()) {
+    const term = String(query.search).trim();
+    andClauses.push({
+      $or: [
+        { name: { $regex: term, $options: 'i' } },
+        { email: { $regex: term, $options: 'i' } },
+        { mobile: { $regex: term, $options: 'i' } },
+      ],
+    });
+  }
+
+  if (query.companyName && String(query.companyName).trim()) {
+    const companies = await Company.find({
+      companyName: { $regex: String(query.companyName).trim(), $options: 'i' },
+    }).select('_id companyId');
+    const mongoIds = companies.map((c) => c._id);
+    const idStrings = companies.map((c) => c.companyId).filter(Boolean);
+    const companyOr = [];
+    if (mongoIds.length) {
+      companyOr.push({ company_name: { $in: mongoIds } });
+    }
+    if (idStrings.length) {
+      companyOr.push({ companyId: { $in: idStrings } });
+    }
+    if (companyOr.length === 0) {
+      filter._id = { $in: [] };
+    } else {
+      andClauses.push({ $or: companyOr });
+    }
+  }
+
+  if (andClauses.length) {
+    filter.$and = andClauses;
+  }
+
+  return filter;
+};
+
+/**
  * Query for users
  * @param {Object} filter - Mongo filter
  * @param {Object} options - Query options
@@ -311,6 +373,7 @@ const getUsersByRole = async (role, options = {}) => {
 
 export {
   createUser,
+  buildUserListFilter,
   queryUsers,
   getUserById,
   getUserByEmail,
