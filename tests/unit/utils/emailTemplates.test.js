@@ -23,6 +23,8 @@ describe('emailTemplates', () => {
     expect(html).toContain("font-family:'Times New Roman',Times,serif");
     expect(html).toContain('Samsara Wellness');
     expect(html).toContain('/assets/images/logo.jpeg');
+    expect(html).toContain('width="104" height="104"');
+    expect(html).toContain('border:2px dashed #ed662e');
     expect(html).toContain('name="color-scheme" content="light only"');
     expect(html).toContain('name="supported-color-schemes" content="light"');
     expect(html).toContain('@media (prefers-color-scheme: dark)');

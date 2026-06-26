@@ -101,12 +101,15 @@ function buildLightModeGuardStyles(brand) {
         color: ${brand.text} !important;
       }
       .email-root { background-color: ${brand.background} !important; }
-      .email-card { background-color: ${brand.white} !important; }
-      .email-header {
-        background: linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%) !important;
+      .email-card {
+        background-color: ${brand.white} !important;
+        border: 2px dashed ${brand.primary} !important;
       }
-      .email-header p, .email-header .email-brand-name { color: ${brand.white} !important; }
-      .email-footer { background-color: ${brand.background} !important; }
+      .email-header {
+        background: ${brand.white} !important;
+      }
+      .email-header p, .email-header .email-brand-name { color: ${brand.text} !important; }
+      .email-footer { background-color: ${brand.white} !important; }
       .email-footer p { color: ${brand.muted} !important; }
       .email-footer a { color: ${brand.primary} !important; }
       .email-cta a { background-color: ${brand.primary} !important; color: ${brand.white} !important; }
@@ -168,7 +171,7 @@ export function buildEmailLayout({
   const taglineBlock =
     tagline === null
       ? ''
-      : `<p style="margin:8px 0 0 0;font-size:13px;line-height:1.5;color:rgba(255,255,255,0.9);">${escapeHtml(tagline)}</p>`;
+      : `<p style="margin:8px 0 0 0;font-size:13px;line-height:1.5;color:${brand.muted};">${escapeHtml(tagline)}</p>`;
 
   const portalLinkBlock = showPortalLink
     ? `<br /><a href="${portalUrl}" style="color:${brand.primary};text-decoration:none;font-weight:600;">${portalUrl.replace(/^https?:\/\//, '')}</a>`
@@ -197,11 +200,11 @@ export function buildEmailLayout({
   <table class="email-root" role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${brand.background}" style="background:${brand.background};padding:24px 12px;">
     <tr>
       <td align="center">
-        <table class="email-card" role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="${brand.white}" style="max-width:600px;width:100%;background:${brand.white};border-radius:16px;overflow:hidden;border:1px solid ${brand.border};box-shadow:0 10px 30px rgba(15,23,42,0.06);">
+        <table class="email-card" role="presentation" width="600" cellpadding="0" cellspacing="0" bgcolor="${brand.white}" style="max-width:600px;width:100%;background:${brand.white};border-radius:16px;overflow:hidden;border:2px dashed ${brand.primary};box-shadow:0 8px 24px rgba(237,102,46,0.08);">
           <tr>
-            <td class="email-header" bgcolor="${brand.primary}" style="padding:28px 32px 20px 32px;background:linear-gradient(135deg,${brand.primary} 0%,${brand.primaryDark} 100%);text-align:center;">
-              <img src="${logoUrl}" alt="${escapeHtml(brand.name)}" width="72" height="72" style="display:block;margin:0 auto 14px auto;border-radius:12px;border:2px solid rgba(255,255,255,0.35);" />
-              <p class="email-brand-name" style="margin:0;font-size:22px;line-height:1.3;font-weight:700;color:${brand.white};letter-spacing:0.2px;font-family:'Times New Roman',Times,serif;">${escapeHtml(brand.name)}</p>
+            <td class="email-header" bgcolor="${brand.white}" style="padding:32px 32px 16px 32px;background:${brand.white};text-align:center;border-bottom:1px dashed ${brand.primary};">
+              <img src="${logoUrl}" alt="${escapeHtml(brand.name)}" width="104" height="104" style="display:block;margin:0 auto 16px auto;border-radius:14px;border:1px solid ${brand.border};" />
+              <p class="email-brand-name" style="margin:0;font-size:24px;line-height:1.3;font-weight:700;color:${brand.text};letter-spacing:0.2px;font-family:'Times New Roman',Times,serif;">${escapeHtml(brand.name)}</p>
               ${taglineBlock}
             </td>
           </tr>
@@ -213,7 +216,7 @@ export function buildEmailLayout({
           </tr>
           ${ctaBlock}
           <tr>
-            <td class="email-footer" bgcolor="${brand.background}" style="padding:24px 32px 28px 32px;border-top:1px solid ${brand.border};background:${brand.background};">
+            <td class="email-footer" bgcolor="${brand.white}" style="padding:24px 32px 28px 32px;border-top:1px dashed ${brand.primary};background:${brand.white};">
               <p style="margin:0;font-size:12px;line-height:1.6;color:${brand.muted};text-align:center;">
                 This is an automated message from ${escapeHtml(brand.name)}. Please do not reply to this email.
               </p>
