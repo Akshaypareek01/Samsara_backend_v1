@@ -1,7 +1,7 @@
 import httpStatus from 'http-status';
 import { OTP } from '../models/index.js';
 import { sendEmail } from './email.service.js';
-import { buildOtpEmailContent } from '../utils/emailTemplates.js';
+import { buildOtpEmailContent, COMPANY_SUPPORT_EMAIL } from '../utils/emailTemplates.js';
 import ApiError from '../utils/ApiError.js';
 
 /**
@@ -50,13 +50,16 @@ const createOTP = async (email, type) => {
  * @returns {Promise}
  */
 const sendOTPEmail = async (email, otp, type, options = {}) => {
+  const portal = options.portal || 'company';
   const { subject, text, html } = buildOtpEmailContent({
     otp,
     type,
-    portal: options.portal || 'company',
+    portal,
   });
 
-  await sendEmail(email, subject, text, html);
+  await sendEmail(email, subject, text, html, {
+    replyTo: portal === 'company' ? COMPANY_SUPPORT_EMAIL : undefined,
+  });
 };
 
 /**

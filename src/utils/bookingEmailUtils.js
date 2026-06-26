@@ -1,4 +1,4 @@
-import { buildAlertEmailContent } from './emailTemplates.js';
+import { buildAlertEmailContent, COMPANY_SUPPORT_EMAIL } from './emailTemplates.js';
 
 /**
  * Formatting helpers for booking notification emails.
@@ -197,9 +197,17 @@ function getBookingAlertTone(status) {
  * @param {Object} booking - Populated booking document.
  * @param {string} [ctaLabel] - Optional CTA button label.
  * @param {string} [ctaUrl] - Optional CTA URL.
+ * @param {boolean} [includeCompanySupport] - Include company support inbox in footer.
  * @returns {{ text: string, html: string }} Email bodies.
  */
-export function buildBookingEmailBodies(greeting, intro, booking, ctaLabel, ctaUrl) {
+export function buildBookingEmailBodies(
+  greeting,
+  intro,
+  booking,
+  ctaLabel,
+  ctaUrl,
+  includeCompanySupport = false
+) {
   const message = [greeting, intro].filter(Boolean).join(' ');
   const details = mapBookingDetails(buildBookingDetailLines(booking));
   const title = `Booking update — ${getBookingReference(booking)}`;
@@ -212,6 +220,7 @@ export function buildBookingEmailBodies(greeting, intro, booking, ctaLabel, ctaU
     ctaLabel,
     ctaUrl,
     tone: getBookingAlertTone(booking.status),
+    supportEmail: includeCompanySupport ? COMPANY_SUPPORT_EMAIL : undefined,
   });
 }
 
@@ -223,10 +232,18 @@ export function buildBookingEmailBodies(greeting, intro, booking, ctaLabel, ctaU
  * @param {Object} booking - Populated booking document.
  * @param {string} [ctaLabel] - Optional CTA button label.
  * @param {string} [ctaUrl] - Optional CTA URL.
+ * @param {boolean} [includeCompanySupport] - Include company support inbox in footer.
  * @returns {string} HTML email body.
  */
-export function buildBookingEmailHtml(greeting, intro, booking, ctaLabel, ctaUrl) {
-  return buildBookingEmailBodies(greeting, intro, booking, ctaLabel, ctaUrl).html;
+export function buildBookingEmailHtml(
+  greeting,
+  intro,
+  booking,
+  ctaLabel,
+  ctaUrl,
+  includeCompanySupport = false
+) {
+  return buildBookingEmailBodies(greeting, intro, booking, ctaLabel, ctaUrl, includeCompanySupport).html;
 }
 
 /**
@@ -236,10 +253,18 @@ export function buildBookingEmailHtml(greeting, intro, booking, ctaLabel, ctaUrl
  * @param {string} intro - Intro paragraph.
  * @param {Object} booking - Populated booking document.
  * @param {string} [ctaUrl] - Optional dashboard URL.
+ * @param {boolean} [includeCompanySupport] - Include company support inbox in footer.
  * @returns {string} Plain-text email body.
  */
-export function buildBookingEmailText(greeting, intro, booking, ctaUrl) {
-  return buildBookingEmailBodies(greeting, intro, booking, ctaUrl ? 'View booking' : undefined, ctaUrl).text;
+export function buildBookingEmailText(greeting, intro, booking, ctaUrl, includeCompanySupport = false) {
+  return buildBookingEmailBodies(
+    greeting,
+    intro,
+    booking,
+    ctaUrl ? 'View booking' : undefined,
+    ctaUrl,
+    includeCompanySupport
+  ).text;
 }
 
 export { getFrontendBaseUrl } from './emailTemplates.js';

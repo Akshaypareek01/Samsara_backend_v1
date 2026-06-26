@@ -45,16 +45,19 @@ if (config.env !== 'test') {
  * @param {string} to
  * @param {string} subject
  * @param {string} text
- * @param {string} html - Optional HTML content
+ * @param {string} [html] - Optional HTML content
+ * @param {Object} [options] - Optional nodemailer extras
+ * @param {string} [options.replyTo] - Reply-to address
  * @returns {Promise}
  */
-const sendEmail = async (to, subject, text, html = null) => {
-  const msg = { 
-    from: config.email.from, 
-    to, 
-    subject, 
+const sendEmail = async (to, subject, text, html = null, options = {}) => {
+  const msg = {
+    from: config.email.from,
+    to,
+    subject,
     text,
-    ...(html && { html })
+    ...(html && { html }),
+    ...(options.replyTo && { replyTo: options.replyTo }),
   };
   
   logger.info(`Sending email to: ${to}, subject: ${subject}`);

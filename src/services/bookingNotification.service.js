@@ -1,6 +1,7 @@
 import logger from '../config/logger.js';
 import { Admin } from '../models/index.js';
 import { sendEmail } from './email.service.js';
+import { COMPANY_SUPPORT_EMAIL } from '../utils/emailTemplates.js';
 import {
   buildBookingEmailHtml,
   buildBookingEmailText,
@@ -34,12 +35,15 @@ function dashboardUrl(role) {
  * @param {string} subject - Email subject.
  * @param {string} text - Plain-text body.
  * @param {string} html - HTML body.
+ * @param {boolean} [includeCompanySupport] - Set Reply-To to company support inbox.
  * @returns {Promise<void>}
  */
-async function sendBookingEmailSafe(to, subject, text, html) {
+async function sendBookingEmailSafe(to, subject, text, html, includeCompanySupport = false) {
   if (!to) return;
   try {
-    await sendEmail(to, subject, text, html);
+    await sendEmail(to, subject, text, html, {
+      replyTo: includeCompanySupport ? COMPANY_SUPPORT_EMAIL : undefined,
+    });
   } catch (err) {
     logger.error(`Booking email failed for ${to}: ${err.message}`);
   }
@@ -52,12 +56,15 @@ async function sendBookingEmailSafe(to, subject, text, html) {
  * @param {string} subject - Email subject.
  * @param {string} text - Plain-text body.
  * @param {string} html - HTML body.
+ * @param {boolean} [includeCompanySupport] - Set Reply-To to company support inbox.
  * @returns {Promise<void>}
  */
-async function broadcastBookingEmail(recipients, subject, text, html) {
+async function broadcastBookingEmail(recipients, subject, text, html, includeCompanySupport = false) {
   const unique = [...new Set(recipients.filter(Boolean))];
   if (unique.length === 0) return;
-  await Promise.all(unique.map((to) => sendBookingEmailSafe(to, subject, text, html)));
+  await Promise.all(
+    unique.map((to) => sendBookingEmailSafe(to, subject, text, html, includeCompanySupport))
+  );
 }
 
 /**
@@ -110,10 +117,18 @@ async function notifyAudience({ booking, subject, greeting, intro, audience }) {
       : 'admin';
 
   const ctaUrl = dashboardUrl(roleForCta);
-  const text = buildBookingEmailText(greeting, intro, booking, ctaUrl);
-  const html = buildBookingEmailHtml(greeting, intro, booking, 'View booking', ctaUrl);
+  const includeCompanySupport = Boolean(audience.company);
+  const text = buildBookingEmailText(greeting, intro, booking, ctaUrl, includeCompanySupport);
+  const html = buildBookingEmailHtml(
+    greeting,
+    intro,
+    booking,
+    'View booking',
+    ctaUrl,
+    includeCompanySupport
+  );
 
-  await broadcastBookingEmail(recipients, subject, text, html);
+  await broadcastBookingEmail(recipients, subject, text, html, includeCompanySupport);
 }
 
 /**

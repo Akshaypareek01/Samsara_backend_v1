@@ -18,7 +18,7 @@ describe('emailTemplates', () => {
   });
 
   test('renders brand name in Times with logo and light-mode meta', () => {
-    const { html } = buildOtpEmailContent({ otp: '654321', type: 'registration', portal: 'company' });
+    const { html, text } = buildOtpEmailContent({ otp: '654321', type: 'registration', portal: 'company' });
 
     expect(html).toContain("font-family:'Times New Roman',Times,serif");
     expect(html).toContain('Samsara Wellness');
@@ -28,6 +28,17 @@ describe('emailTemplates', () => {
     expect(html).toContain('@media (prefers-color-scheme: dark)');
     expect(html).toContain('class="email-header"');
     expect(html).toContain('bgcolor="#FFFFFF"');
+    expect(html).toContain('assist@samsarawellness.in');
+    expect(text).toContain('assist@samsarawellness.in');
+  });
+
+  test('company OTP login email includes support inbox in footer only', () => {
+    const { html, text } = buildOtpEmailContent({ otp: '1234', type: 'login', portal: 'company' });
+
+    expect(html).toContain('assist@samsarawellness.in');
+    expect(html).toContain('Need help? Contact us at');
+    expect(html).not.toContain('Need assistance?');
+    expect(text).toContain('assist@samsarawellness.in');
   });
 
   test('booking alert emails use brand primary for info tone', () => {
@@ -36,10 +47,13 @@ describe('emailTemplates', () => {
       message: 'Your session is confirmed.',
       details: [{ label: 'Reference', value: 'BK-001' }],
       tone: 'info',
+      supportEmail: 'assist@samsarawellness.in',
     });
 
     expect(html).toContain('#ed662e');
     expect(html).toContain('Booking confirmed');
+    expect(html).toContain('assist@samsarawellness.in');
+    expect(html).not.toContain('Need assistance?');
   });
 
   test('action emails include brand colors and light-mode guard', () => {

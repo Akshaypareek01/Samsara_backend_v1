@@ -25,6 +25,18 @@ const PORTAL_PATHS = {
 
 const OTP_EXPIRY_MINUTES = 10;
 
+/** Company portal support inbox shown in company-facing emails. */
+export const COMPANY_SUPPORT_EMAIL = 'assist@samsarawellness.in';
+
+/**
+ * Plain-text support line for company-facing emails.
+ *
+ * @returns {string} Support contact line.
+ */
+export function getCompanySupportEmailLine() {
+  return `Need help? Contact us at ${COMPANY_SUPPORT_EMAIL}`;
+}
+
 /**
  * Escape HTML special characters for safe email rendering.
  *
@@ -115,6 +127,7 @@ function buildLightModeGuardStyles(brand) {
  * @param {typeof BRAND} [options.brand] - Optional brand color overrides.
  * @param {string|null} [options.tagline] - Header tagline; omit with null to hide.
  * @param {boolean} [options.showPortalLink] - Show CRM portal link in footer.
+ * @param {string} [options.supportEmail] - Optional support inbox mailto in footer.
  * @returns {string} Full HTML document.
  */
 export function buildEmailLayout({
@@ -127,6 +140,7 @@ export function buildEmailLayout({
   brand = BRAND,
   tagline = 'Corporate wellness, simplified',
   showPortalLink = true,
+  supportEmail,
 }) {
   const safePreheader = escapeHtml(preheader);
   const safeTitle = escapeHtml(title);
@@ -158,6 +172,13 @@ export function buildEmailLayout({
 
   const portalLinkBlock = showPortalLink
     ? `<br /><a href="${portalUrl}" style="color:${brand.primary};text-decoration:none;font-weight:600;">${portalUrl.replace(/^https?:\/\//, '')}</a>`
+    : '';
+
+  const supportBlock = supportEmail
+    ? `<p style="margin:12px 0 0 0;font-size:12px;line-height:1.6;color:${brand.muted};text-align:center;">
+        Need help? Contact us at
+        <a href="mailto:${escapeHtml(supportEmail)}" style="color:${brand.primary};text-decoration:none;font-weight:600;">${escapeHtml(supportEmail)}</a>
+      </p>`
     : '';
 
   return `<!DOCTYPE html>
@@ -197,6 +218,7 @@ export function buildEmailLayout({
                 This is an automated message from ${escapeHtml(brand.name)}. Please do not reply to this email.
               </p>
               ${footerExtra}
+              ${supportBlock}
               <p style="margin:14px 0 0 0;font-size:12px;line-height:1.6;color:${brand.muted};text-align:center;">
                 &copy; ${new Date().getFullYear()} ${escapeHtml(brand.legalName)}. All rights reserved.${portalLinkBlock}
               </p>
@@ -232,6 +254,7 @@ export function buildOtpEmailContent({ otp, type, portal = 'company' }) {
   const actionLabel = isRegistration ? 'complete your registration' : `sign in to the ${portalLabel}`;
   const title = isRegistration ? 'Verify your email address' : 'Your secure login code';
 
+  const isCompanyPortal = portal === 'company';
   const text = [
     `Hello,`,
     '',
@@ -243,9 +266,13 @@ export function buildOtpEmailContent({ otp, type, portal = 'company' }) {
     `If you did not request this, you can safely ignore this email.`,
     '',
     `Open portal: ${loginUrl}`,
+    isCompanyPortal ? '' : null,
+    isCompanyPortal ? getCompanySupportEmailLine() : null,
     '',
     `— ${BRAND.name}`,
-  ].join('\n');
+  ]
+    .filter((line) => line !== null)
+    .join('\n');
 
   const contentHtml = `
     <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:${BRAND.text};">
@@ -273,6 +300,7 @@ export function buildOtpEmailContent({ otp, type, portal = 'company' }) {
     contentHtml,
     ctaLabel: isRegistration ? 'Complete registration' : `Open ${portalLabel}`,
     ctaUrl: loginUrl,
+    supportEmail: isCompanyPortal ? COMPANY_SUPPORT_EMAIL : undefined,
   });
 
   return { subject, text, html };
@@ -289,6 +317,7 @@ export function buildOtpEmailContent({ otp, type, portal = 'company' }) {
  * @param {string} [params.ctaLabel] - Button label.
  * @param {string} [params.ctaUrl] - Button URL.
  * @param {'info'|'success'|'warning'|'danger'} [params.tone] - Visual accent.
+ * @param {string} [params.supportEmail] - Optional support inbox mailto in footer.
  * @returns {{ subject: string, text: string, html: string }} Email content.
  */
 export function buildAlertEmailContent({
@@ -299,6 +328,7 @@ export function buildAlertEmailContent({
   ctaLabel,
   ctaUrl,
   tone = 'info',
+  supportEmail,
 }) {
   const toneColors = {
     info: BRAND.primary,
@@ -318,6 +348,7 @@ export function buildAlertEmailContent({
     ...detailLines,
     '',
     ctaUrl ? `Open dashboard: ${ctaUrl}` : null,
+    supportEmail ? getCompanySupportEmailLine() : null,
     '',
     `— ${BRAND.name}`,
   ]
@@ -359,6 +390,7 @@ export function buildAlertEmailContent({
     contentHtml,
     ctaLabel,
     ctaUrl,
+    supportEmail,
   });
 
   return { subject, text, html };
