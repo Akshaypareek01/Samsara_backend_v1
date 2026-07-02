@@ -153,6 +153,44 @@ const createStepTracker = {
   }),
 };
 
+// Daily activity (device steps + active calories), upsert by date.
+const createActivityTracker = {
+  body: Joi.object().keys({
+    date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/),
+    steps: Joi.object({
+      value: Joi.number().min(0).max(200000).required(),
+    }).required(),
+    activeCalories: Joi.object({
+      value: Joi.number().min(0),
+      unit: Joi.string().default('kcal'),
+    }),
+    distance: Joi.object({
+      value: Joi.number().min(0),
+      unit: Joi.string().valid('km', 'mi').default('km'),
+    }),
+    activeTime: Joi.number().min(0),
+    source: Joi.string().valid('healthkit', 'healthconnect', 'manual', 'system'),
+    notes: Joi.string().max(500),
+  }),
+};
+
+// Daily heart-rate summary, upsert by date.
+const createHeartRateTracker = {
+  body: Joi.object().keys({
+    date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/),
+    summary: Joi.object({
+      avg: Joi.number().min(0).max(300),
+      min: Joi.number().min(0).max(300),
+      max: Joi.number().min(0).max(300),
+      latest: Joi.number().min(0).max(300),
+      unit: Joi.string().default('count/min'),
+    }).required(),
+    measuredAt: Joi.string().isoDate(),
+    source: Joi.string().valid('healthkit', 'healthconnect', 'manual', 'system'),
+    notes: Joi.string().max(500),
+  }),
+};
+
 const createSleepTracker = {
   body: Joi.object().keys({
     sleepRate: Joi.number().min(0).max(100),
@@ -329,6 +367,8 @@ export {
   createBmiTracker,
   createBodyStatusTracker,
   createStepTracker,
+  createActivityTracker,
+  createHeartRateTracker,
   createSleepTracker,
   createWorkoutTracker,
   updateTrackerEntry,

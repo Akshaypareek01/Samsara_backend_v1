@@ -28,6 +28,7 @@ import { WeightTracker } from './weight-tracker.model.js';
 import { TemperatureTracker } from './temperature-tracker.model.js';
 import { BmiTracker } from './bmi-tracker.model.js';
 import { StepTracker } from './step-tracker.model.js';
+import { HeartRateTracker } from './heart-rate-tracker.model.js';
 import { WorkoutTracker } from './workout-tracker.model.js';
 import { CaloriesTarget } from './calories-target.model.js';
 import { Meditation } from './meditation.model.js';
@@ -86,6 +87,7 @@ export {
   TemperatureTracker,
   BmiTracker,
   StepTracker,
+  HeartRateTracker,
   WorkoutTracker,
   CaloriesTarget,
   Meditation,

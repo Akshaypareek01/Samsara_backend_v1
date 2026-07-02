@@ -7,7 +7,8 @@ import {
   FatTracker, 
   BmiTracker, 
   BodyStatus, 
-  StepTracker, 
+  StepTracker,
+  HeartRateTracker,
   SleepTracker,
   WorkoutTracker,
   CaloriesTarget
@@ -1369,9 +1370,100 @@ const updateCaloriesFromSource = async (userId, source, calories) => {
   return caloriesTarget;
 };
 
+/**
+ * Resolve a YYYY-MM-DD string (or Date) to that day's [start, end) window.
+ * Falls back to today when no date is supplied.
+ */
+const dayRange = (date) => {
+  const base = date ? new Date(date) : new Date();
+  const start = new Date(base);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+};
+
+/**
+ * Upsert today's activity (steps + active calories) into the StepTracker
+ * collection, keyed by (userId, day). Repeated syncs on the same day update
+ * the same record instead of creating duplicates.
+ *
+ * @param {string} userId
+ * @param {{ date?: string, steps?: {value:number}, activeCalories?: {value:number, unit?:string}, distance?: object, activeTime?: number, source?: string, notes?: string }} data
+ */
+const upsertActivityEntry = async (userId, data) => {
+  const { start, end } = dayRange(data.date);
+  const set = { userId, measurementDate: start, isActive: true };
+
+  if (data.steps && data.steps.value != null) set.steps = data.steps.value;
+  if (data.activeCalories && data.activeCalories.value != null) set.calories = data.activeCalories.value;
+  if (data.distance) set.distance = data.distance;
+  if (data.activeTime != null) set.activeTime = data.activeTime;
+  if (data.source) set.source = data.source;
+  if (data.notes) set.notes = data.notes;
+
+  return StepTracker.findOneAndUpdate(
+    { userId, measurementDate: { $gte: start, $lt: end } },
+    { $set: set },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+};
+
+/**
+ * Get daily activity history (steps + active calories) for the last N days.
+ */
+const getActivityHistory = async (userId, days = 30) => {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  return StepTracker.find({
+    userId,
+    measurementDate: { $gte: startDate },
+    isActive: true,
+  }).sort({ measurementDate: -1 });
+};
+
+/**
+ * Upsert today's heart-rate summary, keyed by (userId, day).
+ *
+ * @param {string} userId
+ * @param {{ date?: string, summary: {avg?:number,min?:number,max?:number,latest?:number,unit?:string}, measuredAt?: string, source?: string, notes?: string }} data
+ */
+const upsertHeartRateEntry = async (userId, data) => {
+  const { start, end } = dayRange(data.date);
+  const set = { userId, measurementDate: start, isActive: true };
+
+  if (data.summary) set.summary = data.summary;
+  if (data.measuredAt) set.measuredAt = new Date(data.measuredAt);
+  if (data.source) set.source = data.source;
+  if (data.notes) set.notes = data.notes;
+
+  return HeartRateTracker.findOneAndUpdate(
+    { userId, measurementDate: { $gte: start, $lt: end } },
+    { $set: set },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+};
+
+/**
+ * Get daily heart-rate history for the last N days.
+ */
+const getHeartRateHistory = async (userId, days = 30) => {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  return HeartRateTracker.find({
+    userId,
+    measurementDate: { $gte: startDate },
+    isActive: true,
+  }).sort({ measurementDate: -1 });
+};
+
 export {
   createInitialTrackers,
   updateTrackersFromProfile,
+  upsertActivityEntry,
+  getActivityHistory,
+  upsertHeartRateEntry,
+  getHeartRateHistory,
   getWeightHistory,
   getWeightById,
   getWaterHistory,

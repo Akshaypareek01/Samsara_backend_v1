@@ -242,6 +242,64 @@ const addStepEntry = catchAsync(async (req, res) => {
 });
 
 /**
+ * Map a StepTracker doc to the client "activity" contract shape.
+ */
+const toActivityShape = (doc) => ({
+  id: doc.id,
+  date: doc.measurementDate,
+  steps: { value: doc.steps ?? 0 },
+  activeCalories: { value: doc.calories ?? 0, unit: 'kcal' },
+  distance: doc.distance,
+  activeTime: doc.activeTime,
+  source: doc.source,
+});
+
+/**
+ * Add/upsert today's activity (device steps + active calories).
+ */
+const addActivityEntry = catchAsync(async (req, res) => {
+  const entry = await trackerService.upsertActivityEntry(req.user.id, req.body);
+  res.status(httpStatus.CREATED).send(toActivityShape(entry));
+});
+
+/**
+ * Get daily activity history (steps + active calories).
+ */
+const getActivityHistory = catchAsync(async (req, res) => {
+  const days = parseInt(req.query.days) || 30;
+  const history = await trackerService.getActivityHistory(req.user.id, days);
+  res.send(history.map(toActivityShape));
+});
+
+/**
+ * Map a HeartRateTracker doc to the client contract shape.
+ */
+const toHeartRateShape = (doc) => ({
+  id: doc.id,
+  date: doc.measurementDate,
+  summary: doc.summary,
+  measuredAt: doc.measuredAt,
+  source: doc.source,
+});
+
+/**
+ * Add/upsert today's heart-rate summary.
+ */
+const addHeartRateEntry = catchAsync(async (req, res) => {
+  const entry = await trackerService.upsertHeartRateEntry(req.user.id, req.body);
+  res.status(httpStatus.CREATED).send(toHeartRateShape(entry));
+});
+
+/**
+ * Get daily heart-rate history.
+ */
+const getHeartRateHistory = catchAsync(async (req, res) => {
+  const days = parseInt(req.query.days) || 30;
+  const history = await trackerService.getHeartRateHistory(req.user.id, days);
+  res.send(history.map(toHeartRateShape));
+});
+
+/**
  * Add sleep entry
  */
 const addSleepEntry = catchAsync(async (req, res) => {
@@ -430,6 +488,10 @@ export {
   addBmiEntry,
   addBodyStatusEntry,
   addStepEntry,
+  addActivityEntry,
+  getActivityHistory,
+  addHeartRateEntry,
+  getHeartRateHistory,
   addSleepEntry,
   addWorkoutEntry,
   getWorkoutHistory,

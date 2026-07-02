@@ -26,6 +26,11 @@ const StepTrackerSchema = new mongoose.Schema(
     activeTime: {
       type: Number, // in minutes
     },
+    source: {
+      type: String,
+      enum: ['healthkit', 'healthconnect', 'manual', 'system'],
+      default: 'manual',
+    },
     measurementDate: {
       type: Date,
       default: Date.now,

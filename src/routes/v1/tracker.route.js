@@ -140,6 +140,20 @@ router.get('/body-status/:entryId', validate(trackerValidation.getTrackerEntryBy
 router.get('/step/history', validate(trackerValidation.getTrackerHistory), trackerController.getStepHistory);
 
 /**
+ * @route   GET /v1/trackers/activity/history
+ * @desc    Get daily activity history (device steps + active calories)
+ * @access  Private
+ */
+router.get('/activity/history', validate(trackerValidation.getTrackerHistory), trackerController.getActivityHistory);
+
+/**
+ * @route   GET /v1/trackers/heart-rate/history
+ * @desc    Get daily heart-rate history
+ * @access  Private
+ */
+router.get('/heart-rate/history', validate(trackerValidation.getTrackerHistory), trackerController.getHeartRateHistory);
+
+/**
  * @route   GET /v1/trackers/sleep/history
  * @desc    Get sleep tracker history
  * @access  Private
@@ -208,6 +222,20 @@ router.post('/body-status', validate(trackerValidation.createBodyStatusTracker),
  * @access  Private
  */
 router.post('/step', validate(trackerValidation.createStepTracker), trackerController.addStepEntry);
+
+/**
+ * @route   POST /v1/trackers/activity
+ * @desc    Add/upsert today's activity (device steps + active calories)
+ * @access  Private
+ */
+router.post('/activity', validate(trackerValidation.createActivityTracker), trackerController.addActivityEntry);
+
+/**
+ * @route   POST /v1/trackers/heart-rate
+ * @desc    Add/upsert today's heart-rate summary
+ * @access  Private
+ */
+router.post('/heart-rate', validate(trackerValidation.createHeartRateTracker), trackerController.addHeartRateEntry);
 
 /**
  * @route   POST /v1/trackers/sleep
