@@ -42,6 +42,7 @@ export const TRAINER_TYPE_OF_TRAINING_ALL = [
 
 export const TRAINER_CATEGORY_ENUM = [
   'Yoga Trainer',
+  'Zumba Trainer',
   'Sound Healer',
   'Psychologist',
   'Women Health Trainer',
