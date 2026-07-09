@@ -1,4 +1,5 @@
 import { buildAlertEmailContent, COMPANY_SUPPORT_EMAIL } from './emailTemplates.js';
+import { getSessionsForBooking, getTrainerIdFromRef } from './bookingSessionUtils.js';
 
 /**
  * Formatting helpers for booking notification emails.
@@ -131,30 +132,84 @@ export function collectCompanyEmails(company) {
  * @returns {string[]} Detail lines.
  */
 export function buildBookingDetailLines(booking) {
-  const endTime = computeEndTime(booking.startTime, booking.duration);
-  const timeRange = endTime
-    ? `${booking.startTime} – ${endTime} (${booking.duration} hr)`
-    : `${booking.startTime} (${booking.duration} hr)`;
+    const sessions = getSessionsForBooking(booking);
+    const lines = [
+        `Reference: ${getBookingReference(booking)}`,
+        `Company: ${getCompanyName(booking.company)}`,
+        ...(getCompanyContactName(booking.company)
+            ? [`Contact person: ${getCompanyContactName(booking.company)}`]
+            : []),
+        `Date: ${formatBookingDate(booking.bookingDate)}`,
+        `Status: ${formatBookingStatus(booking.status)}`,
+    ];
 
-  const lines = [
-    `Reference: ${getBookingReference(booking)}`,
-    `Company: ${getCompanyName(booking.company)}`,
-    ...(getCompanyContactName(booking.company)
-      ? [`Contact person: ${getCompanyContactName(booking.company)}`]
-      : []),
-    `Trainer: ${getTrainerName(booking.trainer)}`,
-    `Date: ${formatBookingDate(booking.bookingDate)}`,
-    `Time: ${timeRange}`,
-    `Training: ${(booking.typeOfTraining || []).join(', ') || '—'}`,
-    `Status: ${formatBookingStatus(booking.status)}`,
-  ];
+    if (sessions.length > 1) {
+        lines.push(`Sessions: ${sessions.length}`);
+        sessions.forEach((s, i) => {
+            const endTime = computeEndTime(s.startTime, s.duration);
+            const timeRange = endTime
+                ? `${s.startTime} – ${endTime} (${s.duration} hr)`
+                : `${s.startTime} (${s.duration} hr)`;
+            const trainerName = getTrainerName(s.trainer);
+            const types = (s.typeOfTraining || []).join(', ') || '—';
+            const sessionStatus = s.trainerStatus ? ` [${s.trainerStatus}]` : '';
+            lines.push(
+                `  ${i + 1}. ${trainerName} — ${timeRange} — ${types}${sessionStatus}`
+            );
+        });
+    } else {
+        const s = sessions[0] || booking;
+        const endTime = computeEndTime(s.startTime, s.duration);
+        const timeRange = endTime
+            ? `${s.startTime} – ${endTime} (${s.duration} hr)`
+            : `${s.startTime} (${s.duration} hr)`;
+        lines.push(`Trainer: ${getTrainerName(s.trainer || booking.trainer)}`);
+        lines.push(`Time: ${timeRange}`);
+        lines.push(`Training: ${(s.typeOfTraining || booking.typeOfTraining || []).join(', ') || '—'}`);
+    }
 
-  if (booking.notes) lines.push(`Notes: ${booking.notes}`);
-  if (booking.trainerNotes) lines.push(`Trainer notes: ${booking.trainerNotes}`);
-  if (booking.adminNotes) lines.push(`Admin notes: ${booking.adminNotes}`);
-  if (booking.cancellationReason) lines.push(`Cancellation reason: ${booking.cancellationReason}`);
+    if (booking.notes) lines.push(`Notes: ${booking.notes}`);
+    if (booking.trainerNotes) lines.push(`Trainer notes: ${booking.trainerNotes}`);
+    if (booking.adminNotes) lines.push(`Admin notes: ${booking.adminNotes}`);
+    if (booking.cancellationReason) lines.push(`Cancellation reason: ${booking.cancellationReason}`);
 
-  return lines;
+    return lines;
+}
+
+/**
+ * Collect unique trainer emails from all sessions in a booking.
+ *
+ * @param {Object} booking - Populated booking document.
+ * @returns {string[]} Unique lowercase emails.
+ */
+export function collectTrainerEmails(booking) {
+    const emails = new Set();
+    for (const session of getSessionsForBooking(booking)) {
+        const trainer = session.trainer;
+        if (trainer && typeof trainer === 'object' && trainer.email) {
+            emails.add(String(trainer.email).trim().toLowerCase());
+        }
+    }
+    if (booking.trainer && typeof booking.trainer === 'object' && booking.trainer.email) {
+        emails.add(String(booking.trainer.email).trim().toLowerCase());
+    }
+    return [...emails];
+}
+
+/**
+ * Build a summary label for trainers in a booking.
+ *
+ * @param {Object} booking - Populated booking document.
+ * @returns {string} Trainer names summary.
+ */
+export function getBookingTrainersSummary(booking) {
+    const sessions = getSessionsForBooking(booking);
+    const names = sessions.map((s) => getTrainerName(s.trainer)).filter(Boolean);
+    const unique = [...new Set(names)];
+    if (unique.length === 0) return getTrainerName(booking.trainer);
+    if (unique.length === 1) return unique[0];
+    if (unique.length === 2) return `${unique[0]} and ${unique[1]}`;
+    return `${unique[0]} and ${unique.length - 1} others`;
 }
 
 /**

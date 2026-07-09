@@ -51,6 +51,8 @@
     "migrate:trainer-weekly-availability:defaults": "cross-env NODE_ENV=development node src/scripts/migrate-trainer-weekly-availability.js --apply-defaults",
     "migrate:eap-syllabus-1day": "cross-env NODE_ENV=development node src/scripts/migrate-eap-syllabus-1day.js",
     "migrate:eap-syllabus-1day:dry-run": "cross-env NODE_ENV=development node src/scripts/migrate-eap-syllabus-1day.js --dry-run",
+    "migrate:eap-trainer-to-psychologist": "cross-env NODE_ENV=development node src/scripts/migrate-eap-trainer-to-psychologist.js",
+    "migrate:eap-trainer-to-psychologist:dry-run": "cross-env NODE_ENV=development node src/scripts/migrate-eap-trainer-to-psychologist.js --dry-run",
     "clear:trainers": "cross-env NODE_ENV=development node src/scripts/clear-all-trainers.js",
     "clear:trainers:apply": "cross-env NODE_ENV=development node src/scripts/clear-all-trainers.js --apply",
     "free-port": "bash scripts/free-backend-port.sh"

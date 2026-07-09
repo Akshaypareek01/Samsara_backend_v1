@@ -48,6 +48,7 @@ import { WhatsAppConversation } from './whatsapp-conversation.model.js';
 import Trainer from './trainer.model.js';
 import TrainerLead from './trainer-lead.model.js';
 import Booking from './booking.model.js';
+import BookingInvoice from './booking-invoice.model.js';
 import Role from './role.model.js';
 import WellnessFeedback from './wellness-feedback.model.js';
 import EapTraining from './eap-training.model.js';
@@ -107,6 +108,7 @@ export {
   Trainer,
   TrainerLead,
   Booking,
+  BookingInvoice,
   Role,
   WellnessFeedback,
   EapTraining,

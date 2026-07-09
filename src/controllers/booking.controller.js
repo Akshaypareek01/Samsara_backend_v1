@@ -4,6 +4,15 @@ import pick from '../utils/pick.js';
 import ApiError from '../utils/ApiError.js';
 import isAdminUser from '../utils/isAdminUser.js';
 import bookingService from '../services/booking.service.js';
+import { bookingIncludesTrainer } from '../utils/bookingSessionUtils.js';
+
+/**
+ * Pre-check session availability for a proposed multi-session booking.
+ */
+const checkBookingAvailability = catchAsync(async (req, res) => {
+    const result = await bookingService.checkBookingAvailability(req.body);
+    res.send(result);
+});
 
 /**
  * Create a new booking
@@ -90,11 +99,7 @@ const getBookingById = catchAsync(async (req, res) => {
             throw new ApiError(httpStatus.FORBIDDEN, 'You can only view your own bookings');
         }
     } else if (req.user.role === 'trainer') {
-        const trainerRef =
-            booking.trainer && typeof booking.trainer === 'object' && booking.trainer._id
-                ? booking.trainer._id.toString()
-                : booking.trainer?.toString?.() || String(booking.trainer);
-        if (trainerRef !== req.user.id.toString()) {
+        if (!bookingIncludesTrainer(booking, req.user.id)) {
             throw new ApiError(httpStatus.FORBIDDEN, 'You can only view bookings assigned to you');
         }
     }
@@ -135,7 +140,13 @@ const updateBookingStatus = catchAsync(async (req, res) => {
         throw new ApiError(httpStatus.FORBIDDEN, 'Companies cannot change booking status');
     }
     const { status, trainerNotes } = req.body;
-    const booking = await bookingService.updateBookingStatus(req.params.id, status, trainerNotes);
+    const trainerId = req.user.role === 'trainer' ? req.user.id : undefined;
+    const booking = await bookingService.updateBookingStatus(
+        req.params.id,
+        status,
+        trainerNotes,
+        trainerId
+    );
     res.send(booking);
 });
 
@@ -198,8 +209,8 @@ const approveBookingAndConfirmPayment = catchAsync(async (req, res) => {
     if (!isAdminUser(req.user)) {
         throw new ApiError(httpStatus.FORBIDDEN, 'Only administrators can approve bookings');
     }
-    const { paymentMode, transactionId, paymentType, paymentAmount, adminNotes } = req.body;
-    const adminId = req.user.id; // Assuming admin is authenticated
+    const { paymentMode, transactionId, paymentType, paymentAmount, adminNotes, trainerFeeLines } = req.body;
+    const adminId = req.user.id;
 
     const paymentDetails = {
         paymentMode,
@@ -208,13 +219,14 @@ const approveBookingAndConfirmPayment = catchAsync(async (req, res) => {
         paymentAmount,
     };
 
-    const booking = await bookingService.approveBookingAndConfirmPayment(
+    const result = await bookingService.approveBookingAndConfirmPayment(
         req.params.id,
         adminId,
         paymentDetails,
-        adminNotes
+        adminNotes,
+        trainerFeeLines
     );
-    res.send(booking);
+    res.send(result);
 });
 
 /**
@@ -258,6 +270,7 @@ const getTrainerApprovedBookings = catchAsync(async (req, res) => {
 
 export {
     createBooking,
+    checkBookingAvailability,
     getAllBookings,
     getMyBookings,
     getMyBookingsSummary,

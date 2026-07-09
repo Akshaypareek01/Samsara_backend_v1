@@ -6,11 +6,18 @@ import {
   buildBookingEmailHtml,
   buildBookingEmailText,
   collectCompanyEmails,
+  collectTrainerEmails,
   formatBookingStatus,
+  getBookingTrainersSummary,
   getCompanyName,
   getFrontendBaseUrl,
   getTrainerName,
 } from '../utils/bookingEmailUtils.js';
+import {
+  getSessionsForBooking,
+  getTrainerApprovalProgress,
+  getTrainerIdFromRef,
+} from '../utils/bookingSessionUtils.js';
 
 const DASHBOARD_PATHS = {
   admin: '/apps/crm/bookings',
@@ -103,8 +110,8 @@ async function notifyAudience({ booking, subject, greeting, intro, audience }) {
   if (audience.company) {
     recipients.push(...collectCompanyEmails(booking.company));
   }
-  if (audience.trainer && booking.trainer?.email) {
-    recipients.push(String(booking.trainer.email).trim().toLowerCase());
+  if (audience.trainer) {
+    recipients.push(...collectTrainerEmails(booking));
   }
   if (audience.admin) {
     recipients.push(...(await getAdminEmails()));
@@ -184,8 +191,10 @@ async function notifyAllRoles(booking, subject, introByRole) {
  */
 export async function notifyBookingCreated(booking) {
   const companyName = getCompanyName(booking.company);
-  const trainerName = getTrainerName(booking.trainer);
-  const subject = `New booking request — ${companyName} with ${trainerName}`;
+  const trainersSummary = getBookingTrainersSummary(booking);
+  const sessionCount = getSessionsForBooking(booking).length;
+  const sessionLabel = sessionCount > 1 ? `${sessionCount} sessions with ` : '';
+  const subject = `New booking request — ${companyName} with ${sessionLabel}${trainersSummary}`;
   const greeting = 'Hello,';
   const intro = `${companyName} submitted a new training session request. The booking is awaiting trainer approval.`;
 
@@ -201,14 +210,14 @@ export async function notifyBookingCreated(booking) {
       booking,
       subject,
       greeting,
-      intro: `${intro} We will notify you when the trainer responds.`,
+      intro: `${intro} We will notify you when all trainers respond.`,
       audience: { admin: false, company: true, trainer: false },
     }),
     notifyAudience({
       booking,
       subject,
       greeting,
-      intro: `${intro} Please accept or review this request in your trainer dashboard.`,
+      intro: `${intro} Please accept or review your assigned session in your trainer dashboard.`,
       audience: { admin: false, company: false, trainer: true },
     }),
   ]);
@@ -225,15 +234,32 @@ export async function notifyBookingCreated(booking) {
  */
 export async function notifyBookingStatusChanged(booking, previousStatus, meta = {}) {
   const companyName = getCompanyName(booking.company);
-  const trainerName = getTrainerName(booking.trainer);
+  const trainersSummary = getBookingTrainersSummary(booking);
   const statusLabel = formatBookingStatus(booking.status);
+  const progress = meta.approvalProgress || getTrainerApprovalProgress(booking);
+
+  if (
+    booking.status === 'pending_approval' &&
+    previousStatus === 'pending_approval' &&
+    progress.approved > 0 &&
+    progress.approved < progress.total
+  ) {
+    await notifyAudience({
+      booking,
+      subject: `Trainer approval progress — ${progress.approved} of ${progress.total} (${companyName})`,
+      greeting: 'Hello,',
+      intro: `${progress.approved} of ${progress.total} trainers have accepted the booking from ${companyName}. Waiting for remaining trainer approvals.`,
+      audience: { admin: true, company: true, trainer: false },
+    });
+    return;
+  }
 
   if (booking.status === 'approved' && previousStatus === 'pending_approval') {
     await notifyAudience({
       booking,
-      subject: `Trainer accepted booking — ${companyName} / ${trainerName}`,
+      subject: `All trainers accepted — ${companyName} / ${trainersSummary}`,
       greeting: 'Hello,',
-      intro: `${trainerName} accepted the session request from ${companyName}. Admin payment confirmation is required before the session is fully confirmed.`,
+      intro: `All trainers have accepted the session request from ${companyName}. Admin payment confirmation is required before the session is fully confirmed.`,
       audience: { admin: true, company: true, trainer: false },
     });
     return;
@@ -243,7 +269,7 @@ export async function notifyBookingStatusChanged(booking, previousStatus, meta =
     await Promise.all([
       notifyAudience({
         booking,
-        subject: `Booking confirmed — ${companyName} / ${trainerName}`,
+        subject: `Booking confirmed — ${companyName} / ${trainersSummary}`,
         greeting: 'Hello,',
         intro:
           'Your training session has been confirmed by admin. Payment details have been recorded and the session is now active.',
@@ -251,9 +277,9 @@ export async function notifyBookingStatusChanged(booking, previousStatus, meta =
       }),
       notifyAudience({
         booking,
-        subject: `Booking confirmed — ${companyName} / ${trainerName}`,
+        subject: `Booking confirmed — ${companyName} / ${trainersSummary}`,
         greeting: 'Hello,',
-        intro: `Booking ${statusLabel.toLowerCase()} for ${companyName} and ${trainerName}.`,
+        intro: `Booking ${statusLabel.toLowerCase()} for ${companyName} and ${trainersSummary}.`,
         audience: { admin: true, company: false, trainer: false },
       }),
     ]);
@@ -261,9 +287,9 @@ export async function notifyBookingStatusChanged(booking, previousStatus, meta =
   }
 
   if (booking.status === 'completed' && previousStatus === 'confirmed') {
-    await notifyAllRoles(booking, `Session completed — ${companyName} / ${trainerName}`, {
-      admin: `The training session between ${companyName} and ${trainerName} has been marked as completed.`,
-      company: `Your training session with ${trainerName} has been marked as completed.`,
+    await notifyAllRoles(booking, `Session completed — ${companyName} / ${trainersSummary}`, {
+      admin: `The training session between ${companyName} and ${trainersSummary} has been marked as completed.`,
+      company: `Your training session with ${trainersSummary} has been marked as completed.`,
       trainer: `Your session with ${companyName} has been marked as completed.`,
     });
     return;
@@ -271,9 +297,9 @@ export async function notifyBookingStatusChanged(booking, previousStatus, meta =
 
   if (booking.status === 'rejected') {
     const reasonNote = booking.adminNotes ? ' See admin notes below for details.' : '';
-    await notifyAllRoles(booking, `Booking rejected — ${companyName} / ${trainerName}`, {
-      admin: `The booking request between ${companyName} and ${trainerName} was rejected.${reasonNote}`,
-      company: `Your booking request with ${trainerName} was rejected.${reasonNote}`,
+    await notifyAllRoles(booking, `Booking rejected — ${companyName} / ${trainersSummary}`, {
+      admin: `The booking request between ${companyName} and ${trainersSummary} was rejected.${reasonNote}`,
+      company: `Your booking request with ${trainersSummary} was rejected.${reasonNote}`,
       trainer: `The booking request from ${companyName} was rejected.${reasonNote}`,
     });
     return;
@@ -285,13 +311,13 @@ export async function notifyBookingStatusChanged(booking, previousStatus, meta =
       cancelledBy === 'company'
         ? companyName
         : cancelledBy === 'trainer'
-          ? trainerName
+          ? trainersSummary
           : 'Admin';
     const reasonNote = booking.cancellationReason ? ' Reason included below.' : '';
 
-    await notifyAllRoles(booking, `Booking cancelled — ${companyName} / ${trainerName}`, {
-      admin: `The booking between ${companyName} and ${trainerName} was cancelled by ${actorLabel}.${reasonNote}`,
-      company: `Your booking with ${trainerName} was cancelled by ${actorLabel}.${reasonNote}`,
+    await notifyAllRoles(booking, `Booking cancelled — ${companyName} / ${trainersSummary}`, {
+      admin: `The booking between ${companyName} and ${trainersSummary} was cancelled by ${actorLabel}.${reasonNote}`,
+      company: `Your booking with ${trainersSummary} was cancelled by ${actorLabel}.${reasonNote}`,
       trainer: `Your booking with ${companyName} was cancelled by ${actorLabel}.${reasonNote}`,
     });
   }
@@ -308,12 +334,12 @@ export async function notifyBookingUpdated(booking, changedFields) {
   if (!changedFields.length) return;
 
   const companyName = getCompanyName(booking.company);
-  const trainerName = getTrainerName(booking.trainer);
+  const trainersSummary = getBookingTrainersSummary(booking);
   const changes = changedFields.join(', ');
 
-  await notifyAllRoles(booking, `Booking updated — ${companyName} / ${trainerName}`, {
+  await notifyAllRoles(booking, `Booking updated — ${companyName} / ${trainersSummary}`, {
     admin: `Booking details were updated (${changes}). Please review the latest schedule.`,
-    company: `Your booking with ${trainerName} was updated (${changes}). Please review the new schedule.`,
+    company: `Your booking with ${trainersSummary} was updated (${changes}). Please review the new schedule.`,
     trainer: `Your booking with ${companyName} was updated (${changes}). Please review the new schedule.`,
   });
 }

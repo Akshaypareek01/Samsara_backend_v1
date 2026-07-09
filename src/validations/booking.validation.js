@@ -1,39 +1,98 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
+import { trainerFeeLineSchema } from './booking-invoice.validation.js';
 const statusEnum = ['pending_approval', 'approved', 'confirmed', 'rejected', 'cancelled', 'completed'];
 
 const paymentModeEnum = ['cash', 'card', 'upi', 'bank_transfer', 'cheque', 'online', 'other'];
 const paymentTypeEnum = ['full', 'partial', 'advance'];
 
+const sessionInputSchema = Joi.object().keys({
+    trainer: Joi.string().custom(objectId).required(),
+    startTime: Joi.string()
+        .required()
+        .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+        .messages({
+            'string.pattern.base': 'Start time must be in HH:MM format (24-hour)',
+        }),
+    duration: Joi.number().required().min(0.5).max(24),
+    typeOfTraining: Joi.array()
+        .items(Joi.string().trim().min(1).max(300))
+        .min(1)
+        .required(),
+    eapTraining: Joi.string().custom(objectId).optional(),
+});
+
+const legacyCreateBooking = Joi.object().keys({
+    company: Joi.string().custom(objectId).required(),
+    trainer: Joi.string().custom(objectId).required(),
+    bookingDate: Joi.date()
+        .required()
+        .min('now')
+        .messages({
+            'date.min': 'Booking date must be today or in the future',
+        }),
+    startTime: Joi.string()
+        .required()
+        .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+        .messages({
+            'string.pattern.base': 'Start time must be in HH:MM format (24-hour)',
+        }),
+    duration: Joi.number().required().min(0.5).max(24).messages({
+        'number.min': 'Duration must be at least 0.5 hours',
+        'number.max': 'Duration cannot exceed 24 hours',
+    }),
+    typeOfTraining: Joi.array()
+        .items(Joi.string().trim().min(1).max(300))
+        .min(1)
+        .required()
+        .messages({
+            'array.min': 'At least one type of training is required',
+        }),
+    notes: Joi.string().max(1000).trim().empty('').optional(),
+    eapTraining: Joi.string().custom(objectId).optional(),
+});
+
+const multiSessionCreateBooking = Joi.object().keys({
+    company: Joi.string().custom(objectId).required(),
+    bookingDate: Joi.date()
+        .required()
+        .min('now')
+        .messages({
+            'date.min': 'Booking date must be today or in the future',
+        }),
+    notes: Joi.string().max(1000).trim().empty('').optional(),
+    sessions: Joi.array().items(sessionInputSchema).min(1).max(10).required(),
+});
+
 const createBooking = {
+    body: Joi.alternatives()
+        .try(multiSessionCreateBooking, legacyCreateBooking)
+        .messages({
+            'alternatives.match': 'Invalid booking payload. Provide either sessions[] or legacy single-trainer fields.',
+        }),
+};
+
+const checkBookingAvailability = {
     body: Joi.object().keys({
-        company: Joi.string().custom(objectId).required(),
-        trainer: Joi.string().custom(objectId).required(),
         bookingDate: Joi.date()
             .required()
             .min('now')
             .messages({
                 'date.min': 'Booking date must be today or in the future',
             }),
-        startTime: Joi.string()
-            .required()
-            .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
-            .messages({
-                'string.pattern.base': 'Start time must be in HH:MM format (24-hour)',
-            }),
-        duration: Joi.number().required().min(0.5).max(24).messages({
-            'number.min': 'Duration must be at least 0.5 hours',
-            'number.max': 'Duration cannot exceed 24 hours',
-        }),
-        typeOfTraining: Joi.array()
-            .items(Joi.string().trim().min(1).max(300))
+        sessions: Joi.array()
+            .items(
+                Joi.object().keys({
+                    trainer: Joi.string().custom(objectId).required(),
+                    startTime: Joi.string()
+                        .required()
+                        .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/),
+                    duration: Joi.number().required().min(0.5).max(24),
+                })
+            )
             .min(1)
-            .required()
-            .messages({
-                'array.min': 'At least one type of training is required',
-            }),
-        notes: Joi.string().max(1000).trim().empty('').optional(),
-        eapTraining: Joi.string().custom(objectId).optional(),
+            .max(10)
+            .required(),
     }),
 };
 
@@ -62,10 +121,10 @@ const updateBookingStatus = {
     }),
     body: Joi.object().keys({
         status: Joi.string()
-            .valid('approved', 'completed')
+            .valid('approved', 'rejected', 'completed')
             .required()
             .messages({
-                'any.only': 'Status must be one of: approved, completed',
+                'any.only': 'Status must be one of: approved, rejected, completed',
             }),
         trainerNotes: Joi.string().max(1000).trim().empty('').optional(),
     }),
@@ -141,6 +200,7 @@ const approveBookingAndConfirmPayment = {
         paymentType: Joi.string().valid(...paymentTypeEnum).required(),
         paymentAmount: Joi.number().required().min(0),
         adminNotes: Joi.string().max(1000).trim().empty('').optional(),
+        trainerFeeLines: Joi.array().items(trainerFeeLineSchema).min(1).required(),
     }),
 };
 
@@ -164,6 +224,7 @@ const adminCancelBooking = {
 
 export {
     createBooking,
+    checkBookingAvailability,
     getBookings,
     getBooking,
     updateBookingStatus,

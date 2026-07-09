@@ -6,6 +6,14 @@ import * as bookingController from '../../controllers/booking.controller.js';
 
 const router = express.Router();
 
+// Pre-check availability for multi-session bookings
+router.post(
+    '/check-availability',
+    auth(),
+    validate(bookingValidation.checkBookingAvailability),
+    bookingController.checkBookingAvailability
+);
+
 // Create a new booking
 router.post(
     '/',

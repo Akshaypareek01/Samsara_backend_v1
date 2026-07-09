@@ -49,6 +49,7 @@ import adminTrackerRoute from './admin-tracker.route.js';
 import adminPeriodRoute from './admin-period.route.js';
 import adminMembershipRoute from './admin-membership.route.js';
 import bookingRoute from './booking.router.js';
+import bookingInvoiceRoute from './booking-invoice.route.js';
 import roleRoute from './role.route.js';
 import webhookRoute from './webhook.route.js';
 import referralRoute from './referral.route.js';
@@ -255,6 +256,10 @@ const defaultRoutes = [
   {
     path: '/bookings',
     route: bookingRoute,
+  },
+  {
+    path: '/booking-invoices',
+    route: bookingInvoiceRoute,
   },
   {
     path: '/roles',
