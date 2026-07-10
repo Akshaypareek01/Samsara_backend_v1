@@ -23,6 +23,13 @@ const typeOfTrainingEnum = TRAINER_TYPE_OF_TRAINING_CURRENT;
 const typeOfTrainingUpdateEnum = TRAINER_TYPE_OF_TRAINING_ALL;
 const experienceEnum = TRAINER_EXPERIENCE_ENUM;
 
+/** Query param may be a single value or repeated array from the client. */
+const queryStringOrArray = (enumValues) =>
+  Joi.alternatives().try(
+    Joi.string().valid(...enumValues),
+    Joi.array().items(Joi.string().valid(...enumValues)).min(1)
+  );
+
 /** Maximum training gallery images per trainer profile. */
 const MAX_TRAINER_GALLERY_IMAGES = 6;
 
@@ -288,8 +295,8 @@ const getTrainers = {
     name: Joi.string(),
     category: Joi.string().valid(...categoryEnum),
     excludeCategory: Joi.string().valid(...categoryEnum),
-    specialistIn: Joi.array().items(Joi.string().valid(...specialistInEnum)).min(1),
-    typeOfTraining: Joi.array().items(Joi.string().valid(...typeOfTrainingEnum)).min(1),
+    specialistIn: queryStringOrArray(specialistInEnum),
+    typeOfTraining: queryStringOrArray(typeOfTrainingEnum),
     city: Joi.string().valid(...TRAINER_CITY_ENUM),
     status: Joi.boolean(),
     acceptingBookings: Joi.boolean(),

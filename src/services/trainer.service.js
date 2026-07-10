@@ -80,10 +80,20 @@ const buildTrainerQueryFilter = (filter = {}, options = {}) => {
     mongo.category = { $nin: [filter.excludeCategory] };
   }
   if (filter.specialistIn) {
-    mongo.specialistIn = filter.specialistIn;
+    const specialistValue = Array.isArray(filter.specialistIn)
+      ? filter.specialistIn[0]
+      : filter.specialistIn;
+    if (specialistValue) {
+      mongo.specialistIn = specialistValue;
+    }
   }
   if (filter.typeOfTraining) {
-    mongo.typeOfTraining = filter.typeOfTraining;
+    const trainingValue = Array.isArray(filter.typeOfTraining)
+      ? filter.typeOfTraining[0]
+      : filter.typeOfTraining;
+    if (trainingValue) {
+      mongo.typeOfTraining = trainingValue;
+    }
   }
   if (filter.city) {
     mongo.cities = String(filter.city).trim();
