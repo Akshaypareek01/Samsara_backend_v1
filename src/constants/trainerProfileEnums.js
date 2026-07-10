@@ -18,6 +18,7 @@ export const TRAINER_SPECIALIST_IN_ALL = [
 /** Wellness discipline options for new registrations */
 export const TRAINER_TYPE_OF_TRAINING_CURRENT = [
   'Yoga',
+  'Zumba',
   'Desktop Yoga',
   'Laughter Yoga',
   'Meditation',
@@ -45,7 +46,7 @@ export const TRAINER_CATEGORY_ENUM = [
   'Zumba Trainer',
   'Sound Healer',
   'Psychologist',
-  'Women Health Trainer',
+  'Ayurveda Doctor',
   'EAP Trainer',
 ];
 
