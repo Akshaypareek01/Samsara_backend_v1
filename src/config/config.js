@@ -150,6 +150,16 @@ const config = {
         ? 'https://corporate.samsarawellness.in'
         : 'http://localhost:3000'),
   },
+  wellnessFeedback: {
+    tokenExpirationDays: Number(envVars.WELLNESS_FEEDBACK_TOKEN_EXPIRATION_DAYS) || 90,
+    crmPublicOrigin:
+      envVars.CRM_PUBLIC_ORIGIN ||
+      envVars.FRONTEND_URL ||
+      envVars.CLIENT_URL ||
+      (envVars.NODE_ENV === 'production'
+        ? 'https://corporate.samsarawellness.in'
+        : 'http://localhost:3000'),
+  },
 };
 
 export default config;

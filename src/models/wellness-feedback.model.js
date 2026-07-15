@@ -14,7 +14,9 @@ const trainerRatingSchema = new mongoose.Schema(
 
 const trainerFeedbackSchema = new mongoose.Schema(
   {
-    trainerNumber: { type: Number, enum: [1, 2], required: true },
+    trainerNumber: { type: Number, enum: [1, 2] },
+    trainerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trainer' },
+    order: { type: Number, min: 1 },
     name: { type: String, trim: true, default: '' },
     ratings: { type: trainerRatingSchema, default: () => ({}) },
     likedMost: { type: String, trim: true, default: '' },
@@ -25,8 +27,12 @@ const trainerFeedbackSchema = new mongoose.Schema(
 
 const wellnessFeedbackSchema = new mongoose.Schema(
   {
+    booking: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
+    company: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
+    trainerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Trainer' }],
     employeeName: { type: String, trim: true, default: '' },
     email: { type: String, trim: true, lowercase: true, default: '' },
+    city: { type: String, trim: true, default: '' },
     companyName: { type: String, trim: true, default: '' },
     sessionDate: { type: Date },
     sessionsAttended: {
@@ -72,6 +78,8 @@ const wellnessFeedbackSchema = new mongoose.Schema(
 
 wellnessFeedbackSchema.index({ createdAt: -1 });
 wellnessFeedbackSchema.index({ companyName: 1, createdAt: -1 });
+wellnessFeedbackSchema.index({ booking: 1, createdAt: -1 });
+wellnessFeedbackSchema.index({ company: 1, createdAt: -1 });
 
 wellnessFeedbackSchema.plugin(toJSON);
 wellnessFeedbackSchema.plugin(paginate);

@@ -4,6 +4,7 @@ import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
 import * as wellnessFeedbackService from '../services/wellness-feedback.service.js';
 import pick from '../utils/pick.js';
+import ApiError from '../utils/ApiError.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +28,28 @@ const serveFeedbackLogo = catchAsync(async (req, res) => {
   res.type('image/png');
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.sendFile(LOGO_HEADER_PATH);
+});
+
+/**
+ * Resolve signed token to prefill context for the public Next.js form.
+ */
+const getFeedbackContext = catchAsync(async (req, res) => {
+  const data = await wellnessFeedbackService.getFeedbackContext(req.query.token);
+  res.status(httpStatus.OK).json({ success: true, data });
+});
+
+/**
+ * Generate a shareable feedback link for a completed booking (company auth).
+ */
+const createBookingShareLink = catchAsync(async (req, res) => {
+  if (req.user.role !== 'company') {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Only companies can create feedback share links');
+  }
+  const data = await wellnessFeedbackService.createBookingShareLink(
+    req.user.id,
+    req.params.bookingId
+  );
+  res.status(httpStatus.OK).json({ success: true, data });
 });
 
 /**
@@ -65,4 +88,11 @@ const listWellnessFeedback = catchAsync(async (req, res) => {
   res.status(httpStatus.OK).json(result);
 });
 
-export { serveFeedbackForm, serveFeedbackLogo, submitWellnessFeedback, listWellnessFeedback };
+export {
+  serveFeedbackForm,
+  serveFeedbackLogo,
+  getFeedbackContext,
+  createBookingShareLink,
+  submitWellnessFeedback,
+  listWellnessFeedback,
+};

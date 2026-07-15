@@ -9,7 +9,9 @@ const trainerRatingSchema = Joi.object({
 });
 
 const trainerFeedbackSchema = Joi.object({
-  trainerNumber: Joi.number().valid(1, 2).required(),
+  trainerNumber: Joi.number().valid(1, 2),
+  trainerId: Joi.string().trim().hex().length(24),
+  order: Joi.number().integer().min(1),
   name: Joi.string().trim().allow('').max(200),
   ratings: trainerRatingSchema.default({}),
   likedMost: Joi.string().trim().allow('').max(1000),
@@ -18,8 +20,10 @@ const trainerFeedbackSchema = Joi.object({
 
 const submitWellnessFeedback = {
   body: Joi.object({
+    token: Joi.string().trim(),
     employeeName: Joi.string().trim().allow('').max(200),
     email: Joi.string().trim().lowercase().max(320).empty('').email({ tlds: { allow: false } }),
+    city: Joi.string().trim().allow('').max(120),
     companyName: Joi.string().trim().allow('').max(200),
     sessionDate: Joi.date().iso().allow(null, ''),
     sessionsAttended: Joi.array().items(Joi.string().trim().max(100)).default([]),
@@ -48,4 +52,16 @@ const listWellnessFeedback = {
   }),
 };
 
-export { submitWellnessFeedback, listWellnessFeedback };
+const getFeedbackContext = {
+  query: Joi.object({
+    token: Joi.string().trim().required(),
+  }),
+};
+
+const createBookingShareLink = {
+  params: Joi.object({
+    bookingId: Joi.string().trim().hex().length(24).required(),
+  }),
+};
+
+export { submitWellnessFeedback, listWellnessFeedback, getFeedbackContext, createBookingShareLink };
