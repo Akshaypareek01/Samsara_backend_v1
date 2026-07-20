@@ -209,7 +209,15 @@ const approveBookingAndConfirmPayment = catchAsync(async (req, res) => {
     if (!isAdminUser(req.user)) {
         throw new ApiError(httpStatus.FORBIDDEN, 'Only administrators can approve bookings');
     }
-    const { paymentMode, transactionId, paymentType, paymentAmount, adminNotes, trainerFeeLines } = req.body;
+    const {
+        paymentMode,
+        transactionId,
+        paymentType,
+        paymentAmount,
+        adminNotes,
+        sessionPayments,
+        trainerFeeLines,
+    } = req.body;
     const adminId = req.user.id;
 
     const paymentDetails = {
@@ -217,6 +225,7 @@ const approveBookingAndConfirmPayment = catchAsync(async (req, res) => {
         transactionId,
         paymentType,
         paymentAmount,
+        sessionPayments,
     };
 
     const result = await bookingService.approveBookingAndConfirmPayment(

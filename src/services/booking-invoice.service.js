@@ -52,6 +52,32 @@ const buildTrainerLinesForInvoice = async (booking, trainerFeeLines) => {
 };
 
 /**
+ * Build session payment lines for invoice from admin input.
+ *
+ * @param {Object} booking - Booking document.
+ * @param {Array<Object>} sessionPayments - Admin session payment rows.
+ * @returns {Array<Object>}
+ */
+const buildSessionPaymentsForInvoice = (booking, sessionPayments) => {
+    const sessions = getSessionsForBooking(booking);
+
+    return sessionPayments.map((payment, index) => {
+        const sessionIndex = payment.sessionIndex ?? index;
+        const session = sessions[sessionIndex] || sessions[index] || {};
+
+        return {
+            sessionIndex,
+            startTime: session.startTime || booking.startTime,
+            duration: session.duration || booking.duration,
+            paymentMode: payment.paymentMode,
+            transactionId: payment.transactionId,
+            paymentType: payment.paymentType,
+            paymentAmount: roundMoney(payment.paymentAmount),
+        };
+    });
+};
+
+/**
  * Create a booking invoice when admin confirms payment.
  *
  * @param {Object} params - Invoice creation params.
@@ -61,6 +87,7 @@ const createBookingInvoice = async ({
     booking,
     adminId,
     companyPayment,
+    sessionPayments = [],
     trainerFeeLines,
 }) => {
     const existing = await BookingInvoice.findOne({ booking: booking._id, status: 'confirmed' });
@@ -69,6 +96,7 @@ const createBookingInvoice = async ({
     }
 
     const builtLines = await buildTrainerLinesForInvoice(booking, trainerFeeLines);
+    const builtSessionPayments = buildSessionPaymentsForInvoice(booking, sessionPayments);
     const totals = aggregateTrainerFeeTotals(builtLines);
     const invoiceNumber = await BookingInvoice.generateInvoiceNumber();
 
@@ -85,6 +113,7 @@ const createBookingInvoice = async ({
             paymentAmount: roundMoney(companyPayment.paymentAmount),
             adminNotes: companyPayment.adminNotes,
         },
+        sessionPayments: builtSessionPayments,
         trainerLines: builtLines,
         totals,
         approvedBy: adminId,
@@ -202,6 +231,39 @@ const buildInvoiceHtml = (invoice) => {
         )
         .join('');
 
+    const sessionPaymentRows = (invoice.sessionPayments || [])
+        .map(
+            (payment, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>${payment.startTime || '—'} (${payment.duration || 0}h)</td>
+        <td class="capitalize">${(payment.paymentMode || '—').replace(/_/g, ' ')}</td>
+        <td>${payment.transactionId || '—'}</td>
+        <td class="capitalize">${payment.paymentType || '—'}</td>
+        <td class="num"><strong>${formatInr(payment.paymentAmount)}</strong></td>
+      </tr>`
+        )
+        .join('');
+
+    const sessionPaymentsSection =
+        (invoice.sessionPayments || []).length > 0
+            ? `
+  <h2 style="font-size:16px;margin-top:28px;">Company session payments</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Session</th>
+        <th>Mode</th>
+        <th>Transaction ID</th>
+        <th>Type</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>${sessionPaymentRows}</tbody>
+  </table>`
+            : '';
+
     const deductionDetails = (invoice.trainerLines || [])
         .map((line, idx) => {
             if (!line.deductions?.length) return '';
@@ -226,6 +288,7 @@ const buildInvoiceHtml = (invoice) => {
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
     th { background: #f5f5f5; }
     .num { text-align: right; white-space: nowrap; }
+    .capitalize { text-transform: capitalize; }
     .totals { margin-top: 20px; width: 360px; margin-left: auto; }
     .totals td { border: none; padding: 4px 0; }
     .totals .label { color: #555; }
@@ -244,11 +307,15 @@ const buildInvoiceHtml = (invoice) => {
     <div>
       <p><strong>Booking</strong></p>
       <p>Date: ${bookingDate}<br/>
-      Company payment: ${formatInr(invoice.companyPayment?.paymentAmount || 0)}<br/>
+      Company payment total: ${formatInr(invoice.companyPayment?.paymentAmount || 0)}<br/>
+      ${(invoice.sessionPayments || []).length > 1 ? `Sessions paid: ${invoice.sessionPayments.length}<br/>` : ''}
       Txn ID: ${invoice.companyPayment?.transactionId || '—'}</p>
     </div>
   </div>
 
+  ${sessionPaymentsSection}
+
+  <h2 style="font-size:16px;margin-top:28px;">Trainer fee lines</h2>
   <table>
     <thead>
       <tr>
@@ -324,4 +391,5 @@ export default {
     buildInvoiceHtml,
     getDefaultTrainerFeeLines,
     buildTrainerLinesForInvoice,
+    buildSessionPaymentsForInvoice,
 };

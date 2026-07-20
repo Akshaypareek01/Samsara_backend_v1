@@ -10,6 +10,7 @@ import {
   createBookingShareLink,
   submitWellnessFeedback,
   listWellnessFeedback,
+  getCompanyFeedbackAnalytics,
 } from '../../controllers/wellness-feedback.controller.js';
 
 const router = express.Router();
@@ -24,6 +25,12 @@ router.post(
   createBookingShareLink
 );
 router.post('/', validate(wellnessFeedbackValidation.submitWellnessFeedback), submitWellnessFeedback);
+router.get(
+  '/analytics',
+  auth(),
+  validate(wellnessFeedbackValidation.getCompanyFeedbackAnalytics),
+  getCompanyFeedbackAnalytics
+);
 router.get('/', auth(), adminOnly(), validate(wellnessFeedbackValidation.listWellnessFeedback), listWellnessFeedback);
 
 export default router;

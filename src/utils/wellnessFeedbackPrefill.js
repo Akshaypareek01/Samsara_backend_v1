@@ -9,6 +9,60 @@ export const WELLNESS_FEEDBACK_SESSION_OPTIONS = [
     'Zumba',
 ];
 
+/** City options on the public feedback form. */
+export const WELLNESS_FEEDBACK_CITY_OPTIONS = [
+    'Bengaluru',
+    'Mumbai',
+    'Delhi NCR',
+    'Hyderabad',
+    'Chennai',
+    'Pune',
+    'Other',
+];
+
+/** Maps company profile cities to feedback form city labels. */
+const COMPANY_CITY_TO_FORM_CITY = {
+    Bangalore: 'Bengaluru',
+    Bengaluru: 'Bengaluru',
+    Mumbai: 'Mumbai',
+    'Navi Mumbai': 'Mumbai',
+    Delhi: 'Delhi NCR',
+    Gurgaon: 'Delhi NCR',
+    Noida: 'Delhi NCR',
+    'Delhi NCR': 'Delhi NCR',
+    Hyderabad: 'Hyderabad',
+    Chennai: 'Chennai',
+    Pune: 'Pune',
+};
+
+/**
+ * Maps a company city value to a feedback form city option.
+ *
+ * @param {string} companyCity - City stored on the company profile.
+ * @returns {string}
+ */
+export function mapCompanyCityToFormCity(companyCity) {
+    if (!companyCity || typeof companyCity !== 'string') return '';
+
+    const trimmed = companyCity.trim();
+    if (WELLNESS_FEEDBACK_CITY_OPTIONS.includes(trimmed)) return trimmed;
+
+    if (COMPANY_CITY_TO_FORM_CITY[trimmed]) {
+        return COMPANY_CITY_TO_FORM_CITY[trimmed];
+    }
+
+    const lower = trimmed.toLowerCase();
+    for (const [source, target] of Object.entries(COMPANY_CITY_TO_FORM_CITY)) {
+        if (source.toLowerCase() === lower) return target;
+    }
+
+    for (const option of WELLNESS_FEEDBACK_CITY_OPTIONS) {
+        if (option.toLowerCase() === lower) return option;
+    }
+
+    return '';
+}
+
 /** Maps booking training types to form session checkbox values. */
 const TRAINING_TYPE_TO_FORM_LABEL = {
     Yoga: 'Yoga',
@@ -67,6 +121,9 @@ export function buildWellnessFeedbackPrefill(booking) {
             : typeof company === 'object' && company?.name
               ? company.name
               : '';
+    const companyCity =
+        typeof company === 'object' && company?.city ? String(company.city).trim() : '';
+    const city = mapCompanyCityToFormCity(companyCity);
 
     const sessionDate = booking.bookingDate
         ? new Date(booking.bookingDate).toISOString().slice(0, 10)
@@ -116,6 +173,7 @@ export function buildWellnessFeedbackPrefill(booking) {
         bookingId: booking._id?.toString?.() || booking.id,
         companyId,
         companyName,
+        city,
         sessionDate,
         sessionAttendedOptions: WELLNESS_FEEDBACK_SESSION_OPTIONS,
         sessionAttendedPrefill: Array.from(prefillLabels),

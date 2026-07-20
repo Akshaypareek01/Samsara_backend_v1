@@ -64,4 +64,8 @@ const createBookingShareLink = {
   }),
 };
 
-export { submitWellnessFeedback, listWellnessFeedback, getFeedbackContext, createBookingShareLink };
+const getCompanyFeedbackAnalytics = {
+  query: Joi.object({}),
+};
+
+export { submitWellnessFeedback, listWellnessFeedback, getFeedbackContext, createBookingShareLink, getCompanyFeedbackAnalytics };

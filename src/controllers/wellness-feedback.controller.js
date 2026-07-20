@@ -88,6 +88,18 @@ const listWellnessFeedback = catchAsync(async (req, res) => {
   res.status(httpStatus.OK).json(result);
 });
 
+/**
+ * Aggregated wellness feedback analytics for the authenticated company.
+ */
+const getCompanyFeedbackAnalytics = catchAsync(async (req, res) => {
+  if (req.user.role !== 'company') {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Only companies can view feedback analytics');
+  }
+
+  const data = await wellnessFeedbackService.getCompanyFeedbackAnalytics(req.user.id);
+  res.status(httpStatus.OK).json({ success: true, data });
+});
+
 export {
   serveFeedbackForm,
   serveFeedbackLogo,
@@ -95,4 +107,5 @@ export {
   createBookingShareLink,
   submitWellnessFeedback,
   listWellnessFeedback,
+  getCompanyFeedbackAnalytics,
 };

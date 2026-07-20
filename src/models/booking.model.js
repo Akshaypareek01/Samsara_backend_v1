@@ -30,6 +30,11 @@ const sessionSchema = new mongoose.Schema(
             min: [0.5, 'Duration must be at least 0.5 hours'],
             max: [24, 'Duration cannot exceed 24 hours'],
         },
+        employeeCount: {
+            type: Number,
+            required: [true, 'Employee count is required'],
+            min: [1, 'At least one employee must attend the session'],
+        },
         typeOfTraining: {
             type: [String],
             required: [true, 'Type of training is required'],
@@ -53,6 +58,32 @@ const sessionSchema = new mongoose.Schema(
             maxlength: [1000, 'Trainer notes cannot exceed 1000 characters'],
         },
         approvedAt: {
+            type: Date,
+        },
+        paymentStatus: {
+            type: String,
+            enum: ['pending', 'confirmed', 'failed', 'refunded'],
+            default: 'pending',
+        },
+        paymentMode: {
+            type: String,
+            enum: ['cash', 'card', 'upi', 'bank_transfer', 'cheque', 'online', 'other'],
+            trim: true,
+        },
+        transactionId: {
+            type: String,
+            trim: true,
+        },
+        paymentType: {
+            type: String,
+            enum: ['full', 'partial', 'advance'],
+            trim: true,
+        },
+        paymentAmount: {
+            type: Number,
+            min: 0,
+        },
+        paidAt: {
             type: Date,
         },
     },
@@ -98,6 +129,10 @@ const bookingSchema = new mongoose.Schema(
             required: [true, 'Duration is required'],
             min: [0.5, 'Duration must be at least 0.5 hours'],
             max: [24, 'Duration cannot exceed 24 hours'],
+        },
+        employeeCount: {
+            type: Number,
+            min: [1, 'At least one employee must attend the session'],
         },
         typeOfTraining: {
             type: [String],

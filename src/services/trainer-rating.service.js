@@ -2,8 +2,11 @@ import httpStatus from 'http-status';
 import mongoose from 'mongoose';
 import { Booking, Trainer } from '../models/index.js';
 import TrainerRating from '../models/trainer-rating.model.js';
+import WellnessFeedback from '../models/wellness-feedback.model.js';
 import ApiError from '../utils/ApiError.js';
 import bookingService from './booking.service.js';
+
+const TRAINER_CRITERIA_KEYS = ['knowledge', 'communication', 'engagement', 'energy', 'usefulness'];
 
 /**
  * Recompute and persist denormalized rating summary on a trainer.
@@ -83,6 +86,97 @@ const assertCompanyOwnsCompletedBooking = async (bookingId, companyId) => {
 };
 
 /**
+ * Average the 1–5 criteria scores from an employee wellness feedback row.
+ *
+ * @param {object} ratings
+ * @returns {number|null}
+ */
+const computeCriteriaAverage = (ratings = {}) => {
+  const values = TRAINER_CRITERIA_KEYS.map((key) => ratings[key]).filter(
+    (value) => typeof value === 'number' && value >= 1 && value <= 5
+  );
+  if (values.length === 0) return null;
+  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+};
+
+/**
+ * Build TrainerRating feedback text from employee open-text fields.
+ *
+ * @param {string} likedMost
+ * @param {string} suggestions
+ * @returns {string}
+ */
+const buildTrainerFeedbackText = (likedMost = '', suggestions = '') => {
+  const parts = [likedMost.trim(), suggestions.trim()].filter(Boolean);
+  return parts.join('\n\n').slice(0, 1000);
+};
+
+/**
+ * Pick the trainer feedback row that should drive the session rating.
+ *
+ * @param {Array<object>} trainerRows
+ * @param {object} booking
+ * @returns {object|null}
+ */
+const pickTrainerRowForBooking = (trainerRows = [], booking) => {
+  const bookingTrainerId = getBookingTrainerId(booking);
+  if (bookingTrainerId) {
+    const matched = trainerRows.find(
+      (row) => row.trainerId && row.trainerId.toString() === bookingTrainerId
+    );
+    if (matched) return matched;
+  }
+  if (trainerRows.length === 1) return trainerRows[0];
+  return trainerRows.find((row) => computeCriteriaAverage(row.ratings) !== null) || null;
+};
+
+/**
+ * Upsert TrainerRating from employee wellness feedback criteria scores.
+ *
+ * @param {string} bookingId
+ * @param {string} companyId
+ * @param {Array<object>} trainerRows
+ * @returns {Promise<object|null>}
+ */
+const syncTrainerRatingFromWellnessFeedback = async (bookingId, companyId, trainerRows = []) => {
+  const booking = await bookingService.getBookingById(bookingId);
+  const row = pickTrainerRowForBooking(trainerRows, booking);
+  if (!row) return null;
+
+  const rating = computeCriteriaAverage(row.ratings);
+  if (!rating) return null;
+
+  const trainerId = row.trainerId?.toString() || getBookingTrainerId(booking);
+  if (!trainerId) return null;
+
+  const feedback = buildTrainerFeedbackText(row.likedMost, row.suggestions);
+  const existing = await TrainerRating.findOne({ booking: bookingId });
+  const previousTrainerId = existing?.trainer?.toString();
+
+  if (existing) {
+    existing.rating = rating;
+    existing.feedback = feedback;
+    existing.trainer = trainerId;
+    await existing.save();
+  } else {
+    await TrainerRating.create({
+      booking: bookingId,
+      trainer: trainerId,
+      company: companyId,
+      rating,
+      feedback,
+    });
+  }
+
+  await recomputeTrainerRatingSummary(trainerId);
+  if (previousTrainerId && previousTrainerId !== trainerId) {
+    await recomputeTrainerRatingSummary(previousTrainerId);
+  }
+
+  return TrainerRating.findOne({ booking: bookingId });
+};
+
+/**
  * Completed bookings for a company that have no rating yet.
  *
  * @param {string} companyId
@@ -94,12 +188,23 @@ const getPendingRatings = async (companyId, options = {}) => {
   const limit = Number(options.limit) || 20;
   const skip = (page - 1) * limit;
 
-  const ratedBookingIds = await TrainerRating.find({ company: companyId }).distinct('booking');
+  const [ratedBookingIds, feedbackBookingIds] = await Promise.all([
+    TrainerRating.find({ company: companyId }).distinct('booking'),
+    WellnessFeedback.find({ company: companyId, booking: { $exists: true, $ne: null } }).distinct(
+      'booking'
+    ),
+  ]);
+
+  const excludedBookingIds = [
+    ...new Map(
+      [...ratedBookingIds, ...feedbackBookingIds].map((id) => [id.toString(), id])
+    ).values(),
+  ];
 
   const filter = {
     company: companyId,
     status: 'completed',
-    _id: { $nin: ratedBookingIds },
+    _id: { $nin: excludedBookingIds },
   };
 
   const [bookings, totalResults] = await Promise.all([
@@ -254,6 +359,7 @@ const getTrainerReviews = async (trainerId, options = {}, requesterRole, request
 
 export default {
   recomputeTrainerRatingSummary,
+  syncTrainerRatingFromWellnessFeedback,
   getPendingRatings,
   createTrainerRating,
   updateTrainerRating,

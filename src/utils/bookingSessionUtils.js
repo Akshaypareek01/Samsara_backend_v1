@@ -34,11 +34,18 @@ export function getSessionsForBooking(booking) {
             trainer: s.trainer,
             startTime: s.startTime,
             duration: s.duration,
+            employeeCount: s.employeeCount,
             typeOfTraining: s.typeOfTraining || [],
             eapTraining: s.eapTraining,
             trainerStatus: s.trainerStatus || 'pending',
             trainerNotes: s.trainerNotes,
             approvedAt: s.approvedAt,
+            paymentStatus: s.paymentStatus || 'pending',
+            paymentMode: s.paymentMode,
+            transactionId: s.transactionId,
+            paymentType: s.paymentType,
+            paymentAmount: s.paymentAmount,
+            paidAt: s.paidAt,
         }));
     }
 
@@ -48,6 +55,7 @@ export function getSessionsForBooking(booking) {
                 trainer: booking.trainer,
                 startTime: booking.startTime,
                 duration: booking.duration,
+                employeeCount: booking.employeeCount,
                 typeOfTraining: booking.typeOfTraining || [],
                 eapTraining: booking.eapTraining,
                 trainerStatus:
@@ -60,6 +68,12 @@ export function getSessionsForBooking(booking) {
                           : 'pending',
                 trainerNotes: booking.trainerNotes,
                 approvedAt: booking.approvedAt,
+                paymentStatus: booking.paymentStatus || 'pending',
+                paymentMode: booking.paymentMode,
+                transactionId: booking.transactionId,
+                paymentType: booking.paymentType,
+                paymentAmount: booking.paymentAmount,
+                paidAt: booking.approvedAt,
             },
         ];
     }
@@ -146,6 +160,87 @@ export function timesOverlap(startA, durationA, startB, durationB) {
     const bStart = timeToMinutes(startB);
     const bEnd = bStart + durationB * 60;
     return aStart < bEnd && aEnd > bStart;
+}
+
+/**
+ * Normalize admin approval payload into per-session payment rows.
+ *
+ * @param {Object} body - Request body with sessionPayments or legacy fields.
+ * @param {number} sessionCount - Expected session count.
+ * @returns {Array<Object>}
+ */
+export function normalizeSessionPaymentsForApproval(body, sessionCount) {
+    if (Array.isArray(body.sessionPayments) && body.sessionPayments.length > 0) {
+        if (body.sessionPayments.length !== sessionCount) {
+            throw new Error(
+                `Expected ${sessionCount} session payment(s), received ${body.sessionPayments.length}`
+            );
+        }
+        return body.sessionPayments.map((payment, index) => ({
+            sessionIndex: payment.sessionIndex ?? index,
+            paymentMode: payment.paymentMode,
+            transactionId: payment.transactionId,
+            paymentType: payment.paymentType,
+            paymentAmount: payment.paymentAmount,
+        }));
+    }
+
+    if (body.paymentMode && body.transactionId && body.paymentType != null && body.paymentAmount != null) {
+        if (sessionCount !== 1) {
+            throw new Error('Legacy single payment is only supported for single-session bookings');
+        }
+        return [
+            {
+                sessionIndex: 0,
+                paymentMode: body.paymentMode,
+                transactionId: body.transactionId,
+                paymentType: body.paymentType,
+                paymentAmount: body.paymentAmount,
+            },
+        ];
+    }
+
+    throw new Error('Session payment details are required');
+}
+
+/**
+ * Derive booking-level payment summary from session payment rows.
+ *
+ * @param {Array<Object>} sessionPayments - Normalized session payments.
+ * @returns {{ paymentMode: string, transactionId: string, paymentType: string, paymentAmount: number }}
+ */
+export function aggregateSessionPayments(sessionPayments) {
+    const paymentAmount = sessionPayments.reduce(
+        (sum, payment) => sum + (Number(payment.paymentAmount) || 0),
+        0
+    );
+    const allFull = sessionPayments.every((payment) => payment.paymentType === 'full');
+    const anyPartial = sessionPayments.some((payment) => payment.paymentType === 'partial');
+    const paymentType = allFull ? 'full' : anyPartial ? 'partial' : 'advance';
+    const uniqueModes = [...new Set(sessionPayments.map((payment) => payment.paymentMode))];
+
+    return {
+        paymentMode: uniqueModes.length === 1 ? uniqueModes[0] : 'other',
+        transactionId: sessionPayments.map((payment) => payment.transactionId).join(', '),
+        paymentType,
+        paymentAmount,
+    };
+}
+
+/**
+ * Resolve total company payment for a booking from session rows or legacy fields.
+ *
+ * @param {Object} booking - Booking document or plain object.
+ * @returns {number|null}
+ */
+export function getBookingPaymentTotal(booking) {
+    if (!booking) return null;
+
+    const sessions = getSessionsForBooking(booking);
+    const sessionTotal = sessions.reduce((sum, session) => sum + (Number(session.paymentAmount) || 0), 0);
+    if (sessionTotal > 0) return sessionTotal;
+
+    return typeof booking.paymentAmount === 'number' ? booking.paymentAmount : null;
 }
 
 export { ACTIVE_STATUSES, TRAINER_SESSION_STATUSES };

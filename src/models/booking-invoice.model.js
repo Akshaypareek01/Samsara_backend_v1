@@ -19,6 +19,19 @@ const deductionRowSchema = new mongoose.Schema(
     { _id: false }
 );
 
+const sessionPaymentLineSchema = new mongoose.Schema(
+    {
+        sessionIndex: { type: Number, default: 0 },
+        startTime: { type: String, trim: true },
+        duration: { type: Number, min: 0 },
+        paymentMode: { type: String, trim: true },
+        transactionId: { type: String, trim: true },
+        paymentType: { type: String, trim: true },
+        paymentAmount: { type: Number, min: 0 },
+    },
+    { _id: false }
+);
+
 const trainerFeeLineSchema = new mongoose.Schema(
     {
         trainer: { type: mongoose.Schema.Types.ObjectId, ref: 'Trainer', required: true },
@@ -73,6 +86,10 @@ const bookingInvoiceSchema = new mongoose.Schema(
             paymentType: { type: String, trim: true },
             paymentAmount: { type: Number, min: 0 },
             adminNotes: { type: String, trim: true, maxlength: 1000 },
+        },
+        sessionPayments: {
+            type: [sessionPaymentLineSchema],
+            default: [],
         },
         trainerLines: {
             type: [trainerFeeLineSchema],

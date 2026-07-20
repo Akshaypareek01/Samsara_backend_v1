@@ -17,9 +17,11 @@ import {
 } from '../utils/trainerAvailabilityUtils.js';
 import {
   bookingIncludesTrainer,
+  aggregateSessionPayments,
   getSessionsForBooking,
   getTrainerApprovalProgress,
   getTrainerIdFromRef,
+  normalizeSessionPaymentsForApproval,
   trainerBookingFilter,
 } from '../utils/bookingSessionUtils.js';
 
@@ -46,6 +48,7 @@ const normalizeCreateSessions = (bookingBody) => {
             trainer: bookingBody.trainer,
             startTime: bookingBody.startTime,
             duration: bookingBody.duration,
+            employeeCount: bookingBody.employeeCount,
             typeOfTraining: bookingBody.typeOfTraining,
             eapTraining: bookingBody.eapTraining,
         },
@@ -134,10 +137,19 @@ const validateAndBuildSession = async (session, bookingDate, usedTrainerIds) => 
         );
     }
 
+    const employeeCount = Number(session.employeeCount);
+    if (!Number.isInteger(employeeCount) || employeeCount < 1) {
+        throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            'Employee count must be a whole number of at least 1.'
+        );
+    }
+
     return {
         trainer: trainerId,
         startTime: session.startTime,
         duration: session.duration,
+        employeeCount,
         typeOfTraining,
         eapTraining: eapTraining || undefined,
         trainerStatus: 'pending',
@@ -203,6 +215,7 @@ const createBooking = async (bookingBody) => {
         trainer: first.trainer,
         startTime: first.startTime,
         duration: first.duration,
+        employeeCount: first.employeeCount,
         typeOfTraining: first.typeOfTraining,
         eapTraining: first.eapTraining,
         sessions: builtSessions,
@@ -638,11 +651,12 @@ const deleteBookingById = async (id) => {
  * Admin approves booking and confirms payment
  * @param {ObjectId} id - Booking ID
  * @param {ObjectId} adminId - Admin ID
- * @param {Object} paymentDetails - Payment information
- * @param {string} paymentDetails.paymentMode - Mode of payment
- * @param {string} paymentDetails.transactionId - Transaction ID
- * @param {string} paymentDetails.paymentType - Type of payment
- * @param {number} paymentDetails.paymentAmount - Payment amount
+ * @param {Object} paymentDetails - Payment information (legacy or sessionPayments)
+ * @param {Array<Object>} [paymentDetails.sessionPayments] - Per-session payments
+ * @param {string} [paymentDetails.paymentMode] - Legacy single payment mode
+ * @param {string} [paymentDetails.transactionId] - Legacy transaction ID
+ * @param {string} [paymentDetails.paymentType] - Legacy payment type
+ * @param {number} [paymentDetails.paymentAmount] - Legacy payment amount
  * @param {string} [adminNotes] - Optional admin notes
  * @returns {Promise<Booking>}
  */
@@ -661,6 +675,14 @@ const approveBookingAndConfirmPayment = async (id, adminId, paymentDetails, admi
     }
 
     const sessions = getSessionsForBooking(booking);
+
+    let sessionPayments;
+    try {
+        sessionPayments = normalizeSessionPaymentsForApproval(paymentDetails, sessions.length);
+    } catch (err) {
+        throw new ApiError(httpStatus.BAD_REQUEST, err.message);
+    }
+
     for (const session of sessions) {
         const trainerId = getTrainerIdFromRef(session.trainer);
         if (!trainerId) continue;
@@ -674,16 +696,34 @@ const approveBookingAndConfirmPayment = async (id, adminId, paymentDetails, admi
     }
 
     const previousStatus = booking.status;
+    const paidAt = new Date();
+    const paymentSummary = aggregateSessionPayments(sessionPayments);
+
+    if (Array.isArray(booking.sessions) && booking.sessions.length > 0) {
+        for (let i = 0; i < booking.sessions.length; i++) {
+            const sessionPayment =
+                sessionPayments.find((payment) => payment.sessionIndex === i) || sessionPayments[i];
+            if (!sessionPayment) continue;
+
+            booking.sessions[i].paymentStatus = 'confirmed';
+            booking.sessions[i].paymentMode = sessionPayment.paymentMode;
+            booking.sessions[i].transactionId = sessionPayment.transactionId;
+            booking.sessions[i].paymentType = sessionPayment.paymentType;
+            booking.sessions[i].paymentAmount = sessionPayment.paymentAmount;
+            booking.sessions[i].paidAt = paidAt;
+        }
+        booking.markModified('sessions');
+    }
 
     booking.status = 'confirmed';
     booking.isApprovedByAdmin = true;
     booking.approvedBy = adminId;
-    booking.approvedAt = new Date();
+    booking.approvedAt = paidAt;
     booking.paymentStatus = 'confirmed';
-    booking.paymentMode = paymentDetails.paymentMode;
-    booking.transactionId = paymentDetails.transactionId;
-    booking.paymentType = paymentDetails.paymentType;
-    booking.paymentAmount = paymentDetails.paymentAmount;
+    booking.paymentMode = paymentSummary.paymentMode;
+    booking.transactionId = paymentSummary.transactionId;
+    booking.paymentType = paymentSummary.paymentType;
+    booking.paymentAmount = paymentSummary.paymentAmount;
 
     if (adminNotes) {
         booking.adminNotes = adminNotes;
@@ -695,12 +735,13 @@ const approveBookingAndConfirmPayment = async (id, adminId, paymentDetails, admi
         booking,
         adminId,
         companyPayment: {
-            paymentMode: paymentDetails.paymentMode,
-            transactionId: paymentDetails.transactionId,
-            paymentType: paymentDetails.paymentType,
-            paymentAmount: paymentDetails.paymentAmount,
+            paymentMode: paymentSummary.paymentMode,
+            transactionId: paymentSummary.transactionId,
+            paymentType: paymentSummary.paymentType,
+            paymentAmount: paymentSummary.paymentAmount,
             adminNotes,
         },
+        sessionPayments,
         trainerFeeLines,
     });
 

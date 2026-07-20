@@ -15,6 +15,10 @@ const sessionInputSchema = Joi.object().keys({
             'string.pattern.base': 'Start time must be in HH:MM format (24-hour)',
         }),
     duration: Joi.number().required().min(0.5).max(24),
+    employeeCount: Joi.number().integer().min(1).required().messages({
+        'number.base': 'Employee count is required',
+        'number.min': 'At least one employee must attend the session',
+    }),
     typeOfTraining: Joi.array()
         .items(Joi.string().trim().min(1).max(300))
         .min(1)
@@ -40,6 +44,10 @@ const legacyCreateBooking = Joi.object().keys({
     duration: Joi.number().required().min(0.5).max(24).messages({
         'number.min': 'Duration must be at least 0.5 hours',
         'number.max': 'Duration cannot exceed 24 hours',
+    }),
+    employeeCount: Joi.number().integer().min(1).required().messages({
+        'number.base': 'Employee count is required',
+        'number.min': 'At least one employee must attend the session',
     }),
     typeOfTraining: Joi.array()
         .items(Joi.string().trim().min(1).max(300))
@@ -189,19 +197,33 @@ const deleteBooking = {
     }),
 };
 
+const sessionPaymentLineSchema = Joi.object({
+    sessionIndex: Joi.number().integer().min(0).optional(),
+    paymentMode: Joi.string().valid(...paymentModeEnum).required(),
+    transactionId: Joi.string().required().trim(),
+    paymentType: Joi.string().valid(...paymentTypeEnum).required(),
+    paymentAmount: Joi.number().required().min(0),
+});
+
 // Admin approval and payment confirmation
 const approveBookingAndConfirmPayment = {
     params: Joi.object().keys({
         id: Joi.string().custom(objectId).required(),
     }),
-    body: Joi.object().keys({
-        paymentMode: Joi.string().valid(...paymentModeEnum).required(),
-        transactionId: Joi.string().required().trim(),
-        paymentType: Joi.string().valid(...paymentTypeEnum).required(),
-        paymentAmount: Joi.number().required().min(0),
-        adminNotes: Joi.string().max(1000).trim().empty('').optional(),
-        trainerFeeLines: Joi.array().items(trainerFeeLineSchema).min(1).required(),
-    }),
+    body: Joi.object()
+        .keys({
+            paymentMode: Joi.string().valid(...paymentModeEnum),
+            transactionId: Joi.string().trim(),
+            paymentType: Joi.string().valid(...paymentTypeEnum),
+            paymentAmount: Joi.number().min(0),
+            adminNotes: Joi.string().max(1000).trim().empty('').optional(),
+            sessionPayments: Joi.array().items(sessionPaymentLineSchema).min(1),
+            trainerFeeLines: Joi.array().items(trainerFeeLineSchema).min(1).required(),
+        })
+        .or('sessionPayments', 'paymentMode')
+        .messages({
+            'object.missing': 'Provide sessionPayments[] or legacy payment fields',
+        }),
 };
 
 const rejectBooking = {
