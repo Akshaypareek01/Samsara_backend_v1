@@ -151,16 +151,9 @@ const createUser = async (userBody) => {
     // Don't throw error here to avoid failing user creation if tracker creation fails
   }
 
-  // Assign teacher complimentary (internal lifetime) plan
   if (user.role === 'teacher') {
-    // Assign lifetime plan to teachers
-    try {
-      await assignLifetimePlan(user._id);
-      console.log(`Assigned lifetime plan to teacher: ${user._id}`);
-    } catch (error) {
-      console.error(`Failed to assign lifetime plan to teacher ${user._id}:`, error);
-      // Don't throw error here to avoid failing user creation if lifetime plan assignment fails
-    }
+    await assignLifetimePlan(user._id, { source: 'teacher_registration' });
+    console.log(`Assigned lifetime plan to teacher: ${user._id}`);
   }
 
   return user;
@@ -293,6 +286,7 @@ const updateUserById = async (userId, updateBody) => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
+  const previousRole = user.role;
   REFERRAL_IMMUTABLE_FIELDS.forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(updateBody, key)) {
       delete updateBody[key];
@@ -303,6 +297,11 @@ const updateUserById = async (userId, updateBody) => {
   }
   Object.assign(user, updateBody);
   await user.save();
+
+  if (user.role === 'teacher' && previousRole !== 'teacher') {
+    await assignLifetimePlan(user._id, { source: 'role_updated_to_teacher' });
+    console.log(`Assigned lifetime plan after role change to teacher: ${user._id}`);
+  }
 
   // Invalidate user caches
   await cacheService.del(CacheKeys.user(userId));

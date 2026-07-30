@@ -112,48 +112,55 @@ const processAppleSubscription = async (userId, productId, receiptData) => {
 };
 
 /**
- * Assign lifetime plan to a teacher
+ * Assign complimentary lifetime membership (teachers / admin grants).
+ * Uses the internal Lifetime Plan even when it is not publicly purchasable (isActive: false).
  * @param {ObjectId} userId - The user ID
+ * @param {Object} [options]
+ * @param {string} [options.source='registration'] - Audit source for metadata
  * @returns {Promise<Membership>}
  */
-const assignLifetimePlan = async (userId) => {
-  try {
-    // Check if user already has a lifetime plan
-    const existingLifetimeMembership = await Membership.findOne({
-      userId,
-      planName: 'Lifetime Plan',
-      status: { $in: ['active', 'expired', 'cancelled'] }
-    });
+const assignLifetimePlan = async (userId, options = {}) => {
+  const { source = 'registration' } = options;
 
-    if (existingLifetimeMembership) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'User already has a lifetime plan');
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
     }
 
-    // Find the lifetime plan
+    const now = new Date();
+
+    // Idempotent: teacher already has a valid active lifetime membership
+    const existingActiveLifetime = await Membership.findOne({
+      userId,
+      planName: 'Lifetime Plan',
+      status: 'active',
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    });
+
+    if (existingActiveLifetime) {
+      return existingActiveLifetime;
+    }
+
+    // Internal grant — do not require isActive / isAvailable (Lifetime Plan is hidden from public checkout)
     const lifetimePlan = await MembershipPlan.findOne({
       name: 'Lifetime Plan',
-      isActive: true
     });
 
     if (!lifetimePlan) {
       throw new ApiError(httpStatus.NOT_FOUND, 'Lifetime plan not found');
     }
 
-    // Check if lifetime plan is available for assignment
-    if (!lifetimePlan.isAvailable()) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Lifetime plan is not currently available');
-    }
-
-    // Calculate end date (100 years from now - effectively lifetime)
-    const startDate = new Date();
-    const endDate = new Date(startDate.getTime() + lifetimePlan.validityDays * 24 * 60 * 60 * 1000);
+    const startDate = now;
+    const endDate = lifetimePlan.getMembershipEndDate(startDate);
 
     // Create membership record
     const membership = new Membership({
       userId,
       planId: lifetimePlan._id,
       planName: lifetimePlan.name,
-      validityDays: lifetimePlan.validityDays,
+      validityDays: lifetimePlan.getActualValidityDays(startDate),
       status: 'active',
       startDate,
       endDate,
@@ -163,13 +170,15 @@ const assignLifetimePlan = async (userId) => {
       currency: lifetimePlan.currency,
       couponCode: null,
       couponCodeString: 'LIFETIME_FREE',
+      platform: 'admin',
+      paymentProvider: 'free',
       autoRenewal: false,
       metadata: {
         isLifetimePlan: true,
-        isTeacherPlan: true,
-        assignedAt: new Date(),
-        source: 'registration'
-      }
+        isTeacherPlan: user.role === 'teacher',
+        assignedAt: now,
+        source,
+      },
     });
 
     await membership.save();
