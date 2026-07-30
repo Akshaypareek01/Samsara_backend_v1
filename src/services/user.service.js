@@ -4,6 +4,10 @@ import { User, BodyStatus, Company } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
 import { assignLifetimePlan } from './membership.service.js';
+import {
+  resolveCompanyFromRegistration,
+  tryAssignCompanyMembership,
+} from './company-membership.service.js';
 import cacheService from './cache.service.js';
 import { CacheKeys, CacheTTL } from '../utils/cacheKeys.js';
 
@@ -154,6 +158,20 @@ const createUser = async (userBody) => {
   if (user.role === 'teacher') {
     await assignLifetimePlan(user._id, { source: 'teacher_registration' });
     console.log(`Assigned lifetime plan to teacher: ${user._id}`);
+  }
+
+  if (user.role === 'user' && user.userCategory === 'Corporate') {
+    const company = await resolveCompanyFromRegistration({
+      companyId: userBody.companyId || user.companyId,
+      corporate_id: userBody.corporate_id || user.corporate_id,
+    });
+
+    if (company) {
+      user.companyId = company.companyId;
+      user.company_name = company._id;
+      await user.save();
+      await tryAssignCompanyMembership(user);
+    }
   }
 
   return user;

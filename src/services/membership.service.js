@@ -462,9 +462,17 @@ const findUserByEmailInsensitive = async (rawEmail) => {
  * @param {import('mongoose').Types.ObjectId} userId
  * @param {import('../models/membership-plan.model.js').default} membershipPlan
  * @param {string} [source] - metadata.source value
+ * @param {Record<string, unknown>} [extraMetadata] - merged into membership.metadata
+ * @param {import('mongoose').ClientSession|null} [session]
  * @returns {Promise<import('../models/membership.model.js').default>}
  */
-const grantAdminMembershipToUser = async (userId, membershipPlan, source = 'admin_assign') => {
+const grantAdminMembershipToUser = async (
+  userId,
+  membershipPlan,
+  source = 'admin_assign',
+  extraMetadata = {},
+  session = null
+) => {
   if (membershipPlan.name === 'Trial Plan') {
     throw new ApiError(httpStatus.GONE, 'Trial Plan has been discontinued');
   }
@@ -481,12 +489,15 @@ const grantAdminMembershipToUser = async (userId, membershipPlan, source = 'admi
     throw new ApiError(httpStatus.BAD_REQUEST, 'Membership plan is not currently available');
   }
 
-  const existingActiveMembership = await Membership.findOne({
+  const existingQuery = Membership.findOne({
     userId,
     status: 'active',
     startDate: { $lte: new Date() },
     endDate: { $gte: new Date() },
   });
+  const existingActiveMembership = session
+    ? await existingQuery.session(session)
+    : await existingQuery;
 
   if (existingActiveMembership) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'User already has an active membership');
@@ -515,17 +526,18 @@ const grantAdminMembershipToUser = async (userId, membershipPlan, source = 'admi
     discountAmount: originalAmount,
     currency: membershipPlan.currency,
     couponCode: null,
-    couponCodeString: 'ADMIN_ASSIGN',
+    couponCodeString: source === 'company_auto_assign' ? 'COMPANY_PROGRAM' : 'ADMIN_ASSIGN',
     platform: 'admin',
-    paymentProvider: 'manual',
+    paymentProvider: source === 'company_auto_assign' ? 'free' : 'manual',
     autoRenewal: false,
     metadata: {
       assignedAt: new Date(),
       source,
+      ...extraMetadata,
     },
   });
 
-  await membership.save();
+  await membership.save(session ? { session } : undefined);
   console.info(`Manual membership assigned via admin: userId=${userId}, plan="${membershipPlan.name}"`);
   return membership;
 };
@@ -598,4 +610,5 @@ export {
   processAppleSubscription,
   assignMembershipByEmailAndPlanName,
   assignMembershipByUserAndPlan,
+  grantAdminMembershipToUser,
 };

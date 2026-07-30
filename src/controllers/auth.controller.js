@@ -73,6 +73,7 @@ const verifyRegistrationOTPController = catchAsync(async (req, res) => {
     role,
     userCategory,
     corporate_id,
+    companyId,
     teacherCategory,
     referralCode,
     // Body data fields
@@ -109,6 +110,9 @@ const verifyRegistrationOTPController = catchAsync(async (req, res) => {
     userData.userCategory = userCategory;
     if (userCategory === 'Corporate') {
       userData.corporate_id = corporate_id;
+      if (companyId && String(companyId).trim()) {
+        userData.companyId = String(companyId).trim().toUpperCase();
+      }
     }
   } else if (role === 'teacher') {
     userData.teacherCategory = teacherCategory;

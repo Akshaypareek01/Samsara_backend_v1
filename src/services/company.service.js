@@ -4,6 +4,10 @@ import ApiError from '../utils/ApiError.js';
 import pick from '../utils/pick.js';
 import { sendLoginOTP, verifyLoginOTP } from './otp.service.js';
 import mongoose from 'mongoose';
+import {
+  validateAppMembershipSettings,
+  enrichCompaniesWithMembershipStats,
+} from './company-membership.service.js';
 
 /**
  * Generate unique company ID
@@ -43,6 +47,7 @@ const createCompany = async (companyBody) => {
  */
 const queryCompanies = async (filter, options) => {
   const companies = await Company.paginate(filter, options);
+  companies.results = await enrichCompaniesWithMembershipStats(companies.results);
   return companies;
 };
 
@@ -85,9 +90,26 @@ const updateCompanyById = async (id, updateBody) => {
   if (!company) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Company not found');
   }
+
+  const nextSettings = {
+    appMembershipEnabled:
+      updateBody.appMembershipEnabled !== undefined
+        ? updateBody.appMembershipEnabled
+        : company.appMembershipEnabled,
+    appMembershipPlanId:
+      updateBody.appMembershipPlanId !== undefined
+        ? updateBody.appMembershipPlanId
+        : company.appMembershipPlanId,
+  };
+
+  if (nextSettings.appMembershipEnabled) {
+    await validateAppMembershipSettings(nextSettings);
+  }
+
   Object.assign(company, updateBody);
   await company.save();
-  return company;
+  const [enriched] = await enrichCompaniesWithMembershipStats([company]);
+  return enriched;
 };
 
 /**

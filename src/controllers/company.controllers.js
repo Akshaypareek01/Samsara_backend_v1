@@ -22,8 +22,17 @@ const createCompany = catchAsync(async (req, res) => {
  * Access: Admin (full access - can see all companies)
  */
 const getAllCompanies = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['companyName', 'email', 'domain', 'status', 'companyId']);
+  const filter = pick(req.query, ['email', 'domain', 'status']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+
+  if (req.query.companyName && String(req.query.companyName).trim()) {
+    filter.companyName = { $regex: String(req.query.companyName).trim(), $options: 'i' };
+  }
+
+  if (req.query.companyId && String(req.query.companyId).trim()) {
+    filter.companyId = { $regex: String(req.query.companyId).trim(), $options: 'i' };
+  }
+
   const result = await companyService.queryCompanies(filter, options);
   res.send(result);
 });
@@ -72,6 +81,17 @@ const checkCompanyExists = catchAsync(async (req, res) => {
  */
 const updateCompanyById = catchAsync(async (req, res) => {
   const company = await companyService.updateCompanyById(req.params.id, req.body);
+  res.send(company);
+});
+
+/**
+ * Update company app membership settings (CRM toggle / plan picker).
+ */
+const updateCompanyAppMembership = catchAsync(async (req, res) => {
+  const company = await companyService.updateCompanyById(req.params.id, {
+    appMembershipEnabled: req.body.appMembershipEnabled,
+    appMembershipPlanId: req.body.appMembershipPlanId ?? null,
+  });
   res.send(company);
 });
 
@@ -246,6 +266,7 @@ export {
   getCompanyByCompanyId,
   checkCompanyExists,
   updateCompanyById,
+  updateCompanyAppMembership,
   deleteCompanyById,
   sendLoginOTP,
   verifyLoginOTP,

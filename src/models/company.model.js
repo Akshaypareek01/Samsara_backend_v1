@@ -28,6 +28,14 @@ const companySchema = new mongoose.Schema(
       designation: { type: String },
     },
     status: { type: Boolean, default: true },
+    /** When true, corporate app users with this companyId receive auto membership up to numberOfEmployees seats */
+    appMembershipEnabled: { type: Boolean, default: false },
+    /** Membership plan granted to eligible corporate registrants */
+    appMembershipPlanId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MembershipPlan',
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -117,6 +117,14 @@ router.get(
   companyController.getCompanyById
 );
 
+// Update company app membership settings (admin CRM)
+router.patch(
+  '/:id/app-membership',
+  auth(),
+  validate(companyValidation.updateCompanyAppMembership),
+  companyController.updateCompanyAppMembership
+);
+
 // Update company by MongoDB ID
 router.patch(
   '/:id',

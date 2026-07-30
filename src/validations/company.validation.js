@@ -149,6 +149,10 @@ const createCompany = {
         'any.required': 'Secondary contact person is required',
       }),
       status: Joi.boolean().optional(),
+      appMembershipEnabled: Joi.boolean().optional(),
+      appMembershipPlanId: Joi.alternatives()
+        .try(Joi.string().custom(objectId), Joi.valid(null))
+        .optional(),
     })
     .custom((value, helpers) => {
       const emailDomain = String(value.email || '')
@@ -157,6 +161,9 @@ const createCompany = {
       const companyDomain = normalizeCompanyDomain(value.domain);
       if (emailDomain && companyDomain && emailDomain !== companyDomain) {
         return helpers.message(`Company email must use your domain (@${companyDomain})`);
+      }
+      if (value.appMembershipEnabled === true && !value.appMembershipPlanId) {
+        return helpers.message('A membership plan is required when app membership is enabled');
       }
       return value;
     }),
@@ -223,8 +230,37 @@ const updateCompany = {
         designation: Joi.string().allow('', null).optional(),
       }).optional(),
       status: Joi.boolean().optional(),
+      appMembershipEnabled: Joi.boolean().optional(),
+      appMembershipPlanId: Joi.alternatives()
+        .try(Joi.string().custom(objectId), Joi.valid(null))
+        .optional(),
     })
-    .min(1),
+    .min(1)
+    .custom((value, helpers) => {
+      if (value.appMembershipEnabled === true && !value.appMembershipPlanId) {
+        return helpers.message('A membership plan is required when app membership is enabled');
+      }
+      return value;
+    }),
+};
+
+const updateCompanyAppMembership = {
+  params: Joi.object().keys({
+    id: Joi.string().custom(objectId).required(),
+  }),
+  body: Joi.object()
+    .keys({
+      appMembershipEnabled: Joi.boolean().required(),
+      appMembershipPlanId: Joi.alternatives()
+        .try(Joi.string().custom(objectId), Joi.valid(null))
+        .optional(),
+    })
+    .custom((value, helpers) => {
+      if (value.appMembershipEnabled === true && !value.appMembershipPlanId) {
+        return helpers.message('A membership plan is required when app membership is enabled');
+      }
+      return value;
+    }),
 };
 
 const deleteCompany = {
@@ -355,6 +391,7 @@ export {
   getCompanyByCompanyId,
   checkCompanyExists,
   updateCompany,
+  updateCompanyAppMembership,
   deleteCompany,
   sendLoginOTP,
   verifyLoginOTP,

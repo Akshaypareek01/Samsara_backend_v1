@@ -38,6 +38,11 @@ const sendRegistrationOTP = {
       then: Joi.string().required(),
       otherwise: Joi.forbidden(),
     }),
+    companyId: Joi.when('userCategory', {
+      is: 'Corporate',
+      then: Joi.string().optional().allow('', null),
+      otherwise: Joi.forbidden(),
+    }),
     // For teachers: teacher category is required
     teacherCategory: Joi.when('role', {
       is: 'teacher',
@@ -78,6 +83,11 @@ const verifyRegistrationOTP = {
     corporate_id: Joi.when('userCategory', {
       is: 'Corporate',
       then: Joi.string().required(),
+      otherwise: Joi.forbidden(),
+    }),
+    companyId: Joi.when('userCategory', {
+      is: 'Corporate',
+      then: Joi.string().optional().allow('', null),
       otherwise: Joi.forbidden(),
     }),
     // For teachers: teacher category is required
