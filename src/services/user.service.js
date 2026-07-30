@@ -3,7 +3,7 @@ import pick from '../utils/pick.js';
 import { User, BodyStatus, Company } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { createInitialTrackers, updateTrackersFromProfile } from './tracker.service.js';
-import { assignLifetimePlan } from './membership.service.js';
+import { assignLifetimePlan, assignFreeTrialMembership } from './membership.service.js';
 import {
   resolveCompanyFromRegistration,
   tryAssignCompanyMembership,
@@ -171,6 +171,14 @@ const createUser = async (userBody) => {
       user.company_name = company._id;
       await user.save();
       await tryAssignCompanyMembership(user);
+    }
+  }
+
+  if (user.role === 'user') {
+    try {
+      await assignFreeTrialMembership(user._id, { source: 'registration' });
+    } catch (error) {
+      console.error(`Failed to assign 7-day trial for user ${user._id}:`, error);
     }
   }
 

@@ -54,6 +54,10 @@ import WellnessFeedback from './wellness-feedback.model.js';
 import EapTraining from './eap-training.model.js';
 import PlatformAccountDetails from './platform-account-details.model.js';
 import TrainerRating from './trainer-rating.model.js';
+import MarketingFolder from './marketing-folder.model.js';
+import MarketingContact from './marketing-contact.model.js';
+import EmailTemplate from './email-template.model.js';
+import EmailCampaign from './email-campaign.model.js';
 
 export {
   Token,
@@ -114,5 +118,9 @@ export {
   EapTraining,
   PlatformAccountDetails,
   TrainerRating,
+  MarketingFolder,
+  MarketingContact,
+  EmailTemplate,
+  EmailCampaign,
 };
 

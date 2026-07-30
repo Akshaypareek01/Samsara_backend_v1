@@ -25,6 +25,11 @@ const seedRoles = async () => {
                 bookingManagement: { create: true, read: true, update: true, delete: true },
                 membershipManagement: { create: true, read: true, update: true, delete: true },
                 classManagement: { create: true, read: true, update: true, delete: true },
+                digitalMarketing: {
+                    contacts: { create: true, read: true, update: true, delete: true },
+                    email: { create: true, read: true, update: true, delete: true },
+                    whatsapp: { create: true, read: true, update: true, delete: true },
+                },
                 eventManagement: { create: true, read: true, update: true, delete: true },
                 support: { create: true, read: true, update: true, delete: true },
                 roleManagement: { create: true, read: true, update: true, delete: true },

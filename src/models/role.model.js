@@ -36,6 +36,11 @@ const roleSchema = new mongoose.Schema(
             bookingManagement: permissionSchema,
             membershipManagement: permissionSchema,
             classManagement: permissionSchema,
+            digitalMarketing: {
+                contacts: permissionSchema,
+                email: permissionSchema,
+                whatsapp: permissionSchema,
+            },
             eventManagement: permissionSchema,
             support: permissionSchema,
             roleManagement: permissionSchema,

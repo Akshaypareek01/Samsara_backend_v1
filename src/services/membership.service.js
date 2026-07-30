@@ -4,6 +4,12 @@ import { Membership, MembershipPlan, User, CouponCode, Transaction } from '../mo
 import ApiError from '../utils/ApiError.js';
 import config from '../config/config.js';
 
+/** Internal trial plan — auto-assigned to new users with role `user`. */
+const TRIAL_PLAN_NAME = 'Trial Plan';
+
+/** Complimentary trial length for new user registrations. */
+const FREE_TRIAL_VALIDITY_DAYS = 7;
+
 /**
  * Verify Apple Receipt with Apple Servers
  * @param {string} receiptData - Base64 encoded receipt data
@@ -201,17 +207,147 @@ const assignLifetimePlan = async (userId, options = {}) => {
 };
 
 /**
- * Whether the user ever had a legacy "Trial Plan" membership (product discontinued; kept for history/UI).
+ * Whether the user ever received the complimentary Trial Plan membership.
  * @param {import('mongoose').Types.ObjectId} userId - The user ID
  * @returns {Promise<boolean>}
  */
 const hasUsedTrialPlan = async (userId) => {
   const trialMembership = await Membership.findOne({
     userId,
-    planName: 'Trial Plan',
+    planName: TRIAL_PLAN_NAME,
   });
 
   return !!trialMembership;
+};
+
+/**
+ * Ensure the internal Trial Plan document exists (not publicly purchasable).
+ * @returns {Promise<import('../models/membership-plan.model.js').default>}
+ */
+const ensureTrialPlan = async () => {
+  const existingPlan = await MembershipPlan.findOne({ name: TRIAL_PLAN_NAME });
+  if (existingPlan) {
+    return existingPlan;
+  }
+
+  const basicPlan = await MembershipPlan.findOne({
+    name: 'Basic Access – Monthly Plan',
+    isActive: true,
+  }).lean();
+
+  const features = basicPlan?.features?.length
+    ? basicPlan.features
+    : ['Full app access during the 7-day trial period'];
+
+  return MembershipPlan.create({
+    name: TRIAL_PLAN_NAME,
+    description: '7-day complimentary trial for new users — auto-assigned at registration.',
+    basePrice: 0,
+    currency: 'INR',
+    validityDays: FREE_TRIAL_VALIDITY_DAYS,
+    features,
+    planType: 'trial',
+    maxUsers: 1,
+    isActive: true,
+    isPublic: false,
+    taxConfig: {
+      gst: { rate: 0, type: 'percentage' },
+      otherTaxes: [],
+    },
+    discountConfig: {
+      maxDiscountPercentage: 100,
+      maxDiscountAmount: null,
+    },
+    metadata: {
+      isTrialPlan: true,
+      autoAssignedOnRegistration: true,
+      trialDurationDays: FREE_TRIAL_VALIDITY_DAYS,
+    },
+  });
+};
+
+/**
+ * Assign a one-time 7-day free trial membership to a new user (role=user).
+ * Skips users who already had a trial or already have active membership.
+ * @param {import('mongoose').Types.ObjectId} userId - The user ID
+ * @param {Object} [options]
+ * @param {string} [options.source='registration'] - Audit source for metadata
+ * @returns {Promise<import('../models/membership.model.js').default|null>}
+ */
+const assignFreeTrialMembership = async (userId, options = {}) => {
+  const { source = 'registration' } = options;
+
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    if (user.role !== 'user') {
+      return null;
+    }
+
+    if (await hasUsedTrialPlan(userId)) {
+      return null;
+    }
+
+    const now = new Date();
+    const existingActiveMembership = await Membership.findOne({
+      userId,
+      status: 'active',
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    });
+
+    if (existingActiveMembership) {
+      return null;
+    }
+
+    const trialPlan = await ensureTrialPlan();
+    const startDate = now;
+    const endDate = new Date(
+      startDate.getTime() + FREE_TRIAL_VALIDITY_DAYS * 24 * 60 * 60 * 1000
+    );
+
+    const membership = new Membership({
+      userId,
+      planId: trialPlan._id,
+      planName: trialPlan.name,
+      validityDays: FREE_TRIAL_VALIDITY_DAYS,
+      status: 'active',
+      startDate,
+      endDate,
+      amountPaid: 0,
+      originalAmount: trialPlan.basePrice,
+      discountAmount: 0,
+      currency: trialPlan.currency,
+      couponCode: null,
+      couponCodeString: 'TRIAL_FREE',
+      platform: 'admin',
+      paymentProvider: 'free',
+      autoRenewal: false,
+      metadata: {
+        isTrialPlan: true,
+        assignedAt: now,
+        source,
+      },
+    });
+
+    await membership.save();
+
+    await User.findByIdAndUpdate(userId, {
+      $set: {
+        'metadata.trialPlanUsed': true,
+        'metadata.trialPlanAssignedAt': now,
+      },
+    });
+
+    console.info(`7-day trial assigned to user: ${userId}, expires: ${endDate.toISOString()}`);
+    return membership;
+  } catch (error) {
+    console.error(`Failed to assign free trial to user ${userId}:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -473,8 +609,8 @@ const grantAdminMembershipToUser = async (
   extraMetadata = {},
   session = null
 ) => {
-  if (membershipPlan.name === 'Trial Plan') {
-    throw new ApiError(httpStatus.GONE, 'Trial Plan has been discontinued');
+  if (membershipPlan.name === TRIAL_PLAN_NAME) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Trial Plan is auto-assigned at registration and cannot be granted manually');
   }
 
   if (membershipPlan.name === 'Lifetime Plan') {
@@ -599,6 +735,8 @@ const assignMembershipByEmailAndPlanName = async (email, planName) => {
 
 export {
   assignLifetimePlan,
+  assignFreeTrialMembership,
+  ensureTrialPlan,
   hasUsedTrialPlan,
   getActiveMembership,
   getUserMemberships,

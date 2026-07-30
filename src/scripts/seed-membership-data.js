@@ -139,6 +139,26 @@ async function seedMembershipData() {
           effectiveMonthlyUsd: 36.58,
         },
       },
+      // --- Internal 7-day trial for new user registrations (not publicly purchasable) ---
+      {
+        name: 'Trial Plan',
+        description: '7-day complimentary trial for new users — auto-assigned at registration.',
+        basePrice: 0,
+        currency: 'INR',
+        validityDays: 7,
+        features: basicAccessPlanFeatures,
+        planType: 'trial',
+        maxUsers: 1,
+        isActive: true,
+        isPublic: false,
+        taxConfig: taxConfigBasic,
+        discountConfig: { maxDiscountPercentage: 100, maxDiscountAmount: null },
+        metadata: {
+          isTrialPlan: true,
+          autoAssignedOnRegistration: true,
+          trialDurationDays: 7,
+        },
+      },
       // --- Internal teacher plan (not listed publicly) ---
       {
         name: 'Lifetime Plan',

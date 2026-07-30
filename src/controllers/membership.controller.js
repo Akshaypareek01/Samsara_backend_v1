@@ -47,13 +47,27 @@ const getMembershipHistory = catchAsync(async (req, res) => {
  */
 const checkTrialPlanUsage = catchAsync(async (req, res) => {
   const hasUsed = await hasUsedTrialPlan(req.user.id);
+  const activeMembership = await getActiveMembership(req.user.id);
+  const isOnActiveTrial =
+    !!activeMembership &&
+    (activeMembership.planName?.toLowerCase().includes('trial') ||
+      activeMembership.couponCodeString === 'TRIAL_FREE' ||
+      activeMembership.metadata?.isTrialPlan === true);
+
+  let trialDaysRemaining = 0;
+  if (isOnActiveTrial && activeMembership.endDate) {
+    const diffMs = new Date(activeMembership.endDate).getTime() - Date.now();
+    trialDaysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  }
 
   res.send({
     success: true,
     data: {
       hasUsedTrialPlan: hasUsed,
-      canUseTrialPlan: false,
-      trialDiscontinued: true,
+      canUseTrialPlan: !hasUsed,
+      trialDiscontinued: false,
+      isOnActiveTrial,
+      trialDaysRemaining,
     },
   });
 });

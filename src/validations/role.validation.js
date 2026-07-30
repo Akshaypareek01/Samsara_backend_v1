@@ -25,6 +25,11 @@ const createRole = {
             bookingManagement: permissionSchema,
             membershipManagement: permissionSchema,
             classManagement: permissionSchema,
+            digitalMarketing: Joi.object().keys({
+                contacts: permissionSchema,
+                email: permissionSchema,
+                whatsapp: permissionSchema,
+            }),
             eventManagement: permissionSchema,
             support: permissionSchema,
             roleManagement: permissionSchema,
@@ -69,6 +74,11 @@ const updateRole = {
                 bookingManagement: permissionSchema,
                 membershipManagement: permissionSchema,
                 classManagement: permissionSchema,
+                digitalMarketing: Joi.object().keys({
+                    contacts: permissionSchema,
+                    email: permissionSchema,
+                    whatsapp: permissionSchema,
+                }),
                 eventManagement: permissionSchema,
                 support: permissionSchema,
                 roleManagement: permissionSchema,
