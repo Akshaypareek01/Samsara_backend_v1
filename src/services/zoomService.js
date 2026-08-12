@@ -236,7 +236,7 @@ const getBestAvailableAccount = () => {
  * @param {Object} account - Zoom account configuration
  * @returns {Promise<string>} OAuth access token
  */
-const getZoomOAuthToken = async (account) => {
+export const getZoomOAuthToken = async (account) => {
   try {
     console.log(`Attempting OAuth authentication for account ${account.id}...`);
     console.log(`Account ${account.id} details:`, {
@@ -442,71 +442,12 @@ export const createZoomMeeting = async (meetingData) => {
   }
 };
 
-/**
- * End a Zoom meeting and update account usage
- * @param {string} meetingId - Zoom meeting ID
- * @param {string} accountId - Account ID used to create the meeting
- * @returns {Promise<Object>} Meeting end result
- */
-export const endZoomMeeting = async (meetingId, accountId) => {
-  try {
-    const account = validAccounts.find(acc => acc.id === accountId);
-    if (!account) {
-      throw new Error(`Account ${accountId} not found`);
-    }
-
-    // Get fresh OAuth token
-    const zoomToken = await getZoomOAuthToken(account);
-
-    // Delete the meeting
-    const result = await axios.delete(`https://api.zoom.us/v2/meetings/${meetingId}`, {
-      headers: {
-        'Authorization': `Bearer ${zoomToken}`,
-        'User-Agent': 'Zoom-api-Jwt-Request',
-        'content-type': 'application/json'
-      }
-    });
-
-    // Update usage tracker
-    const currentUsage = accountUsageTracker.get(accountId) || { activeMeetings: 0 };
-    accountUsageTracker.set(accountId, {
-      ...currentUsage,
-      activeMeetings: Math.max(0, currentUsage.activeMeetings - 1),
-      lastUsed: Date.now()
-    });
-
-    console.log(`Meeting ${meetingId} ended successfully using account ${accountId}`);
-
-    return {
-      success: true,
-      message: 'Meeting ended successfully',
-      accountUsed: accountId
-    };
-
-  } catch (error) {
-    // Handle 404 error gracefully (meeting already ended)
-    if (error.response?.status === 404) {
-      console.log(`Meeting ${meetingId} already ended or doesn't exist`);
-      
-      // Still update usage tracker
-      const errorUsage = accountUsageTracker.get(accountId) || { activeMeetings: 0 };
-      accountUsageTracker.set(accountId, {
-        ...errorUsage,
-        activeMeetings: Math.max(0, errorUsage.activeMeetings - 1),
-        lastUsed: Date.now()
-      });
-
-      return {
-        success: true,
-        message: 'Meeting already ended',
-        accountUsed: accountId
-      };
-    }
-
-    console.error(`Failed to end meeting ${meetingId} with account ${accountId}:`, error.response?.data || error.message);
-    throw error;
-  }
-};
+// Meeting end / live-conflict helpers live in zoomMeetingLifecycle.js
+export {
+  endZoomMeeting,
+  endOtherLiveMeetingsForAccount,
+  getZoomZakToken,
+} from './zoomMeetingLifecycle.js';
 
 /**
  * Get account usage statistics
@@ -641,12 +582,11 @@ export const generateSDKSignature = (meetingNumber, role, accountId) => {
 
 export default {
   createZoomMeeting,
-  endZoomMeeting,
   getAccountUsageStats,
   resetAccountStatus,
   resetAllAccountStatuses,
   getAccountById,
-  generateSDKSignature
+  generateSDKSignature,
 };
 
 // Export for testing purposes

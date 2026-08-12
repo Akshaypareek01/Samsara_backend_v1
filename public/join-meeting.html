@@ -166,7 +166,7 @@
         
         // Make redirect function globally accessible
         window.redirectAfterMeeting = redirectAfterMeeting;
-        
+
         // Debug helper function (only logs to console, doesn't show on screen)
         const updateDebugStatus = (status) => {
             // Only log to console, don't show on screen
@@ -175,6 +175,16 @@
             if (statusEl) {
                 statusEl.textContent = status; // Update for console inspection only
             }
+        };
+
+        /**
+         * Shows a clear error when Zoom host-conflict dialog would otherwise loop reloads.
+         */
+        const showHostConflictHelp = () => {
+            showError(
+                'Cannot join as Zoom host',
+                'This Zoom account is Basic and already has a host session lock. Close the Zoom desktop app for tech.samsarawellness@gmail.com, then join again as participant — or upgrade that Zoom user to Pro for host joins.'
+            );
         };
         
         // Wait for DOM and scripts to load
@@ -201,7 +211,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 let meetingNumber = urlParams.get('meetingNumber') || urlParams.get('mn');
                 let password = urlParams.get('password') || urlParams.get('pwd') || '';
-                const userName = urlParams.get('userName') || urlParams.get('name') || 'Guest';
+                let userName = urlParams.get('userName') || urlParams.get('name') || 'Guest';
                 const userEmail = urlParams.get('email') || urlParams.get('userEmail') || '';
                 const role = parseInt(urlParams.get('role') || '0'); // 0 = participant, 1 = host
                 let accountId = urlParams.get('accountId') || null;
@@ -288,13 +298,29 @@
                     throw new Error(signatureData.message || 'Failed to generate signature');
                 }
 
-                const { signature, sdkKey } = signatureData.data;
+                const { signature, sdkKey, zak, hostEmail, hostName, zoomAccountType } = signatureData.data;
+                // Host start requires ZAK + the Zoom host email (CRM often sends empty email)
+                const joinEmail = (role === 1 ? (hostEmail || userEmail) : userEmail) || '';
+                if (role === 1 && hostName && (!userName || userName === 'Admin' || userName === 'Guest')) {
+                    userName = hostName;
+                }
                 console.log('SDK signature generated successfully');
                 console.log('Account info:', {
                     accountId: signatureData.data.accountId,
                     sdkKey: sdkKey.substring(0, 10) + '...',
-                    role: role
+                    role: role,
+                    hasZak: !!zak,
+                    joinEmail: joinEmail || '(none)',
+                    userName,
+                    zoomAccountType
                 });
+
+                if (role === 1 && !zak) {
+                    throw new Error('Host join requires a Zoom ZAK token, but none was returned by the server.');
+                }
+                if (role === 1 && zoomAccountType === 1) {
+                    console.warn('⚠️ Host Zoom user is Basic (free). Concurrent hosting is blocked by Zoom — close desktop Zoom app for this account, or upgrade to Pro.');
+                }
 
                 // ZoomMtg should already be available from the script load
                 const ZoomMtg = window.ZoomMtg;
@@ -343,10 +369,11 @@
                     userName: userName,
                     signature: signature,
                     sdkKey: sdkKey,
-                    userEmail: userEmail,
+                    userEmail: joinEmail,
                     passWord: password,
                     role: role,
-                    accountId: signatureData.data.accountId
+                    accountId: signatureData.data.accountId,
+                    zak: zak || undefined
                 };
                 window.ZoomMeetingConfig = window.meetingConfig;
                 
@@ -401,14 +428,15 @@
                             sdkKey: sdkKey.substring(0, 10) + '...'
                         });
                         
-                        // Define meeting config - only valid parameters for SDK 2.11.0
+                        // Define meeting config — host role MUST include zak
                         const meetingConfig = {
                             meetingNumber: meetingNumber,
-                            userName: userName,
+                            userName: userName || (role === 1 ? 'Host' : 'Participant'),
                             signature: signature,
                             sdkKey: sdkKey,
-                            userEmail: userEmail,
+                            userEmail: joinEmail,
                             passWord: password,
+                            ...(zak ? { zak } : {}),
                             success: function(res) {
                                 joinCallbacksFired = true;
                                 updateDebugStatus('✅ JOIN SUCCESS! Hiding loading...');
@@ -503,9 +531,21 @@
                                 console.error('❌ Error details:', JSON.stringify(res, null, 2));
                                 
                                 let errorMessage = res.reason || res.errorMessage || res.error || 'Unknown error';
+                                const errorText = String(errorMessage).toLowerCase();
                                 
+                                // Host-conflict: do NOT auto-retry/reload (that caused infinite loading)
+                                if (
+                                    res.errorCode === 3000 ||
+                                    errorText.includes('other meetings in progress') ||
+                                    errorText.includes('hosting another meeting') ||
+                                    errorText.includes('cannot not host another')
+                                ) {
+                                    showHostConflictHelp();
+                                    return;
+                                }
+
                                 // Handle specific Zoom errors
-                                if (res.errorCode === 1 || errorMessage.includes('recaptcha') || errorMessage.includes('limit')) {
+                                if (res.errorCode === 1 || errorText.includes('recaptcha') || errorText.includes('limit')) {
                                     errorMessage = 'Zoom has temporarily limited access. Please wait a few minutes and try again, or verify reCAPTCHA at https://zoom.us';
                                 }
                                 
@@ -562,7 +602,10 @@
                                 userName: userName,
                                 hasSignature: !!signature,
                                 hasSdkKey: !!sdkKey,
-                                hasPassword: !!password
+                                hasPassword: !!password,
+                                hasZak: !!zak,
+                                role: role,
+                                joinEmail: joinEmail || '(none)'
                             });
                             ZoomMtg.join(meetingConfig);
                             console.log('📞 ZoomMtg.join() called successfully');

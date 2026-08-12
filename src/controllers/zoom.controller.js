@@ -10,7 +10,14 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Class, CustomSession, Event } from '../models/index.js';
-import { createZoomMeeting as createZoomMeetingService, endZoomMeeting, generateSDKSignature } from '../services/zoomService.js';
+import {
+  createZoomMeeting as createZoomMeetingService,
+  generateSDKSignature,
+  getZoomZakToken,
+  getAccountById,
+  getZoomOAuthToken,
+  validAccounts,
+} from '../services/zoomService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -628,23 +635,63 @@ export const generateMeetingSDKSignature = async (req, res) => {
             }
         }
 
-        // If still no account ID found, default to account_1
+        // If still no account ID found, default to first configured Zoom account
         if (!zoomAccountId) {
-            console.warn(`Account ID not found for meeting ${meetingNumber}, defaulting to account_1`);
-            zoomAccountId = 'account_1';
+            zoomAccountId = validAccounts[0]?.id || 'account_1';
+            console.warn(
+                `Account ID not found for meeting ${meetingNumber}, defaulting to ${zoomAccountId}`
+            );
         }
 
-        // Generate SDK signature using the correct account's credentials
-        const signatureData = generateSDKSignature(meetingNumber, userRole, zoomAccountId);
+        // Participant join: signature only (fast path — no ZAK / no end-session churn)
+        if (Number(userRole) !== 1) {
+            const signatureData = generateSDKSignature(meetingNumber, userRole, zoomAccountId);
+            return res.json({
+                status: 'success',
+                data: {
+                    signature: signatureData.signature,
+                    sdkKey: signatureData.sdkKey,
+                    accountId: signatureData.accountId,
+                    meetingNumber: meetingNumber,
+                    role: userRole,
+                }
+            });
+        }
 
-        res.json({
+        // Host join: ZAK required. Avoid ending sessions in a reload loop — only mint ZAK.
+        let zak = null;
+        let hostEmail = null;
+        let hostName = null;
+        let zoomAccountType = null;
+        try {
+            const zakData = await getZoomZakToken(zoomAccountId, meetingNumber);
+            zak = zakData.zak;
+            hostEmail = zakData.hostEmail;
+            hostName = zakData.hostName;
+            zoomAccountType = zakData.accountType;
+        } catch (zakError) {
+            console.error('Failed to fetch ZAK for host join:', zakError.response?.data || zakError.message);
+            return res.status(500).json({
+                status: 'error',
+                message:
+                    'Failed to get Zoom host token (ZAK). Ensure Server-to-Server OAuth has user:read:admin / user:read:token:admin scopes.',
+                details: zakError.response?.data || zakError.message,
+            });
+        }
+
+        const signatureData = generateSDKSignature(meetingNumber, userRole, zoomAccountId);
+        return res.json({
             status: 'success',
             data: {
                 signature: signatureData.signature,
                 sdkKey: signatureData.sdkKey,
                 accountId: signatureData.accountId,
                 meetingNumber: meetingNumber,
-                role: userRole
+                role: userRole,
+                zak,
+                hostEmail,
+                hostName,
+                zoomAccountType,
             }
         });
     } catch (error) {
@@ -684,7 +731,9 @@ export const getMeetingDetails = async (req, res) => {
             meetingData = {
                 meetingNumber: classDoc.meeting_number,
                 password: classDoc.password || '',
-                accountId: classDoc.zoomAccountUsed
+                accountId: classDoc.zoomAccountUsed,
+                joinUrl: classDoc.zoomJoinUrl || null,
+                startUrl: classDoc.zoomStartUrl || null,
             };
         } else if (sessionId) {
             const sessionDoc = await CustomSession.findById(sessionId);
@@ -703,7 +752,9 @@ export const getMeetingDetails = async (req, res) => {
             meetingData = {
                 meetingNumber: sessionDoc.meeting_number,
                 password: sessionDoc.password || '',
-                accountId: sessionDoc.zoomAccountUsed
+                accountId: sessionDoc.zoomAccountUsed,
+                joinUrl: sessionDoc.zoomJoinUrl || null,
+                startUrl: sessionDoc.zoomStartUrl || null,
             };
         } else if (eventId) {
             const eventDoc = await Event.findById(eventId);
@@ -722,13 +773,52 @@ export const getMeetingDetails = async (req, res) => {
             meetingData = {
                 meetingNumber: eventDoc.meeting_number,
                 password: eventDoc.password || '',
-                accountId: eventDoc.zoomAccountUsed
+                accountId: eventDoc.zoomAccountUsed,
+                joinUrl: eventDoc.zoomJoinUrl || null,
+                startUrl: eventDoc.zoomStartUrl || null,
             };
         } else {
             return res.status(400).json({
                 status: 'fail',
                 message: 'classId, sessionId, or eventId is required'
             });
+        }
+
+        // Prefer Zoom's real join_url (bypasses Meeting SDK host-lock bugs on Basic accounts)
+        if (!meetingData.joinUrl && meetingData.meetingNumber) {
+            try {
+                const account =
+                    getAccountById(meetingData.accountId || validAccounts[0]?.id) ||
+                    validAccounts[0];
+                if (account) {
+                    const zoomToken = await getZoomOAuthToken(account);
+                    const zoomMeeting = await axios.get(
+                        `https://api.zoom.us/v2/meetings/${meetingData.meetingNumber}`,
+                        {
+                            headers: { Authorization: `Bearer ${zoomToken}` },
+                            timeout: 15000,
+                        }
+                    );
+                    meetingData.joinUrl = zoomMeeting.data?.join_url || null;
+                    meetingData.startUrl = zoomMeeting.data?.start_url || meetingData.startUrl;
+                    if (zoomMeeting.data?.password && !meetingData.password) {
+                        meetingData.password = zoomMeeting.data.password;
+                    }
+                }
+            } catch (zoomLookupError) {
+                console.warn(
+                    'Could not refresh join_url from Zoom API:',
+                    zoomLookupError.response?.data || zoomLookupError.message
+                );
+            }
+        }
+
+        if (!meetingData.joinUrl && meetingData.meetingNumber) {
+            const pwd = meetingData.password
+                ? `?pwd=${encodeURIComponent(meetingData.password)}`
+                : '';
+            // Zoom Web Client join — no Meeting SDK, no host-role conflict dialog
+            meetingData.joinUrl = `https://zoom.us/wc/join/${meetingData.meetingNumber}${pwd}`;
         }
 
         res.json({

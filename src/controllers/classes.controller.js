@@ -2,7 +2,11 @@ import axios from "axios";
 import { Class, User } from "../models/index.js";
 import { createZoomMeeting as createZoomMeetingBackend } from './zoom.controller.js';
 import { createUserNotification } from '../utils/notificationUtils.js';
-import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
+import {
+  createZoomMeeting,
+  endZoomMeeting,
+  endOtherLiveMeetingsForAccount,
+} from '../services/zoomService.js';
 import { validateClassOverlap } from '../services/overlapCheck.service.js';
 
 // Helper to parse time string (HH:MM, HH:MM:SS, or "h:mm AM/PM") to minutes since midnight
@@ -472,11 +476,38 @@ export const updateClass = async (req, res) => {
 export const deleteClass = async (req, res) => {
   const { classId } = req.params;
   try {
-    const deletedClass = await Class.findByIdAndDelete(classId);
-    if (!deletedClass) {
+    const classDoc = await Class.findById(classId);
+    if (!classDoc) {
       return res.status(404).json({ success: false, error: "Class not found" });
     }
-    res.json({ success: true, data: deletedClass });
+
+    // End Zoom meeting first when a live meeting exists, then delete the class
+    if (classDoc.meeting_number) {
+      try {
+        await endZoomMeeting(
+          classDoc.meeting_number,
+          classDoc.zoomAccountUsed || "account_1"
+        );
+      } catch (zoomError) {
+        console.error(
+          "Error ending Zoom meeting before class delete:",
+          zoomError?.message || zoomError
+        );
+        return res.status(500).json({
+          success: false,
+          error:
+            zoomError?.message ||
+            "Failed to end Zoom meeting before deleting class",
+        });
+      }
+    }
+
+    const deletedClass = await Class.findByIdAndDelete(classId);
+    res.json({
+      success: true,
+      data: deletedClass,
+      zoomEnded: Boolean(classDoc.meeting_number),
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -989,12 +1020,56 @@ export const removeStudentFromClass = async (req, res) => {
     }
   };
 
+/**
+ * Clears local class records for Zoom meetings that were force-ended as conflicts.
+ * @param {Array<string|number>} endedMeetingIds - Meeting IDs ended on Zoom
+ * @param {string} keepClassId - Class that should keep its meeting pointer
+ */
+const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) => {
+  if (!endedMeetingIds?.length) return;
+  await Class.updateMany(
+    {
+      _id: { $ne: keepClassId },
+      meeting_number: { $in: endedMeetingIds.map((id) => String(id)) },
+    },
+    {
+      $set: {
+        meeting_number: '',
+        status: false,
+      },
+    }
+  );
+};
+
 // Start a Zoom meeting for a class (single API call)
-export const startClassMeeting = async (req, res) => {
+  export const startClassMeeting = async (req, res) => {
   try {
     const { classId } = req.params;
     const classDoc = await Class.findById(classId);
     if (!classDoc) return res.status(404).json({ success: false, error: "Class not found" });
+
+    // Reuse an already-started meeting instead of creating a second host session
+    if (classDoc.meeting_number && String(classDoc.meeting_number).trim() !== '') {
+      const accountUsed = classDoc.zoomAccountUsed || 'account_1';
+      try {
+        const conflictResult = await endOtherLiveMeetingsForAccount(
+          accountUsed,
+          classDoc.meeting_number
+        );
+        await clearEndedConflictMeetingsFromDb(conflictResult.ended, classDoc._id);
+      } catch (conflictError) {
+        console.warn('Could not clear conflicting live meetings on restart:', conflictError.message);
+      }
+
+      return res.json({
+        success: true,
+        meetingNumber: classDoc.meeting_number,
+        password: classDoc.password,
+        joinUrl: classDoc.zoomJoinUrl || null,
+        accountUsed,
+        reused: true,
+      });
+    }
 
     // Use centralized Zoom service with multiple account support
     const meetingData = {
@@ -1018,11 +1093,23 @@ export const startClassMeeting = async (req, res) => {
     // Create Zoom meeting using the centralized service
     const result = await createZoomMeeting(meetingData);
 
+    // Clear any other live host sessions on this Zoom user before CRM host join
+    try {
+      const conflictResult = await endOtherLiveMeetingsForAccount(
+        result.accountUsed,
+        result.meetingId
+      );
+      await clearEndedConflictMeetingsFromDb(conflictResult.ended, classDoc._id);
+    } catch (conflictError) {
+      console.warn('Could not clear conflicting live meetings after create:', conflictError.message);
+    }
+
     // Save meeting info to class
     classDoc.meeting_number = result.meetingId;
     classDoc.password = result.password;
     classDoc.status = true;
     classDoc.zoomAccountUsed = result.accountUsed; // Track which account was used
+    classDoc.zoomJoinUrl = result.joinUrl || classDoc.zoomJoinUrl;
     await classDoc.save();
 
     res.json({
@@ -1031,6 +1118,7 @@ export const startClassMeeting = async (req, res) => {
       password: result.password,
       joinUrl: result.joinUrl,
       accountUsed: result.accountUsed,
+      reused: false,
     });
   } catch (error) {
     console.error('Error starting class meeting:', error.message);
