@@ -103,10 +103,17 @@ export const getZoomCallback = async (req, res) => {
 
 export const getAccessToken = async(req, res) => {
     try {
-        const clientId = "_nLks8WMQDO1I34y6RQNXA";
-        const clientSecret = "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ";
-        const redirectUri = 'http://localhost:3000/';
-        const codeVerifier = '';
+        // Prefer account_2 (active); fall back to account_1 only if still configured in env
+        const clientId = process.env.ZOOM_CLIENT_ID_2 || process.env.ZOOM_CLIENT_ID_1;
+        const clientSecret = process.env.ZOOM_CLIENT_SECRET_2 || process.env.ZOOM_CLIENT_SECRET_1;
+        const accountId = process.env.ZOOM_ACCOUNT_ID_2 || process.env.ZOOM_ACCOUNT_ID_1;
+
+        if (!clientId || !clientSecret || !accountId) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'Zoom credentials not configured in environment'
+            });
+        }
 
         const grantType = 'account_credentials';
 
@@ -114,7 +121,7 @@ export const getAccessToken = async(req, res) => {
 
         const requestBody = {
             grant_type: grantType,
-            account_id: "C76CruAJSpitbs_UIRb4eQ"
+            account_id: accountId
         };
 
         const headers = {

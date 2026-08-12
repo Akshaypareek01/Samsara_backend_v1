@@ -10,12 +10,13 @@ import crypto from 'crypto';
 const ZOOM_ACCOUNTS = [
   {
     id: 'account_1',
-    clientId: process.env.ZOOM_CLIENT_ID_1 || "_nLks8WMQDO1I34y6RQNXA",
-    clientSecret: process.env.ZOOM_CLIENT_SECRET_1 || "hw06ETTGZMJ8s4LnphEi9A5SVtQUQNZJ",
-    accountId: process.env.ZOOM_ACCOUNT_ID_1 || "C76CruAJSpitbs_UIRb4eQ",
-    userId: process.env.ZOOM_USER_ID_1 || "developer@theodin.in",
-    sdkKey: process.env.ZOOM_MEETING_SDK_KEY_1 || "TsFvuPFLTeKf7_bNBWggPA",
-    sdkSecret: process.env.ZOOM_MEETING_SDK_SECRET_1 || "C7Dm4JuZ2QXoN0bM2OYTw5JxZvjPK1y9",
+    // Only loads when ZOOM_*_1 env vars are set (no hardcoded fallbacks)
+    clientId: process.env.ZOOM_CLIENT_ID_1,
+    clientSecret: process.env.ZOOM_CLIENT_SECRET_1,
+    accountId: process.env.ZOOM_ACCOUNT_ID_1,
+    userId: process.env.ZOOM_USER_ID_1,
+    sdkKey: process.env.ZOOM_MEETING_SDK_KEY_1,
+    sdkSecret: process.env.ZOOM_MEETING_SDK_SECRET_1,
     isActive: true,
     lastUsed: null,
     activeMeetings: 0,
