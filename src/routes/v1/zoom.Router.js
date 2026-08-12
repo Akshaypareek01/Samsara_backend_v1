@@ -19,6 +19,7 @@ import {
 } from '../../controllers/wellness-feedback.controller.js';
 import validate from '../../middlewares/validate.js';
 import * as wellnessFeedbackValidation from '../../validations/wellness-feedback.validation.js';
+import auth from '../../middlewares/auth.js';
 
 const zoomRouter = express.Router();
 
@@ -32,7 +33,7 @@ zoomRouter.post('/createZoomMeeting-event', createEventZoomMeeting);
 zoomRouter.post('/getMeetingData', getMeeting);
 zoomRouter.delete('/deleteMeeting', deleteMeeting);
 zoomRouter.post('/generateSDKSignature', generateMeetingSDKSignature);
-zoomRouter.get('/getMeetingDetails', getMeetingDetails);
+zoomRouter.get('/getMeetingDetails', auth(), getMeetingDetails);
 zoomRouter.get('/join-meeting', serveJoinMeetingPage);
 zoomRouter.get('/wellness-feedback-form', serveFeedbackForm);
 zoomRouter.post(

@@ -144,6 +144,31 @@
             // Consider it mobile if it's a small screen OR has mobile user agent
             return isSmallScreen || (isMobileUserAgent && hasTouchScreen);
         };
+
+        /**
+         * Resolves where Zoom SDK / leave flows should send the user.
+         * CRM passes ?leaveUrl=...; forceHost defaults to CRM classes (not Amplify consumer).
+         * @returns {string}
+         */
+        const resolveLeaveUrl = () => {
+            const params = new URLSearchParams(window.location.search);
+            const fromQuery = params.get('leaveUrl');
+            if (fromQuery) {
+                try {
+                    return decodeURIComponent(fromQuery);
+                } catch (e) {
+                    return fromQuery;
+                }
+            }
+            if (params.get('forceHost') === '1') {
+                // CRM desktop host join — never dump onto consumer Amplify
+                return 'http://localhost:3000/apps/crm/classes/';
+            }
+            if (isMobileDevice()) {
+                return 'samsara://';
+            }
+            return 'https://main.d21u027aqec24o.amplifyapp.com/Homepage/Classes';
+        };
         
         // Redirect function - called when meeting ends or user leaves
         const redirectAfterMeeting = () => {
@@ -152,16 +177,9 @@
                 return;
             }
             window.redirecting = true;
-            
-            if (isMobileDevice()) {
-                // Mobile device - redirect to app deep link
-                console.log('Meeting ended - Mobile device detected, redirecting to samsara://');
-                window.location.href = 'samsara://';
-            } else {
-                // Desktop/large screen - redirect to Classes page
-                console.log('Meeting ended - Desktop device detected, redirecting to Classes page');
-                window.location.href = 'https://main.d21u027aqec24o.amplifyapp.com/Homepage/Classes';
-            }
+            const target = resolveLeaveUrl();
+            console.log('Meeting ended — redirecting to', target);
+            window.location.href = target;
         };
         
         // Make redirect function globally accessible
@@ -183,8 +201,81 @@
         const showHostConflictHelp = () => {
             showError(
                 'Cannot join as Zoom host',
-                'This Zoom account is Basic and already has a host session lock. Close the Zoom desktop app for tech.samsarawellness@gmail.com, then join again as participant — or upgrade that Zoom user to Pro for host joins.'
+                'Close the Zoom desktop app signed in as the Samsara Zoom account (tech.samsarawellness@gmail.com), then click Join again from CRM. Do not click “End and Start New Meeting” — that can delete the class meeting.'
             );
+        };
+
+        /**
+         * Never click "End and Start" — it deletes the class meeting on Basic accounts.
+         * Cancel the dialog and fall back to Zoom Web Client join as instructor.
+         * @param {string} meetingNumber
+         * @param {string} password
+         */
+        const fallbackInstructorToWebClient = (meetingNumber, password) => {
+            if (window.__samsaraWcFallbackDone) return;
+            window.__samsaraWcFallbackDone = true;
+            const pwd = password ? `?pwd=${encodeURIComponent(password)}` : '';
+            const wcUrl = `https://zoom.us/wc/join/${meetingNumber}${pwd}`;
+            console.warn('⚠️ Host SDK blocked — falling back to WC instructor join:', wcUrl);
+            window.location.replace(wcUrl);
+        };
+
+        /**
+         * Host start via classic Zoom URL + ZAK.
+         * Basic accounts reject Meeting SDK host tokens with "We don't support this login way".
+         * @param {string} meetingNumber
+         * @param {string} zak
+         */
+        const startAsHostViaClassicZoom = (meetingNumber, zak) => {
+            if (window.__samsaraClassicHostStartDone) return;
+            window.__samsaraClassicHostStartDone = true;
+            if (!zak) {
+                showError(
+                    'Cannot start as Zoom host',
+                    'Missing ZAK token. Check Server-to-Server OAuth scopes (user:read:token:admin).'
+                );
+                return;
+            }
+            const startUrl = `https://zoom.us/s/${encodeURIComponent(meetingNumber)}?zak=${encodeURIComponent(zak)}`;
+            console.warn('⚠️ Meeting SDK host blocked — opening classic Zoom host start:', startUrl);
+            window.location.replace(startUrl);
+        };
+
+        /**
+         * Watches for Zoom's host-conflict modal and cancels it (never End and Start).
+         * @param {string} meetingNumber
+         * @param {string} password
+         * @param {boolean} forceHost - CRM admin: show help instead of WC attendee fallback
+         */
+        const watchHostConflictDialog = (meetingNumber, password, forceHost = false) => {
+            const tick = () => {
+                const buttons = Array.from(document.querySelectorAll('button, [role="button"], a'));
+                let cancelBtn = null;
+                let endStartBtn = null;
+                for (const btn of buttons) {
+                    const t = (btn.textContent || '').replace(/\s+/g, ' ').trim();
+                    if (/^cancel$/i.test(t)) cancelBtn = btn;
+                    if (/end and start/i.test(t)) endStartBtn = btn;
+                }
+                const bodyText = (document.body && document.body.innerText) || '';
+                if (endStartBtn && /hosting another meeting/i.test(bodyText)) {
+                    console.warn('⚠️ Host conflict dialog detected — Cancel (not End and Start)');
+                    try {
+                        if (cancelBtn) cancelBtn.click();
+                    } catch (e) {}
+                    if (forceHost) {
+                        showHostConflictHelp();
+                    } else {
+                        fallbackInstructorToWebClient(meetingNumber, password);
+                    }
+                    return true;
+                }
+                return false;
+            };
+            tick();
+            const obs = new MutationObserver(() => tick());
+            obs.observe(document.documentElement, { childList: true, subtree: true });
+            setTimeout(() => obs.disconnect(), 60000);
         };
         
         // Wait for DOM and scripts to load
@@ -214,6 +305,7 @@
                 let userName = urlParams.get('userName') || urlParams.get('name') || 'Guest';
                 const userEmail = urlParams.get('email') || urlParams.get('userEmail') || '';
                 const role = parseInt(urlParams.get('role') || '0'); // 0 = participant, 1 = host
+                const forceHost = urlParams.get('forceHost') === '1'; // CRM admin desktop host
                 let accountId = urlParams.get('accountId') || null;
                 const classId = urlParams.get('classId') || null;
                 const sessionId = urlParams.get('sessionId') || null;
@@ -224,8 +316,9 @@
                 // Get API base URL (remove /public/join-meeting if present)
                 const baseUrl = apiBaseUrl.replace(/\/v1\/zoom\/join-meeting$/, '').replace(/\/public\/join-meeting$/, '');
 
-                // If classId/sessionId/eventId is provided, fetch meeting details from database
-                if (classId || sessionId || eventId) {
+                // If classId/sessionId/eventId is provided AND meeting number missing, fetch details
+                // (requires auth — prefer meetingNumber in query from the app)
+                if ((!meetingNumber) && (classId || sessionId || eventId)) {
                     console.log('Fetching meeting details from database...');
                     const detailsParams = new URLSearchParams();
                     if (classId) detailsParams.append('classId', classId);
@@ -318,8 +411,20 @@
                 if (role === 1 && !zak) {
                     throw new Error('Host join requires a Zoom ZAK token, but none was returned by the server.');
                 }
+                // Basic Zoom: Meeting SDK role=1 fails with "We don't support this login way".
+                // CRM forceHost → classic /s/{mn}?zak= (real host). Teachers → WC join.
                 if (role === 1 && zoomAccountType === 1) {
-                    console.warn('⚠️ Host Zoom user is Basic (free). Concurrent hosting is blocked by Zoom — close desktop Zoom app for this account, or upgrade to Pro.');
+                    if (forceHost) {
+                        console.warn('⚠️ Zoom Basic + CRM host — classic Zoom start with ZAK (SDK host unsupported).');
+                        startAsHostViaClassicZoom(meetingNumber, zak);
+                        return;
+                    }
+                    console.warn('⚠️ Zoom Basic — SDK host blocked. Redirecting to Web Client instructor join.');
+                    fallbackInstructorToWebClient(meetingNumber, password);
+                    return;
+                }
+                if (role === 1) {
+                    watchHostConflictDialog(meetingNumber, password, forceHost);
                 }
 
                 // ZoomMtg should already be available from the script load
@@ -401,15 +506,17 @@
                 let joinCallbacksFired = false;
                 let zoomInitialized = false;
 
+                const leaveUrl = resolveLeaveUrl();
+
                 // Initialize Zoom SDK - only valid parameters for SDK 3.1.6
                 console.log('🔧 Initializing Zoom SDK with config:', {
-                    leaveUrl: isMobileDevice() ? 'samsara://' : 'https://main.d21u027aqec24o.amplifyapp.com/Homepage/Classes',
+                    leaveUrl,
                     disableCORP: !window.crossOriginIsolated,
                     crossOriginIsolated: window.crossOriginIsolated
                 });
                 
                 ZoomMtg.init({
-                    leaveUrl: isMobileDevice() ? 'samsara://' : 'https://main.d21u027aqec24o.amplifyapp.com/Homepage/Classes',
+                    leaveUrl,
                     disableCORP: !window.crossOriginIsolated, // Required for SharedArrayBuffer support
                     success: function(res) {
                         zoomInitialized = true;
@@ -530,58 +637,30 @@
                                 
                                 let errorMessage = res.reason || res.errorMessage || res.error || 'Unknown error';
                                 const errorText = String(errorMessage).toLowerCase();
+                                const isUnsupportedHostLogin =
+                                    errorText.includes('login way') ||
+                                    errorText.includes('not support start') ||
+                                    errorText.includes('via tokens') ||
+                                    res.errorCode === 3265;
                                 const isHostConflict =
                                     res.errorCode === 3000 ||
                                     errorText.includes('other meetings in progress') ||
                                     errorText.includes('hosting another meeting') ||
                                     errorText.includes('cannot not host another');
 
-                                // Host conflict on Basic Zoom: retry once as participant (no page reload)
-                                if (role === 1 && isHostConflict && !window.__zoomParticipantFallbackTried) {
-                                    window.__zoomParticipantFallbackTried = true;
-                                    console.warn('⚠️ Host conflict — retrying as participant (role=0)');
-                                    const statusEl2 = document.getElementById('loading-status');
-                                    if (statusEl2) statusEl2.textContent = 'Retrying as participant...';
+                                // Basic / token host start rejected by Zoom SDK
+                                if (role === 1 && isUnsupportedHostLogin && zak) {
+                                    startAsHostViaClassicZoom(meetingNumber, zak);
+                                    return;
+                                }
 
-                                    fetch(`${baseUrl}/v1/zoom/generateSDKSignature`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                            meetingNumber: meetingNumber,
-                                            role: 0,
-                                            accountId: accountId,
-                                            classId: classId,
-                                            sessionId: sessionId,
-                                            eventId: eventId,
-                                        }),
-                                    })
-                                        .then((r) => r.json())
-                                        .then((fallbackJson) => {
-                                            if (fallbackJson.status !== 'success') {
-                                                throw new Error(fallbackJson.message || 'Fallback signature failed');
-                                            }
-                                            const fb = fallbackJson.data;
-                                            joinCallbacksFired = false;
-                                            ZoomMtg.join({
-                                                meetingNumber: meetingNumber,
-                                                userName: userName || 'Participant',
-                                                signature: fb.signature,
-                                                sdkKey: fb.sdkKey,
-                                                userEmail: userEmail || joinEmail || '',
-                                                passWord: password,
-                                                success: meetingConfig.success,
-                                                error: function (err2) {
-                                                    joinCallbacksFired = true;
-                                                    showError(
-                                                        'Failed to join meeting',
-                                                        err2.reason || err2.errorMessage || 'Participant join also failed. Start the class again, then retry.'
-                                                    );
-                                                },
-                                            });
-                                        })
-                                        .catch((fallbackError) => {
-                                            showError('Failed to join meeting', fallbackError.message);
-                                        });
+                                // Host conflict: never End and Start
+                                if (role === 1 && isHostConflict) {
+                                    if (forceHost) {
+                                        showHostConflictHelp();
+                                    } else {
+                                        fallbackInstructorToWebClient(meetingNumber, password);
+                                    }
                                     return;
                                 }
 

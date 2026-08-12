@@ -17,6 +17,9 @@ import {
   getAccountById,
   getZoomOAuthToken,
   validAccounts,
+  buildZoomWcHostStartUrl,
+  patchMeetingPrivacySettings,
+  endOtherLiveMeetingsForAccount,
 } from '../services/zoomService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -658,7 +661,17 @@ export const generateMeetingSDKSignature = async (req, res) => {
             });
         }
 
-        // Host join: ZAK required. Avoid ending sessions in a reload loop — only mint ZAK.
+        // Host join: end OTHER live sessions on this Zoom user, then mint ZAK.
+        // Never end the meeting being started (exceptMeetingId = this meetingNumber).
+        try {
+            await endOtherLiveMeetingsForAccount(zoomAccountId, meetingNumber);
+        } catch (endErr) {
+            console.warn(
+                'Could not clear other live Zoom sessions before host join:',
+                endErr.response?.data || endErr.message
+            );
+        }
+
         let zak = null;
         let hostEmail = null;
         let hostName = null;
@@ -704,30 +717,36 @@ export const generateMeetingSDKSignature = async (req, res) => {
 };
 
 /**
- * Get meeting details from class/session/event
- * This endpoint fetches meeting number and password from the database
+ * Get meeting details from class/session/event (auth required).
+ * Query: classId|sessionId|eventId, asHost=1 for teacher/admin host-start URL (ZAK).
+ * Participants never receive startUrl/ZAK — only a join URL after enrollment check.
  */
 export const getMeetingDetails = async (req, res) => {
     try {
         const { classId, sessionId, eventId } = req.query;
-        
+        const asHost = String(req.query.asHost || '') === '1' || String(req.query.asHost || '').toLowerCase() === 'true';
+        const user = req.user;
+        const userId = String(user?.id || user?._id || '');
+        const isStaff =
+            user?.role === 'admin' ||
+            user?.role === 'company' ||
+            user?.role === 'trainer' ||
+            (user?.role && typeof user.role === 'object'); // populated Admin Role
+
         let meetingData = null;
-        let accountId = null;
+        let docTeacherId = null;
+        let docStudents = [];
 
         if (classId) {
             const classDoc = await Class.findById(classId);
             if (!classDoc) {
-                return res.status(404).json({
-                    status: 'fail',
-                    message: 'Class not found'
-                });
+                return res.status(404).json({ status: 'fail', message: 'Class not found' });
             }
             if (!classDoc.meeting_number) {
-                return res.status(400).json({
-                    status: 'fail',
-                    message: 'No meeting created for this class yet'
-                });
+                return res.status(400).json({ status: 'fail', message: 'No meeting created for this class yet' });
             }
+            docTeacherId = classDoc.teacher ? String(classDoc.teacher._id || classDoc.teacher) : null;
+            docStudents = classDoc.students || [];
             meetingData = {
                 meetingNumber: classDoc.meeting_number,
                 password: classDoc.password || '',
@@ -738,17 +757,13 @@ export const getMeetingDetails = async (req, res) => {
         } else if (sessionId) {
             const sessionDoc = await CustomSession.findById(sessionId);
             if (!sessionDoc) {
-                return res.status(404).json({
-                    status: 'fail',
-                    message: 'Session not found'
-                });
+                return res.status(404).json({ status: 'fail', message: 'Session not found' });
             }
             if (!sessionDoc.meeting_number) {
-                return res.status(400).json({
-                    status: 'fail',
-                    message: 'No meeting created for this session yet'
-                });
+                return res.status(400).json({ status: 'fail', message: 'No meeting created for this session yet' });
             }
+            docTeacherId = sessionDoc.teacher ? String(sessionDoc.teacher._id || sessionDoc.teacher) : null;
+            docStudents = sessionDoc.students || (sessionDoc.user ? [sessionDoc.user] : []);
             meetingData = {
                 meetingNumber: sessionDoc.meeting_number,
                 password: sessionDoc.password || '',
@@ -759,17 +774,13 @@ export const getMeetingDetails = async (req, res) => {
         } else if (eventId) {
             const eventDoc = await Event.findById(eventId);
             if (!eventDoc) {
-                return res.status(404).json({
-                    status: 'fail',
-                    message: 'Event not found'
-                });
+                return res.status(404).json({ status: 'fail', message: 'Event not found' });
             }
             if (!eventDoc.meeting_number) {
-                return res.status(400).json({
-                    status: 'fail',
-                    message: 'No meeting created for this event yet'
-                });
+                return res.status(400).json({ status: 'fail', message: 'No meeting created for this event yet' });
             }
+            docTeacherId = eventDoc.teacher ? String(eventDoc.teacher._id || eventDoc.teacher) : null;
+            docStudents = eventDoc.students || eventDoc.registeredUsers || [];
             meetingData = {
                 meetingNumber: eventDoc.meeting_number,
                 password: eventDoc.password || '',
@@ -784,7 +795,24 @@ export const getMeetingDetails = async (req, res) => {
             });
         }
 
-        // Prefer Zoom's real join_url (bypasses Meeting SDK host-lock bugs on Basic accounts)
+        const isTeacherOfDoc = docTeacherId && userId && docTeacherId === userId;
+        const isEnrolled = (docStudents || []).some((s) => String(s?._id || s) === userId);
+
+        if (!isStaff && !isTeacherOfDoc && !isEnrolled) {
+            return res.status(403).json({
+                status: 'fail',
+                message: 'You are not allowed to join this private meeting',
+            });
+        }
+
+        if (asHost && !isStaff && !isTeacherOfDoc) {
+            return res.status(403).json({
+                status: 'fail',
+                message: 'Only the class teacher or staff can start as host',
+            });
+        }
+
+        // Refresh join_url from Zoom when missing
         if (!meetingData.joinUrl && meetingData.meetingNumber) {
             try {
                 const account =
@@ -817,13 +845,137 @@ export const getMeetingDetails = async (req, res) => {
             const pwd = meetingData.password
                 ? `?pwd=${encodeURIComponent(meetingData.password)}`
                 : '';
-            // Zoom Web Client join — no Meeting SDK, no host-role conflict dialog
             meetingData.joinUrl = `https://zoom.us/wc/join/${meetingData.meetingNumber}${pwd}`;
+        }
+
+        // Harden privacy on every authorized fetch (covers older meetings)
+        await patchMeetingPrivacySettings(
+            meetingData.meetingNumber,
+            meetingData.accountId || validAccounts[0]?.id
+        );
+
+        const responseData = {
+            meetingNumber: meetingData.meetingNumber,
+            password: meetingData.password,
+            joinUrl: meetingData.joinUrl,
+            accountId: meetingData.accountId,
+            asHost: false,
+            hostStartUrl: null,
+        };
+
+        if (asHost) {
+            // Meeting SDK role=1 + ZAK = real host (CRM admin/trainer on desktop web).
+            // Mobile teachers on Zoom Basic → WC participant (SDK host lock is permanent on Basic).
+            let zoomAccountType = null;
+            let zakForStart = null;
+            try {
+                const zakInfo = await getZoomZakToken(
+                    meetingData.accountId || validAccounts[0]?.id,
+                    meetingData.meetingNumber
+                );
+                zoomAccountType = zakInfo.accountType;
+                zakForStart = zakInfo.zak;
+            } catch (typeErr) {
+                console.warn('Could not read Zoom account type / ZAK:', typeErr.message);
+            }
+
+            const isBasicZoom = zoomAccountType === 1;
+            // CRM staff always get SDK host path (desktop browser). App teachers on Basic do not.
+            // Consumer web teachers pass forceHost=1 directly on join-meeting (same as CRM).
+            const useSdkHost = isStaff || !isBasicZoom;
+
+            responseData.asHost = true;
+            responseData.zoomAccountType = zoomAccountType;
+
+            if (!useSdkHost) {
+                try {
+                    const account =
+                        getAccountById(meetingData.accountId || validAccounts[0]?.id) ||
+                        validAccounts[0];
+                    if (account) {
+                        const zoomToken = await getZoomOAuthToken(account);
+                        await axios.patch(
+                            `https://api.zoom.us/v2/meetings/${meetingData.meetingNumber}`,
+                            {
+                                settings: {
+                                    join_before_host: true,
+                                    waiting_room: false,
+                                    show_share_button: false,
+                                    private_meeting: true,
+                                },
+                            },
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${zoomToken}`,
+                                    'Content-Type': 'application/json',
+                                },
+                                timeout: 15000,
+                            }
+                        );
+                    }
+                } catch (patchErr) {
+                    console.warn(
+                        'Basic instructor JBH patch failed:',
+                        patchErr.response?.data || patchErr.message
+                    );
+                }
+                responseData.hostMode = 'web_participant';
+                responseData.useMeetingSdk = false;
+                responseData.sdkJoinPath = null;
+                responseData.hostNote =
+                    'Zoom Basic cannot host via Meeting SDK on mobile. Joining as instructor in the web client.';
+            } else {
+                try {
+                    await endOtherLiveMeetingsForAccount(
+                        meetingData.accountId || validAccounts[0]?.id,
+                        meetingData.meetingNumber
+                    );
+                } catch (clearErr) {
+                    console.warn(
+                        'Could not clear other live meetings for CRM host join:',
+                        clearErr.message
+                    );
+                }
+
+                const sdkParams = new URLSearchParams({
+                    role: '1',
+                    forceHost: '1',
+                });
+                if (classId) sdkParams.set('classId', String(classId));
+                if (sessionId) sdkParams.set('sessionId', String(sessionId));
+                if (eventId) sdkParams.set('eventId', String(eventId));
+                if (meetingData.meetingNumber) {
+                    sdkParams.set('meetingNumber', String(meetingData.meetingNumber));
+                }
+                if (meetingData.password) {
+                    sdkParams.set('password', String(meetingData.password));
+                }
+                if (meetingData.accountId) {
+                    sdkParams.set('accountId', String(meetingData.accountId));
+                }
+
+                responseData.hostMode = 'sdk';
+                responseData.useMeetingSdk = true;
+                responseData.sdkJoinPath = `/zoom/join-meeting?${sdkParams.toString()}`;
+                // Optional: classic start_url with fresh ZAK for desktop Zoom client
+                if (zakForStart && meetingData.meetingNumber) {
+                    const origin = (() => {
+                        try {
+                            return meetingData.joinUrl
+                                ? new URL(meetingData.joinUrl).origin
+                                : 'https://zoom.us';
+                        } catch {
+                            return 'https://zoom.us';
+                        }
+                    })();
+                    responseData.hostStartUrl = `${origin}/s/${meetingData.meetingNumber}?zak=${encodeURIComponent(zakForStart)}`;
+                }
+            }
         }
 
         res.json({
             status: 'success',
-            data: meetingData
+            data: responseData,
         });
     } catch (error) {
         console.error('Error fetching meeting details:', error.message);

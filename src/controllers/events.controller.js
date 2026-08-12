@@ -193,12 +193,15 @@ export const startEventMeeting = async (req, res) => {
       agenda: eventDoc.details || "",
       settings: {
         host_video: true,
-        participant_video: true,
-        join_before_host: true,
-        approval_type: 1,
+        participant_video: false,
+        join_before_host: false,
+        approval_type: 2,
         audio: 'both',
         auto_recording: 'local',
-        waiting_room: false,
+        waiting_room: true,
+        show_share_button: false,
+        private_meeting: true,
+        mute_upon_entry: true,
       },
     };
 

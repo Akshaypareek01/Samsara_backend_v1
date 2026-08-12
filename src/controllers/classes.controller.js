@@ -8,6 +8,7 @@ import {
   endOtherLiveMeetingsForAccount,
   getAccountById,
   getZoomOAuthToken,
+  patchMeetingPrivacySettings,
 } from '../services/zoomService.js';
 import { validateClassOverlap } from '../services/overlapCheck.service.js';
 
@@ -1078,11 +1079,13 @@ const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) =>
       const accountUsed = classDoc.zoomAccountUsed || 'account_2';
       const stillExists = await zoomMeetingExists(classDoc.meeting_number, accountUsed);
       if (stillExists) {
+        await patchMeetingPrivacySettings(classDoc.meeting_number, accountUsed);
         return res.json({
           success: true,
           meetingNumber: classDoc.meeting_number,
           password: classDoc.password,
           joinUrl: classDoc.zoomJoinUrl || null,
+          startUrl: classDoc.zoomStartUrl || null,
           accountUsed,
           reused: true,
         });
@@ -1107,12 +1110,15 @@ const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) =>
       agenda: classDoc.description || "",
       settings: {
         host_video: true,
-        participant_video: true,
-        join_before_host: true,
+        participant_video: false,
+        join_before_host: false,
+        waiting_room: true,
+        show_share_button: false,
+        private_meeting: true,
+        mute_upon_entry: true,
         approval_type: 2,
         audio: 'both',
         auto_recording: 'local',
-        waiting_room: false,
       },
     };
 
@@ -1125,6 +1131,7 @@ const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) =>
     classDoc.status = true;
     classDoc.zoomAccountUsed = result.accountUsed;
     classDoc.zoomJoinUrl = result.joinUrl || classDoc.zoomJoinUrl;
+    classDoc.zoomStartUrl = result.startUrl || classDoc.zoomStartUrl;
     await classDoc.save();
 
     res.json({
@@ -1132,6 +1139,7 @@ const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) =>
       meetingNumber: result.meetingId,
       password: result.password,
       joinUrl: result.joinUrl,
+      startUrl: result.startUrl || null,
       accountUsed: result.accountUsed,
       reused: false,
     });

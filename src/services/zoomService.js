@@ -296,6 +296,32 @@ export const getZoomOAuthToken = async (account) => {
 };
 
 /**
+ * Default Zoom settings for private Samsara classes.
+ * Waiting room + no join-before-host so only admitted participants get in;
+ * share/invite UI disabled at the meeting level.
+ */
+export const PRIVATE_ZOOM_MEETING_SETTINGS = {
+  host_video: true,
+  participant_video: false,
+  join_before_host: false,
+  waiting_room: true,
+  mute_upon_entry: true,
+  approval_type: 2,
+  audio: 'both',
+  enforce_login: false,
+  meeting_authentication: false,
+  registrants_email_notification: false,
+  registrants_confirmation_email: false,
+  allow_multiple_devices: false,
+  breakout_room: false,
+  close_registration: false,
+  show_share_button: false,
+  use_pmi: false,
+  watermark: false,
+  private_meeting: true,
+};
+
+/**
  * Create a Zoom meeting using the best available account
  * @param {Object} meetingData - Meeting configuration
  * @returns {Promise<Object>} Meeting creation result
@@ -332,7 +358,7 @@ export const createZoomMeeting = async (meetingData) => {
       // Get OAuth token
       const zoomToken = await getZoomOAuthToken(selectedAccount);
 
-      // Build meeting request with latest API features
+      // Build meeting request — private in-app classes (not shareable open invites)
       const requestBody = {
         topic: meetingData.topic || "Meeting",
         type: 2, // Scheduled meeting
@@ -342,37 +368,23 @@ export const createZoomMeeting = async (meetingData) => {
         password: meetingData.password || "",
         agenda: meetingData.agenda || "",
         settings: {
+          ...PRIVATE_ZOOM_MEETING_SETTINGS,
           host_video: true,
-          participant_video: true,
-          join_before_host: true,
-          approval_type: 2, // 0 = Automatically approve, 1 = Manually approve, 2 = No registration required
-          audio: 'both',
           auto_recording: meetingData.settings?.auto_recording || 'local',
-          waiting_room: false,
-          enforce_login: false,
-          registrants_email_notification: false,
-          meeting_authentication: false,
-          // Latest features
-          allow_multiple_devices: true,
-          breakout_room: false,
-          close_registration: false,
           contact_name: meetingData.contactName || '',
           contact_email: meetingData.contactEmail || selectedAccount.userId,
-          // Only include supported countries - remove if account doesn't support dial-in
-          // global_dial_in_countries: ['US'], // Uncomment if dial-in is needed and supported
-          registrants_confirmation_email: false,
-          show_share_button: true,
-          use_pmi: false,
-          watermark: false,
-          // Enable latest features
           alternative_hosts: meetingData.alternativeHosts || '',
           alternative_hosts_email_notification: false,
-          ...meetingData.settings
+          ...meetingData.settings,
         },
       };
       
-      // Explicitly disable registration - override any account-level defaults
+      // Force private class defaults even if callers pass looser settings
       requestBody.settings.approval_type = 2;
+      requestBody.settings.join_before_host = false;
+      requestBody.settings.waiting_room = true;
+      requestBody.settings.show_share_button = false;
+      requestBody.settings.private_meeting = true;
 
       // Create the meeting using latest REST API v2
       const response = await axios.post(
@@ -407,6 +419,7 @@ export const createZoomMeeting = async (meetingData) => {
         meetingId: response.data.id,
         password: response.data.password,
         joinUrl: response.data.join_url,
+        startUrl: response.data.start_url,
         accountUsed: selectedAccount.id,
         meetingData: response.data
       };
@@ -448,6 +461,59 @@ export {
   endOtherLiveMeetingsForAccount,
   getZoomZakToken,
 } from './zoomMeetingLifecycle.js';
+
+/**
+ * Hardens an existing Zoom meeting for private in-app use (waiting room, no JBH, hide share).
+ * @param {string|number} meetingNumber
+ * @param {string} accountId
+ * @returns {Promise<boolean>}
+ */
+export const patchMeetingPrivacySettings = async (meetingNumber, accountId) => {
+  const account = getAccountById(accountId) || validAccounts[0];
+  if (!account || !meetingNumber) return false;
+  try {
+    const zoomToken = await getZoomOAuthToken(account);
+    await axios.patch(
+      `https://api.zoom.us/v2/meetings/${meetingNumber}`,
+      {
+        settings: {
+          join_before_host: false,
+          waiting_room: true,
+          show_share_button: false,
+          private_meeting: true,
+          allow_multiple_devices: false,
+          mute_upon_entry: true,
+          participant_video: false,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${zoomToken}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000,
+      }
+    );
+    return true;
+  } catch (error) {
+    console.warn(
+      `Could not patch privacy settings for meeting ${meetingNumber}:`,
+      error.response?.data || error.message
+    );
+    return false;
+  }
+};
+
+/**
+ * Builds a Zoom Web Client host-start URL using a fresh ZAK (teacher gets real host controls).
+ * @param {string|number} meetingNumber
+ * @param {string} zak
+ * @returns {string}
+ */
+export const buildZoomWcHostStartUrl = (meetingNumber, zak) => {
+  const id = String(meetingNumber).trim();
+  return `https://zoom.us/wc/${id}/start?zak=${encodeURIComponent(zak)}`;
+};
 
 /**
  * Get account usage statistics
@@ -531,16 +597,15 @@ export const generateSDKSignature = (meetingNumber, role, accountId) => {
       typ: 'JWT'
     };
 
-    // Zoom SDK signature payload includes meeting number and role
+    // Zoom Meeting SDK JWT (current docs use sdkKey; appKey kept for older clients)
     const payload = {
-      iss: account.sdkKey,
-      exp: exp,
-      iat: iat,
-      aud: 'zoom',
+      sdkKey: account.sdkKey,
       appKey: account.sdkKey,
+      mn: meetingNumber.toString(),
+      role: Number(role),
+      iat,
+      exp,
       tokenExp: exp,
-      mn: meetingNumber.toString(), // Meeting number
-      role: role // 0 = participant, 1 = host
     };
 
     // Create JWT signature using base64url encoding
