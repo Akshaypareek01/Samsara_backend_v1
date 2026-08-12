@@ -6,6 +6,8 @@ import {
   createZoomMeeting,
   endZoomMeeting,
   endOtherLiveMeetingsForAccount,
+  getAccountById,
+  getZoomOAuthToken,
 } from '../services/zoomService.js';
 import { validateClassOverlap } from '../services/overlapCheck.service.js';
 
@@ -1021,6 +1023,29 @@ export const removeStudentFromClass = async (req, res) => {
   };
 
 /**
+ * Returns true when the Zoom meeting still exists (not deleted by SDK conflict dialog).
+ * @param {string|number} meetingId - Zoom meeting number
+ * @param {string} accountId - Zoom account key
+ */
+const zoomMeetingExists = async (meetingId, accountId) => {
+  try {
+    const account = getAccountById(accountId) || getAccountById('account_2') || getAccountById('account_1');
+    if (!account) return false;
+    const zoomToken = await getZoomOAuthToken(account);
+    await axios.get(`https://api.zoom.us/v2/meetings/${meetingId}`, {
+      headers: { Authorization: `Bearer ${zoomToken}` },
+      timeout: 15000,
+    });
+    return true;
+  } catch (error) {
+    if (error.response?.status === 404) return false;
+    console.warn('zoomMeetingExists check failed:', error.response?.data || error.message);
+    // Network/auth blip — treat as existing to avoid accidental recreate storms
+    return true;
+  }
+};
+
+/**
  * Clears local class records for Zoom meetings that were force-ended as conflicts.
  * @param {Array<string|number>} endedMeetingIds - Meeting IDs ended on Zoom
  * @param {string} keepClassId - Class that should keep its meeting pointer
@@ -1048,33 +1073,34 @@ const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) =>
     const classDoc = await Class.findById(classId);
     if (!classDoc) return res.status(404).json({ success: false, error: "Class not found" });
 
-    // Reuse an already-started meeting instead of creating a second host session
+    // Reuse only if Zoom still has this meeting (SDK "End and Start" often deletes it)
     if (classDoc.meeting_number && String(classDoc.meeting_number).trim() !== '') {
-      const accountUsed = classDoc.zoomAccountUsed || 'account_1';
-      try {
-        const conflictResult = await endOtherLiveMeetingsForAccount(
+      const accountUsed = classDoc.zoomAccountUsed || 'account_2';
+      const stillExists = await zoomMeetingExists(classDoc.meeting_number, accountUsed);
+      if (stillExists) {
+        return res.json({
+          success: true,
+          meetingNumber: classDoc.meeting_number,
+          password: classDoc.password,
+          joinUrl: classDoc.zoomJoinUrl || null,
           accountUsed,
-          classDoc.meeting_number
-        );
-        await clearEndedConflictMeetingsFromDb(conflictResult.ended, classDoc._id);
-      } catch (conflictError) {
-        console.warn('Could not clear conflicting live meetings on restart:', conflictError.message);
+          reused: true,
+        });
       }
-
-      return res.json({
-        success: true,
-        meetingNumber: classDoc.meeting_number,
-        password: classDoc.password,
-        joinUrl: classDoc.zoomJoinUrl || null,
-        accountUsed,
-        reused: true,
-      });
+      console.warn(
+        `Stored meeting ${classDoc.meeting_number} no longer exists on Zoom — creating a new one`
+      );
+      classDoc.meeting_number = '';
+      classDoc.zoomJoinUrl = undefined;
+      classDoc.zoomStartUrl = undefined;
+      classDoc.status = false;
+      await classDoc.save();
     }
 
     // Use centralized Zoom service with multiple account support
     const meetingData = {
       topic: classDoc.title || "Class Meeting",
-      startTime: new Date(classDoc.schedule).toISOString(),
+      startTime: new Date().toISOString(),
       duration: classDoc.duration || 60,
       timezone: 'Asia/Kolkata',
       password: classDoc.password || "",
@@ -1083,7 +1109,7 @@ const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) =>
         host_video: true,
         participant_video: true,
         join_before_host: true,
-        approval_type: 1,
+        approval_type: 2,
         audio: 'both',
         auto_recording: 'local',
         waiting_room: false,
@@ -1093,22 +1119,11 @@ const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) =>
     // Create Zoom meeting using the centralized service
     const result = await createZoomMeeting(meetingData);
 
-    // Clear any other live host sessions on this Zoom user before CRM host join
-    try {
-      const conflictResult = await endOtherLiveMeetingsForAccount(
-        result.accountUsed,
-        result.meetingId
-      );
-      await clearEndedConflictMeetingsFromDb(conflictResult.ended, classDoc._id);
-    } catch (conflictError) {
-      console.warn('Could not clear conflicting live meetings after create:', conflictError.message);
-    }
-
     // Save meeting info to class
     classDoc.meeting_number = result.meetingId;
     classDoc.password = result.password;
     classDoc.status = true;
-    classDoc.zoomAccountUsed = result.accountUsed; // Track which account was used
+    classDoc.zoomAccountUsed = result.accountUsed;
     classDoc.zoomJoinUrl = result.joinUrl || classDoc.zoomJoinUrl;
     await classDoc.save();
 

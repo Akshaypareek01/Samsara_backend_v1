@@ -840,11 +840,7 @@ export const getMeetingDetails = async (req, res) => {
  */
 export const serveJoinMeetingPage = async (req, res) => {
     try {
-        // Set required headers for SharedArrayBuffer (gallery view support)
-        // These headers enable SharedArrayBuffer which is required for gallery view
-        res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-        
+        // Do NOT set COEP/COOP — require-corp breaks Zoom SDK CDN loads in mobile WebViews.
         const publicPath = path.join(__dirname, '../../public/join-meeting.html');
         res.sendFile(publicPath);
     } catch (error) {

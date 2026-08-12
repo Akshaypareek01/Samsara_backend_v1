@@ -526,30 +526,74 @@
                             error: function(res) {
                                 joinCallbacksFired = true;
                                 updateDebugStatus('❌ JOIN ERROR - Check console');
-                                console.error('❌❌❌ ERROR CALLBACK FIRED!');
                                 console.error('❌❌❌ ERROR joining meeting:', res);
-                                console.error('❌ Error details:', JSON.stringify(res, null, 2));
                                 
                                 let errorMessage = res.reason || res.errorMessage || res.error || 'Unknown error';
                                 const errorText = String(errorMessage).toLowerCase();
-                                
-                                // Host-conflict: do NOT auto-retry/reload (that caused infinite loading)
-                                if (
+                                const isHostConflict =
                                     res.errorCode === 3000 ||
                                     errorText.includes('other meetings in progress') ||
                                     errorText.includes('hosting another meeting') ||
-                                    errorText.includes('cannot not host another')
-                                ) {
+                                    errorText.includes('cannot not host another');
+
+                                // Host conflict on Basic Zoom: retry once as participant (no page reload)
+                                if (role === 1 && isHostConflict && !window.__zoomParticipantFallbackTried) {
+                                    window.__zoomParticipantFallbackTried = true;
+                                    console.warn('⚠️ Host conflict — retrying as participant (role=0)');
+                                    const statusEl2 = document.getElementById('loading-status');
+                                    if (statusEl2) statusEl2.textContent = 'Retrying as participant...';
+
+                                    fetch(`${baseUrl}/v1/zoom/generateSDKSignature`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            meetingNumber: meetingNumber,
+                                            role: 0,
+                                            accountId: accountId,
+                                            classId: classId,
+                                            sessionId: sessionId,
+                                            eventId: eventId,
+                                        }),
+                                    })
+                                        .then((r) => r.json())
+                                        .then((fallbackJson) => {
+                                            if (fallbackJson.status !== 'success') {
+                                                throw new Error(fallbackJson.message || 'Fallback signature failed');
+                                            }
+                                            const fb = fallbackJson.data;
+                                            joinCallbacksFired = false;
+                                            ZoomMtg.join({
+                                                meetingNumber: meetingNumber,
+                                                userName: userName || 'Participant',
+                                                signature: fb.signature,
+                                                sdkKey: fb.sdkKey,
+                                                userEmail: userEmail || joinEmail || '',
+                                                passWord: password,
+                                                success: meetingConfig.success,
+                                                error: function (err2) {
+                                                    joinCallbacksFired = true;
+                                                    showError(
+                                                        'Failed to join meeting',
+                                                        err2.reason || err2.errorMessage || 'Participant join also failed. Start the class again, then retry.'
+                                                    );
+                                                },
+                                            });
+                                        })
+                                        .catch((fallbackError) => {
+                                            showError('Failed to join meeting', fallbackError.message);
+                                        });
+                                    return;
+                                }
+
+                                if (isHostConflict) {
                                     showHostConflictHelp();
                                     return;
                                 }
 
-                                // Handle specific Zoom errors
                                 if (res.errorCode === 1 || errorText.includes('recaptcha') || errorText.includes('limit')) {
-                                    errorMessage = 'Zoom has temporarily limited access. Please wait a few minutes and try again, or verify reCAPTCHA at https://zoom.us';
+                                    errorMessage = 'Zoom has temporarily limited access. Please wait a few minutes and try again.';
                                 }
                                 
-                                console.error('❌ Showing error to user:', errorMessage);
                                 showError('Failed to join meeting', errorMessage);
                             }
                         };
