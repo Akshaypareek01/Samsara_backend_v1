@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import auth from '../../middlewares/auth.js';
+import adminOnly from '../../middlewares/admin.middleware.js';
 import validate from '../../middlewares/validate.js';
 import * as marketingValidation from '../../validations/marketing.validation.js';
 import * as marketingController from '../../controllers/marketing.controller.js';
@@ -11,7 +12,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-router.use(auth());
+router.use(auth(), adminOnly());
 
 // Contacts
 router.post('/contacts', validate(marketingValidation.createContact), marketingController.createContact);

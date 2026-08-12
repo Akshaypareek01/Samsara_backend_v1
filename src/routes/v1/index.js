@@ -300,13 +300,9 @@ const devRoutes = [
   },
 ];
 
-console.log('🔧 Registering routes:');
 defaultRoutes.forEach((route) => {
-  console.log(`  - ${route.path}`);
   router.use(route.path, route.route);
 });
-
-console.log('✅ All routes registered!');
 
 // ❌ REMOVED DUPLICATE REGISTRATION - was causing conflicts
 

@@ -5,6 +5,7 @@ import { errorConverter, errorHandler } from '../../../src/middlewares/error.js'
 import ApiError from '../../../src/utils/ApiError.js';
 import config from '../../../src/config/config.js';
 import logger from '../../../src/config/logger.js';
+import { jest } from '@jest/globals';
 
 describe('Error middlewares', () => {
   describe('Error converter', () => {

@@ -5,16 +5,16 @@ const referralCodeField = Joi.string().trim().max(16).optional().allow('', null)
 
 const register = {
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
+    email: Joi.string().trim().lowercase().required().email(),
     password: Joi.string().required().custom(password),
-    name: Joi.string().required(),
+    name: Joi.string().trim().required().max(60),
     referralCode: referralCodeField,
   }),
 };
 
 const login = {
   body: Joi.object().keys({
-    email: Joi.string().required(),
+    email: Joi.string().trim().lowercase().required().email(),
     password: Joi.string().required(),
   }),
 };
@@ -22,9 +22,9 @@ const login = {
 // OTP-based registration validation for users (Personal/Corporate)
 const sendRegistrationOTP = {
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    name: Joi.string().allow(null).max(20),
-    mobile: Joi.string().optional().min(10),
+    email: Joi.string().trim().lowercase().required().email(),
+    name: Joi.string().trim().allow(null, '').max(60),
+    mobile: Joi.string().trim().optional().pattern(/^[0-9]{10,15}$/).messages({ 'string.pattern.base': 'mobile must be 10-15 digits' }),
     role: Joi.string().valid('user', 'teacher').required(),
     // For users: category is required
     userCategory: Joi.when('role', {
@@ -65,13 +65,13 @@ const sendRegistrationOTP = {
 
 const verifyRegistrationOTP = {
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
+    email: Joi.string().trim().lowercase().required().email(),
     otp: Joi.string()
       .required()
       .length(4)
       .pattern(/^\d{4}$/),
-    name: Joi.string().allow(null).max(20),
-    mobile: Joi.string().optional().min(10),
+    name: Joi.string().trim().allow(null, '').max(60),
+    mobile: Joi.string().trim().optional().pattern(/^[0-9]{10,15}$/).messages({ 'string.pattern.base': 'mobile must be 10-15 digits' }),
     role: Joi.string().valid('user', 'teacher').required(),
     // For users: category is required
     userCategory: Joi.when('role', {
@@ -113,13 +113,13 @@ const verifyRegistrationOTP = {
 // OTP-based login validation
 const sendLoginOTP = {
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
+    email: Joi.string().trim().lowercase().required().email(),
   }),
 };
 
 const verifyLoginOTP = {
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
+    email: Joi.string().trim().lowercase().required().email(),
     otp: Joi.string()
       .required()
       .length(4)

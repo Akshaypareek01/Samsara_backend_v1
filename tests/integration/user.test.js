@@ -1,6 +1,6 @@
 import request from 'supertest';
 import httpStatus from 'http-status';
-import { faker } from '@faker-js/faker';
+import faker from 'faker';
 import app from '../../src/app.js';
 import setupTestDB from '../utils/setupTestDB.js';
 import { User } from '../../src/models/user.model.js';

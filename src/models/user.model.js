@@ -10,12 +10,17 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, 'A user must have a name'],
-      maxlength: [20, 'Username must be less than or equal to 20 characters.'],
+      trim: true,
+      maxlength: [60, 'Name must be 60 characters or fewer.'],
     },
     email: {
       type: String,
       required: [true, 'Please provide your email'],
       unique: true,
+      // Case-sensitive emails let Foo@x.com and foo@x.com become two accounts
+      // with separate memberships and health data.
+      lowercase: true,
+      trim: true,
       validate: [validator.isEmail, 'Please provide a valid email'],
     },
     gender: {
@@ -78,8 +83,28 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      // required: [false, 'Please provide a password'],
-      // minlength: 8
+      // Stripped by the toJSON plugin. Without this the bcrypt hash was
+      // returned by every endpoint that serialises a user — /users/profile,
+      // /users/:userId, the admin list, and any populated `teacher`/`students`.
+      // Admin already had it; Users did not.
+      private: true,
+      // Defence in depth. Every entry point already applies the same rule via
+      // Joi's `custom(password)`, but the model must not be the weak link if a
+      // script or new code path sets a password directly.
+      // Only applies to plaintext on the way in — the pre-save hash runs after
+      // validation, and bcrypt output satisfies both rules anyway.
+      minlength: [8, 'Password must be at least 8 characters'],
+      validate: {
+        validator(value) {
+          if (value == null || value === '') return true; // OTP-only accounts
+          return /\d/.test(value) && /[a-zA-Z]/.test(value);
+        },
+        message: 'Password must contain at least one letter and one number',
+      },
+    },
+    passwordResetToken: {
+      type: String,
+      private: true,
     },
     mobile: {
       type: String,
@@ -174,7 +199,6 @@ const userSchema = new mongoose.Schema(
       },
     ],
     passwordChangedAt: Date,
-    passwordResetToken: String,
     passwordResetExpires: Date,
     status: {
       type: Boolean,
@@ -354,7 +378,8 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
  * @returns {Promise<boolean>}
  */
 userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
-  const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
+  const normalized = String(email || '').trim().toLowerCase();
+  const user = await this.findOne({ email: normalized, _id: { $ne: excludeUserId } });
   return !!user;
 };
 
@@ -383,5 +408,9 @@ userSchema.methods.canReceiveNotification = async function (notificationType) {
   const preferences = await this.getNotificationPreferences();
   return preferences.canReceiveNotification(notificationType);
 };
+
+// perf indexes — admin list filters and teacher lookups
+userSchema.index({ role: 1, userCategory: 1 });
+userSchema.index({ companyId: 1 });
 
 export const User = mongoose.model('Users', userSchema);

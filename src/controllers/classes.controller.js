@@ -151,7 +151,7 @@ const getTeacherData = (teacher) => {
 export const getAllTeachers = async (req, res) => {
   try {
     const teachers = await User.find({ role: 'teacher' })
-      .select('name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .select('name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .exec();
       
     const teachersWithImages = teachers.map(teacher => {
@@ -206,7 +206,7 @@ export const createClass = async (req, res) => {
 
     const newClass = await Class.create(req.body);
     const populatedClass = await Class.findById(newClass._id)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
       
@@ -253,7 +253,7 @@ export const createClass = async (req, res) => {
 export const getAllClasses = async (req, res) => {
   try {
     const classes = await Class.find()
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
       
@@ -276,7 +276,7 @@ export const getAllUpcomingClasses = async (req, res) => {
     
     // Get all classes (we'll filter them in JavaScript to handle recurring schedules)
     const allClasses = await Class.find()
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
 
@@ -321,7 +321,7 @@ export const getUpcomingClassesByCategory = async (req, res) => {
     const allClasses = await Class.find({ 
       classCategory: classCategory 
     })
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
 
@@ -356,7 +356,7 @@ export const getClassById = async (req, res) => {
   const { classId } = req.params;
   try {
     const foundClass = await Class.findById(classId)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
     
@@ -401,7 +401,7 @@ export const updateClass = async (req, res) => {
     }
 
     const updatedClass = await Class.findByIdAndUpdate(classId, updatedData, { new: true })
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
       
@@ -545,24 +545,36 @@ export const addStudentToClass = async (req, res) => {
     // Validate that the student exists and has role 'user'
     await validateStudent(studentId);
 
-    // Check if student is already in the class
-    if (foundClass.students.includes(studentId)) {
-      return res.json({ success: false, message: "Student already enrolled" });
+    // Atomic claim: prevents both double-enrolment and overbooking when
+    // several students book the last seat at the same moment.
+    const guard = { _id: classId, students: { $ne: studentId } };
+    if (Number.isFinite(foundClass.maxCapacity) && foundClass.maxCapacity > 0) {
+      guard.$expr = { $lt: [{ $size: '$students' }, foundClass.maxCapacity] };
     }
 
-    // Add student to class
-    foundClass.students.push(studentId);
-    await foundClass.save();
+    const claimed = await Class.findOneAndUpdate(
+      guard,
+      { $addToSet: { students: studentId } },
+      { new: true }
+    );
+
+    if (!claimed) {
+      const alreadyIn = foundClass.students.some((s) => String(s?._id ?? s) === String(studentId));
+      return res.status(409).json({
+        success: false,
+        message: alreadyIn ? 'Student already enrolled' : 'Class is full',
+        code: alreadyIn ? 'ALREADY_ENROLLED' : 'CLASS_FULL',
+      });
+    }
 
     console.log('Student added to class:', {
       classId,
       studentId,
-      totalStudentsAfter: foundClass.students.length,
-      studentIds: foundClass.students.map(s => s.toString())
+      totalStudentsAfter: claimed.students.length,
     });
 
     const updatedClass = await Class.findById(classId)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
 
@@ -649,7 +661,7 @@ export const getStudentClasses = async (req, res) => {
 
     // Find all classes where studentId exists in the students array
     const classes = await Class.find({ students: studentId })
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .exec();
 
     const classesWithTeacherData = classes.map(classItem => {
@@ -678,7 +690,7 @@ export const getStudentUpcomingClasses = async (req, res) => {
     const allClasses = await Class.find({ 
       students: studentId
     })
-    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
     .exec();
 
     // Filter classes that are upcoming (handles both schedule date and recurring schedules)
@@ -755,7 +767,7 @@ export const assignTeacherToClass = async (req, res) => {
       { $set: { teacher: teacherId } },
       { new: true }
     )
-    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+    .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
     .populate('students', 'name email')
     .exec();
     
@@ -780,7 +792,7 @@ export const removeStudentFromClass = async (req, res) => {
         { $pull: { students: studentId } },
         { new: true }
       )
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
       
@@ -863,7 +875,7 @@ export const removeStudentFromClass = async (req, res) => {
         { $set: { recordingPath: recordingPath } },
         { new: true }
       )
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
       

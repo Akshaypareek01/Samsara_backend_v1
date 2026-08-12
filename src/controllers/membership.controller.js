@@ -126,7 +126,7 @@ const createMembershipController = catchAsync(async (req, res) => {
 const updateMembershipController = catchAsync(async (req, res) => {
   const { membershipId } = req.params;
 
-  const membership = await updateMembership(membershipId, req.body);
+  const membership = await updateMembership(membershipId, req.body, req.user);
 
   res.send({
     success: true,
@@ -142,7 +142,7 @@ const cancelMembershipController = catchAsync(async (req, res) => {
   const { membershipId } = req.params;
   const { reason } = req.body;
 
-  const membership = await cancelMembership(membershipId, reason);
+  const membership = await cancelMembership(membershipId, reason, req.user);
 
   res.send({
     success: true,

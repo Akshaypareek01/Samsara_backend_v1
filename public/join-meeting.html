@@ -326,6 +326,9 @@
                 const classId = urlParams.get('classId') || null;
                 const sessionId = urlParams.get('sessionId') || null;
                 const eventId = urlParams.get('eventId') || null;
+                // Passed by the app so the signature endpoint can verify this
+                // caller is the assigned teacher before issuing a host token.
+                const authToken = urlParams.get('authToken') || '';
                 // Get base URL - use current origin (handles any port)
                 const apiBaseUrl = urlParams.get('apiBaseUrl') || window.location.origin;
 
@@ -391,6 +394,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
                     },
                     body: JSON.stringify({
                         meetingNumber: meetingNumber,

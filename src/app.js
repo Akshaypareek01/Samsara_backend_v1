@@ -95,7 +95,18 @@ app.use(helmet({
 }));
 
 // parse json request body
-app.use(express.json());
+// `verify` stashes the raw bytes so webhook HMAC signatures (WhatsApp/Meta)
+// can be checked against exactly what was sent.
+app.use(
+  express.json({
+    limit: '1mb',
+    verify: (req, res, buf) => {
+      if (req.originalUrl && req.originalUrl.startsWith('/v1/whatsapp/webhook')) {
+        req.rawBody = buf;
+      }
+    },
+  })
+);
 
 // parse urlencoded request body
 app.use(express.urlencoded({ extended: true }));
@@ -107,9 +118,27 @@ app.use(mongoSanitize());
 // gzip compression
 app.use(compression());
 
-// enable cors
-app.use(cors());
-app.options('*', cors());
+// enable cors — explicit allowlist rather than reflecting any origin.
+// Native apps ignore CORS entirely, so this only constrains browser clients.
+const allowedOrigins = [
+  config.frontend.url,
+  config.frontend.consumerUrl,
+  config.wellnessFeedback.crmPublicOrigin,
+  ...(config.env !== 'production' ? ['http://localhost:3000', 'http://localhost:5173'] : []),
+].filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    // No Origin header = native app, curl, or server-to-server — always allow.
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // jwt authentication
 app.use(passport.initialize());

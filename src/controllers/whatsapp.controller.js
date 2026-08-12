@@ -1,6 +1,39 @@
+import crypto from 'crypto';
 import catchAsync from '../utils/catchAsync.js';
 import { whatsappService } from '../services/whatsapp.service.js';
 import config from '../config/config.js';
+import logger from '../config/logger.js';
+
+/**
+ * Verify Meta's X-Hub-Signature-256 HMAC over the raw request body.
+ *
+ * Strict once WHATSAPP_APP_SECRET is configured. Without it we can only reject
+ * requests that present a signature we cannot match — set the env var to make
+ * this fail closed.
+ *
+ * @param {import('express').Request} req
+ * @returns {boolean} true when the request may be processed
+ */
+const hasValidWebhookSignature = (req) => {
+  const appSecret = process.env.WHATSAPP_APP_SECRET;
+  const header = req.get('x-hub-signature-256');
+
+  if (!appSecret) {
+    logger.warn(
+      'WHATSAPP_APP_SECRET is not set — inbound WhatsApp webhooks are NOT authenticated. Set it to enable signature verification.'
+    );
+    return true;
+  }
+
+  if (!header || !req.rawBody) {
+    return false;
+  }
+
+  const expected = `sha256=${crypto.createHmac('sha256', appSecret).update(req.rawBody).digest('hex')}`;
+  const a = Buffer.from(header);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
 
 /**
  * Webhook verification for WhatsApp
@@ -54,10 +87,12 @@ const verifyWebhook = catchAsync(async (req, res) => {
  * POST /v1/whatsapp/webhook
  */
 const handleIncomingMessage = catchAsync(async (req, res) => {
-  const body = req.body;
+  if (!hasValidWebhookSignature(req)) {
+    logger.warn('WhatsApp webhook rejected: invalid or missing X-Hub-Signature-256');
+    return res.status(401).json({ status: 'error', message: 'Invalid signature' });
+  }
 
-  // Verify the webhook signature if configured
-  console.log('Incoming webhook:', JSON.stringify(body, null, 2));
+  const body = req.body;
 
   // Check if this is a valid WhatsApp webhook
   if (body.object === 'whatsapp_business_account') {

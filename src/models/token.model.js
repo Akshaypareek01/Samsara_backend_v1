@@ -39,6 +39,13 @@ tokenSchema.plugin(toJSON);
 /**
  * @typedef Token
  */
+// Refresh/reset lookups filter on these; without indexes every logout and
+// refresh is a collection scan over long JWT strings.
+tokenSchema.index({ token: 1 });
+tokenSchema.index({ user: 1, type: 1 });
+// Self-clean expired rows so the collection stops growing without bound.
+tokenSchema.index({ expires: 1 }, { expireAfterSeconds: 0 });
+
 const Token = mongoose.model('Token', tokenSchema);
 
 export default Token;

@@ -3,7 +3,7 @@ import validate from '../../middlewares/validate.js';
 import * as authValidation from '../../validations/auth.validation.js';
 import * as authController from '../../controllers/auth.controller.js';
 import auth from '../../middlewares/auth.js';
-import { sendOtpLimiter, sendOtpIpLimiter } from '../../middlewares/rateLimiter.js';
+import { sendOtpLimiter, sendOtpIpLimiter, verifyOtpLimiter } from '../../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
@@ -21,6 +21,7 @@ router.post(
 );
 router.post(
   '/verify-registration-otp',
+  verifyOtpLimiter,
   validate(authValidation.verifyRegistrationOTP),
   authController.verifyRegistrationOTPController
 );
@@ -33,7 +34,7 @@ router.post(
   validate(authValidation.sendLoginOTP),
   authController.sendLoginOTPController
 );
-router.post('/verify-login-otp', validate(authValidation.verifyLoginOTP), authController.verifyLoginOTPController);
+router.post('/verify-login-otp', verifyOtpLimiter, validate(authValidation.verifyLoginOTP), authController.verifyLoginOTPController);
 
 // Other auth endpoints
 router.post('/logout', validate(authValidation.logout), authController.logout);

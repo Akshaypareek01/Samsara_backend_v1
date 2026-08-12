@@ -97,7 +97,7 @@ export const getEventById = async (req, res) => {
 export const getAllEvents = async (req, res) => {
     try {
         const events = await Event.find()
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
             .populate('students', 'name email')
             .exec();
             
@@ -122,7 +122,7 @@ export const getAllEventsUpcoming = async (req, res) => {
         const events = await Event.find({ 
             startDate: { $gte: currentDate } 
         })
-        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
         .populate('students', 'name email')
         .exec();
 
@@ -159,7 +159,7 @@ export const updateEvent = async (req, res) => {
         }
 
         const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true })
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
             .populate('students', 'name email')
             .exec();
             
@@ -362,7 +362,7 @@ export const isUserEnrolledInEvent = async (req, res) => {
         const { eventId, userId } = req.body;
 
         const event = await Event.findById(eventId)
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
             .populate('students', 'name email')
             .exec();
             
@@ -370,17 +370,38 @@ export const isUserEnrolledInEvent = async (req, res) => {
             return res.status(404).json({ message: 'Event not found' });
         }
 
-        if (!event.students.includes(userId)) {
-            event.students.push(userId);
-            await event.save();
-            
-            const eventData = event.toObject();
-            eventData.teacher = getTeacherData(eventData.teacher);
-            
-            return res.status(200).json({ message: 'User registered successfully', event: eventData });
+        // Atomic claim: `students: { $ne: userId }` makes double-registration
+        // impossible, and the size guard prevents overbooking under concurrency.
+        // A read-modify-write here loses updates when a popular event opens.
+        const seatCap = Number.parseInt(event.availableseats, 10);
+        const guard = { _id: eventId, students: { $ne: userId } };
+        if (Number.isFinite(seatCap) && seatCap > 0) {
+            guard.$expr = { $lt: [{ $size: '$students' }, seatCap] };
         }
-        
-        res.status(400).json({ message: 'User already registered' });
+
+        const claimed = await Event.findOneAndUpdate(
+            guard,
+            { $addToSet: { students: userId } },
+            { new: true }
+        );
+
+        if (!claimed) {
+            const alreadyIn = event.students.some((s) => String(s?._id ?? s) === String(userId));
+            return res.status(409).json({
+                message: alreadyIn ? 'User already registered' : 'Event is full',
+                code: alreadyIn ? 'ALREADY_REGISTERED' : 'EVENT_FULL',
+            });
+        }
+
+        const populated = await Event.findById(eventId)
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
+            .populate('students', 'name email')
+            .exec();
+
+        const eventData = populated.toObject();
+        eventData.teacher = getTeacherData(eventData.teacher);
+
+        return res.status(200).json({ message: 'User registered successfully', event: eventData });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
     }
@@ -408,7 +429,7 @@ export const getUserRegisteredEvents = async (req, res) => {
         const { userId } = req.params;
 
         const events = await Event.find({ students: userId })
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
             .populate('students', 'name email')
             .exec();
             
@@ -436,7 +457,7 @@ export const getUserRegisteredEventsUpcoming = async (req, res) => {
             students: userId, 
             startDate: { $gte: currentDate } // Ensures only today's and future events are included
         })
-        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
         .populate('students', 'name email')
         .exec();
 
@@ -458,7 +479,7 @@ export const getEventsByTeacher = async (req, res) => {
         const { teacherId } = req.params;
 
         const events = await Event.find({ teacher: teacherId })
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
             .populate('students', 'name email')
             .exec();
             

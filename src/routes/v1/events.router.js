@@ -17,11 +17,16 @@ import {
   startEventMeeting,
   isUserEnrolledInEvent,
 } from '../../controllers/events.controller.js';
+import auth from '../../middlewares/auth.js';
+import validate from '../../middlewares/validate.js';
+import { eventValidation } from '../../validations/eventClass.validation.js';
+import adminOnly from '../../middlewares/admin.middleware.js';
+import { selfOrAdmin } from '../../middlewares/ownership.js';
 
 const eventsRouter = express.Router();
 
 // Create a new event
-eventsRouter.post('/', createEvent);
+eventsRouter.post('/', auth(), validate(eventValidation.createEvent), createEvent);
 
 // Get event by ID
 eventsRouter.get('/upcoming', getAllEventsUpcoming);
@@ -30,29 +35,29 @@ eventsRouter.get('/:id', getEventById);
 // Get all events
 eventsRouter.get('/', getAllEvents);
 
-eventsRouter.post('/add-pre-data', addPredefinedEvents);
+eventsRouter.post('/add-pre-data', auth(), adminOnly(), addPredefinedEvents);
 // Update event
-eventsRouter.put('/:id', updateEvent);
+eventsRouter.put('/:id', auth(), validate(eventValidation.updateEvent), updateEvent);
 
 // Delete event
-eventsRouter.delete('/:id', deleteEvent);
+eventsRouter.delete('/:id', auth(), validate(eventValidation.eventIdParam), deleteEvent);
 
-eventsRouter.post('/end_meeting/:classId', EndEventMeeting);
+eventsRouter.post('/end_meeting/:classId', auth(), EndEventMeeting);
 
-eventsRouter.post('/start_meeting/:eventId', startEventMeeting);
+eventsRouter.post('/start_meeting/:eventId', auth(), startEventMeeting);
 
 // Check if user is enrolled in an event
 eventsRouter.get('/enrollment/:eventId/:userId', isUserEnrolledInEvent);
 
-eventsRouter.post('/register', registerUserToEvent);
+eventsRouter.post('/register', auth(), validate(eventValidation.registerUserToEvent), registerUserToEvent);
 
 // Route to get all students for a specific event
-eventsRouter.get('/students/:eventId', getStudentsForEvent);
+eventsRouter.get('/students/:eventId', auth(), getStudentsForEvent);
 
 // Route to get all events a user is registered in
-eventsRouter.get('/user-events/:userId', getUserRegisteredEvents);
+eventsRouter.get('/user-events/:userId', auth(), selfOrAdmin(), getUserRegisteredEvents);
 
-eventsRouter.get('/user-events/:userId/upcoming', getUserRegisteredEventsUpcoming);
+eventsRouter.get('/user-events/:userId/upcoming', auth(), selfOrAdmin(), getUserRegisteredEventsUpcoming);
 
 // Route to get all events by teacher ID
 eventsRouter.get('/teacher/:teacherId', getEventsByTeacher);

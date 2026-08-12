@@ -1,20 +1,19 @@
+import crypto from 'crypto';
 import httpStatus from 'http-status';
 import { OTP } from '../models/index.js';
 import { sendEmail } from './email.service.js';
 import { buildOtpEmailContent, COMPANY_SUPPORT_EMAIL } from '../utils/emailTemplates.js';
 import ApiError from '../utils/ApiError.js';
 
+/** Failed attempts allowed against a single OTP before it is burned. */
+const MAX_OTP_ATTEMPTS = 5;
+
 /**
- * Generate a 4-digit OTP
- * @param {string} email - Email address (for test purposes)
+ * Generate a 4-digit OTP using a cryptographically secure RNG.
  * @returns {string}
  */
-const generateOTP = (email) => {
-  // Always return "1234" for test email
-  if (email === 'test@gmail.com') {
-    return '1234';
-  }
-  return Math.floor(1000 + Math.random() * 9000).toString();
+const generateOTP = () => {
+  return String(crypto.randomInt(1000, 10000));
 };
 
 /**
@@ -24,14 +23,15 @@ const generateOTP = (email) => {
  * @returns {Promise<Object>}
  */
 const createOTP = async (email, type) => {
+  const normalizedEmail = String(email || '').trim().toLowerCase();
   // Delete any existing OTP for this email and type
-  await OTP.deleteMany({ email, type });
+  await OTP.deleteMany({ email: normalizedEmail, type });
 
-  const otp = generateOTP(email);
+  const otp = generateOTP();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
   const otpDoc = await OTP.create({
-    email,
+    email: normalizedEmail,
     otp,
     type,
     expiresAt,
@@ -70,23 +70,35 @@ const sendOTPEmail = async (email, otp, type, options = {}) => {
  * @returns {Promise<boolean>}
  */
 const verifyOTP = async (email, otp, type) => {
-  const otpDoc = await OTP.findOne({
-    email,
-    otp,
-    type,
-    isUsed: false,
-    expiresAt: { $gt: new Date() },
-  });
+  const normalizedEmail = String(email || '').trim().toLowerCase();
 
-  if (!otpDoc) {
-    return false;
+  // Atomically claim the OTP. Matching on isUsed:false in the same operation
+  // means two concurrent requests can never both succeed with one code.
+  const claimed = await OTP.findOneAndUpdate(
+    {
+      email: normalizedEmail,
+      otp,
+      type,
+      isUsed: false,
+      attempts: { $lt: MAX_OTP_ATTEMPTS },
+      expiresAt: { $gt: new Date() },
+    },
+    { $set: { isUsed: true } },
+    { new: true }
+  );
+
+  if (claimed) {
+    return true;
   }
 
-  // Mark OTP as used
-  otpDoc.isUsed = true;
-  await otpDoc.save();
+  // Wrong or already-burned code: count the attempt against the live OTP for
+  // this email so guessing is bounded rather than free.
+  await OTP.updateOne(
+    { email: normalizedEmail, type, isUsed: false, expiresAt: { $gt: new Date() } },
+    { $inc: { attempts: 1 } }
+  );
 
-  return true;
+  return false;
 };
 
 /**
@@ -134,6 +146,7 @@ const verifyLoginOTP = async (email, otp) => {
 };
 
 export {
+  MAX_OTP_ATTEMPTS,
   generateOTP,
   createOTP,
   sendOTPEmail,

@@ -7,8 +7,12 @@ import ApiError from '../utils/ApiError.js';
 const errorConverter = (err, req, res, next) => {
   let error = err;
   if (!(error instanceof ApiError)) {
-    const statusCode =
-      error.statusCode || error instanceof mongoose.Error ? httpStatus.BAD_REQUEST : httpStatus.INTERNAL_SERVER_ERROR;
+    // Precedence matters: keep the error's own status when it has one,
+    // otherwise map mongoose validation/cast errors to 400 and the rest to 500.
+    let statusCode = error.statusCode;
+    if (!statusCode) {
+      statusCode = error instanceof mongoose.Error ? httpStatus.BAD_REQUEST : httpStatus.INTERNAL_SERVER_ERROR;
+    }
     const message = error.message || httpStatus[statusCode];
     error = new ApiError(statusCode, message, false, err.stack);
   }
@@ -31,9 +35,11 @@ const errorHandler = (err, req, res, next) => {
     ...(config.env === 'development' && { stack: err.stack }),
   };
 
-  if (config.env === 'development') {
-    logger.error(err);
-  }
+  // Log in every environment — production had no error visibility at all.
+  // The stack stays out of the response body (see `response` above).
+  logger.error(
+    `${req.method} ${req.originalUrl} ${statusCode} - ${err.message}${err.stack ? `\n${err.stack}` : ''}`
+  );
 
   res.status(statusCode).send(response);
 };

@@ -96,6 +96,12 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// perf indexes — same access patterns as classes
+eventSchema.index({ startDate: 1 });
+eventSchema.index({ teacher: 1, startDate: -1 });
+eventSchema.index({ students: 1 });
+eventSchema.index({ meeting_number: 1 });
+
 const Event = mongoose.model('Event', eventSchema);
 
 export default Event;

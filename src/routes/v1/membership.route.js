@@ -7,7 +7,6 @@ import {
   checkTrialPlanUsage,
   // assignTrialPlanController,
   // assignLifetimePlanController,
-  createMembershipController,
   updateMembershipController,
   cancelMembershipController,
   verifyIosReceiptController,
@@ -29,7 +28,11 @@ router.get('/history', auth(), getMembershipHistory);
 router.get('/trial-status', auth(), checkTrialPlanUsage);
 
 // Create new membership
-router.post('/', auth(), validate(membershipValidation.createMembership), createMembershipController);
+// REMOVED: POST /v1/memberships/ always threw a Mongoose ValidationError —
+// the Joi schema permits only planId/couponCode/autoRenewal/metadata while the
+// model requires planName, validityDays, endDate, amountPaid and originalAmount.
+// Verified unused by the app, CRM and web app. Memberships are created through
+// the payment, IAP and coupon flows.
 
 // Verify iOS receipt
 router.post('/verify-receipt', auth(), validate(membershipValidation.verifyIosReceipt), verifyIosReceiptController);

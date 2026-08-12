@@ -20,7 +20,12 @@ import {
   startSessionMeeting,
 } from '../../controllers/customSession.controller.js';
 
+import auth from '../../middlewares/auth.js';
+
 const CustomSessionRouter = express.Router();
+
+// Private 1-to-1 wellness sessions — never public.
+CustomSessionRouter.use(auth());
 
 // Routes
 CustomSessionRouter.get('/time-slots', getAllTimeSlots);

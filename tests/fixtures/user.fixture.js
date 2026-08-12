@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { faker } from '@faker-js/faker';
+import faker from 'faker';
 import { User } from '../../src/models/user.model.js';
 
 const password = 'password1';
@@ -13,6 +13,7 @@ const userOne = {
   email: faker.internet.email().toLowerCase(),
   password,
   role: 'user',
+  userCategory: 'Personal',
   isEmailVerified: false,
 };
 
@@ -22,6 +23,7 @@ const userTwo = {
   email: faker.internet.email().toLowerCase(),
   password,
   role: 'user',
+  userCategory: 'Personal',
   isEmailVerified: false,
 };
 

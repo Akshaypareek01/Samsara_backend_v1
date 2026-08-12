@@ -28,6 +28,10 @@ const loginUserWithEmailAndPassword = async (email, password) => {
 const sendLoginOTPForUser = async (email) => {
   const user = await getUserByEmail(email);
   if (!user) {
+    // NOTE (SAM-H-19): this 404 is an account-enumeration oracle, but the app
+    // depends on it — Pages/Login/Signin.jsx routes new users into onboarding
+    // from this error. Flattening the response here breaks signup, so the fix
+    // must ship with a coordinated app change (dedicated account-check step).
     throw new ApiError(httpStatus.NOT_FOUND, 'Account not found. Please register first.');
   }
 

@@ -24,6 +24,9 @@ class R2Service {
       Key: fileName,
       Body: fileBuffer,
       ContentType: mimeType,
+      // PDFs download rather than render, so a stored document can never act
+      // as a live page on the public bucket domain.
+      ...(mimeType === 'application/pdf' ? { ContentDisposition: 'attachment' } : {}),
       ACL: 'public-read',
     });
 

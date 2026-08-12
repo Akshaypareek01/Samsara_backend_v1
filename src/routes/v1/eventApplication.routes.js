@@ -9,7 +9,11 @@ import {
   updateEventApplication,
 } from '../../controllers/eventsapplication.Controller.js';
 
+import auth from '../../middlewares/auth.js';
+
 const EventApplicationRouter = express.Router();
+
+EventApplicationRouter.use(auth());
 
 // Create a new event application
 EventApplicationRouter.post('/apply', createEventApplication);

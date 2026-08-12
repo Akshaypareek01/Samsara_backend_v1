@@ -11,6 +11,8 @@ describe('User model', () => {
         email: faker.internet.email().toLowerCase(),
         password: 'password1',
         role: 'user',
+        // Required by the model whenever role === 'user'; the fixture predates it.
+        userCategory: 'Personal',
       };
     });
 
@@ -51,6 +53,8 @@ describe('User model', () => {
         email: faker.internet.email().toLowerCase(),
         password: 'password1',
         role: 'user',
+        // Required by the model whenever role === 'user'; the fixture predates it.
+        userCategory: 'Personal',
       };
       expect(new User(newUser).toJSON()).not.toHaveProperty('password');
     });

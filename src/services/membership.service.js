@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import axios from 'axios';
 import { Membership, MembershipPlan, User, CouponCode, Transaction } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
+import isAdminUser from '../utils/isAdminUser.js';
 import config from '../config/config.js';
 
 /** Internal trial plan — auto-assigned to new users with role `user`. */
@@ -69,9 +70,43 @@ const processAppleSubscription = async (userId, productId, receiptData) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'No transaction information found in Apple receipt');
   }
 
-  const latest = transactions.sort((a, b) => b.expires_date_ms - a.expires_date_ms)[0];
-  const expiryDate = new Date(Number(latest.expires_date_ms));
-  const startDate = new Date(Number(latest.purchase_date_ms));
+  // Bind the receipt to the plan the client asked for. Without this, a cheap
+  // purchase can be redeemed against an expensive plan by changing productId.
+  const matching = transactions.filter((t) => t.product_id === productId);
+  if (matching.length === 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Receipt does not contain a purchase for this product');
+  }
+
+  // Reject receipts issued to a different app.
+  const receiptBundleId = appleResponse.receipt?.bundle_id;
+  const expectedBundleId = process.env.APPLE_BUNDLE_ID;
+  if (expectedBundleId && receiptBundleId && receiptBundleId !== expectedBundleId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Receipt was issued for a different application');
+  }
+
+  const latest = matching.sort((a, b) => Number(b.expires_date_ms) - Number(a.expires_date_ms))[0];
+
+  const expiresMs = Number(latest.expires_date_ms);
+  const purchaseMs = Number(latest.purchase_date_ms);
+  if (!Number.isFinite(expiresMs) || !Number.isFinite(purchaseMs)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Apple receipt is missing purchase or expiry dates');
+  }
+
+  // One Apple purchase belongs to one account. Without this check a single
+  // receipt can be replayed from unlimited accounts.
+  const originalTransactionId = latest.original_transaction_id;
+  if (originalTransactionId) {
+    const claimedByOther = await Transaction.findOne({
+      'metadata.originalTransactionId': originalTransactionId,
+      userId: { $ne: userId },
+    });
+    if (claimedByOther) {
+      throw new ApiError(httpStatus.CONFLICT, 'This purchase is already linked to another account');
+    }
+  }
+
+  const expiryDate = new Date(expiresMs);
+  const startDate = new Date(purchaseMs);
   const iapPricing = plan.getIapReportingPricing();
 
   // 4. Create Transaction record
@@ -393,16 +428,37 @@ const createMembership = async (membershipData) => {
 };
 
 /**
+ * Throw unless the actor owns this membership (admins bypass).
+ *
+ * @param {{ userId: any }} membership
+ * @param {object|null} actor - req.user, or null for trusted internal calls.
+ * @returns {void}
+ */
+const assertMembershipOwner = (membership, actor) => {
+  if (!actor) return; // internal/system call
+  if (isAdminUser(actor)) return;
+  const owner = String(membership.userId?._id ?? membership.userId ?? '');
+  const callerId = String(actor.id ?? actor._id ?? '');
+  if (!owner || !callerId || owner !== callerId) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden');
+  }
+};
+
+/**
  * Update membership status
  * @param {ObjectId} membershipId - The membership ID
  * @param {Object} updateData - The update data
  * @returns {Promise<Membership>}
  */
-const updateMembership = async (membershipId, updateData) => {
-  const membership = await Membership.findByIdAndUpdate(membershipId, updateData, { new: true });
+const updateMembership = async (membershipId, updateData, actor = null) => {
+  const membership = await Membership.findById(membershipId);
   if (!membership) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Membership not found');
   }
+  assertMembershipOwner(membership, actor);
+
+  Object.assign(membership, updateData);
+  await membership.save();
   return membership;
 };
 
@@ -412,11 +468,12 @@ const updateMembership = async (membershipId, updateData) => {
  * @param {string} reason - Cancellation reason
  * @returns {Promise<Membership>}
  */
-const cancelMembership = async (membershipId, reason = null) => {
+const cancelMembership = async (membershipId, reason = null, actor = null) => {
   const membership = await Membership.findById(membershipId);
   if (!membership) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Membership not found');
   }
+  assertMembershipOwner(membership, actor);
 
   await membership.cancel(reason);
   return membership;

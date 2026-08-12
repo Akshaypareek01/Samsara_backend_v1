@@ -10,8 +10,8 @@ const envVarsSchema = Joi.object()
     PORT: Joi.number().default(3000),
     MONGODB_URL: Joi.string().required().description('MongoDB URL'),
     JWT_SECRET: Joi.string().required().description('JWT secret key'),
-    JWT_ACCESS_EXPIRATION_MINUTES: Joi.number().default(172800).description('minutes after which access tokens expire'),
-    JWT_REFRESH_EXPIRATION_DAYS: Joi.number().default(172800).description('days after which refresh tokens expire'),
+    JWT_ACCESS_EXPIRATION_MINUTES: Joi.number().default(60).description('minutes after which access tokens expire'),
+    JWT_REFRESH_EXPIRATION_DAYS: Joi.number().default(30).description('days after which refresh tokens expire'),
     JWT_RESET_PASSWORD_EXPIRATION_MINUTES: Joi.number()
       .default(10)
       .description('minutes after which reset password token expires'),
@@ -65,6 +65,31 @@ const { value: envVars, error } = envVarsSchema.prefs({ errors: { label: 'key' }
 
 if (error) {
   throw new Error(`Config validation error: ${error.message}`);
+}
+
+// A signing secret that is short or a known boilerplate default lets anyone
+// forge a token for any account, including admin. Fail fast rather than boot.
+const WEAK_JWT_SECRETS = new Set([
+  'thisisasamplesecret',
+  'secret',
+  'changeme',
+  'jwtsecret',
+  'your-secret-key',
+]);
+
+if (WEAK_JWT_SECRETS.has(String(envVars.JWT_SECRET).trim().toLowerCase())) {
+  throw new Error(
+    'JWT_SECRET is a known default value. Generate a new one (openssl rand -base64 48) before starting.'
+  );
+}
+
+if (String(envVars.JWT_SECRET).length < 32) {
+  const message = `JWT_SECRET is only ${String(envVars.JWT_SECRET).length} characters. Use at least 32.`;
+  if (envVars.NODE_ENV === 'production') {
+    throw new Error(message);
+  }
+  // eslint-disable-next-line no-console
+  console.warn(`WARNING: ${message}`);
 }
 
 const config = {

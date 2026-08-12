@@ -32,7 +32,7 @@ zoomRouter.post('/createZoomMeeting-session', createSessionZoomMeeting);
 zoomRouter.post('/createZoomMeeting-event', createEventZoomMeeting);
 zoomRouter.post('/getMeetingData', getMeeting);
 zoomRouter.delete('/deleteMeeting', deleteMeeting);
-zoomRouter.post('/generateSDKSignature', generateMeetingSDKSignature);
+zoomRouter.post('/generateSDKSignature', auth(), generateMeetingSDKSignature);
 zoomRouter.get('/getMeetingDetails', auth(), getMeetingDetails);
 zoomRouter.get('/join-meeting', serveJoinMeetingPage);
 zoomRouter.get('/wellness-feedback-form', serveFeedbackForm);

@@ -1,4 +1,5 @@
 import express from 'express';
+import auth from '../../middlewares/auth.js';
 import {
   createAvailability,
   getTeacherAvailabilities,
@@ -10,7 +11,7 @@ import {
 const TeacherAvailabilityrouter = express.Router();
 
 // Create new availability
-TeacherAvailabilityrouter.post('/', createAvailability);
+TeacherAvailabilityrouter.post('/', auth(), createAvailability);
 
 // Get all availabilities for a teacher
 TeacherAvailabilityrouter.get('/teacher/:teacherId', getTeacherAvailabilities);
@@ -19,9 +20,9 @@ TeacherAvailabilityrouter.get('/teacher/:teacherId', getTeacherAvailabilities);
 TeacherAvailabilityrouter.get('/available-slots/:teacherId/:date', getAvailableSlots);
 
 // Update availability
-TeacherAvailabilityrouter.patch('/:id', updateAvailability);
+TeacherAvailabilityrouter.patch('/:id', auth(), updateAvailability);
 
 // Delete availability
-TeacherAvailabilityrouter.delete('/:id', deleteAvailability);
+TeacherAvailabilityrouter.delete('/:id', auth(), deleteAvailability);
 
 export default TeacherAvailabilityrouter;

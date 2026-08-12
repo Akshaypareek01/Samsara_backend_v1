@@ -9,6 +9,7 @@ import {
   tryAssignCompanyMembership,
 } from './company-membership.service.js';
 import cacheService from './cache.service.js';
+import { purgeUserData } from './userDeletion.service.js';
 import { CacheKeys, CacheTTL } from '../utils/cacheKeys.js';
 
 /** @type {string[]} */
@@ -19,6 +20,14 @@ const REFERRAL_IMMUTABLE_FIELDS = ['referralCode', 'referredBy', 'referredAt'];
  * @param {unknown} value
  * @returns {string|null} uppercase code or null if absent
  */
+/**
+ * Escape regex metacharacters so user-supplied search terms cannot cause
+ * catastrophic backtracking (ReDoS) or alter the intended query.
+ * @param {unknown} value
+ * @returns {string}
+ */
+const escapeRegex = (value) => String(value ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const normalizeIncomingReferralCode = (value) => {
   if (value == null) return null;
   const s = String(value).trim().toUpperCase();
@@ -31,6 +40,9 @@ const normalizeIncomingReferralCode = (value) => {
  * @returns {Promise<User>}
  */
 const createUser = async (userBody) => {
+  if (userBody && typeof userBody.email === 'string') {
+    userBody.email = userBody.email.trim().toLowerCase();
+  }
   if (await User.isEmailTaken(userBody.email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
@@ -63,26 +75,11 @@ const createUser = async (userBody) => {
 
   // Create initial BodyStatus entry if age, gender, height, or weight are provided
   // Check both userBody and saved user object to ensure we catch all data
-  console.log(`[BodyStatus] Checking user ${user._id} for body data...`);
-  console.log(`[BodyStatus] userBody has:`, {
-    age: userBody.age,
-    gender: userBody.gender,
-    height: userBody.height,
-    weight: userBody.weight
-  });
-  console.log(`[BodyStatus] saved user has:`, {
-    age: user.age,
-    gender: user.gender,
-    height: user.height,
-    weight: user.weight
-  });
 
   const hasBodyData = (user.age && user.age.toString().trim() !== '') ||
                       (user.gender && user.gender.toString().trim() !== '') ||
                       (user.height && user.height.toString().trim() !== '') ||
                       (user.weight && user.weight.toString().trim() !== '');
-  
-  console.log(`[BodyStatus] hasBodyData: ${hasBodyData}`);
   
   if (hasBodyData) {
     try {
@@ -195,13 +192,13 @@ const buildUserListFilter = async (query) => {
   const filter = pick(query, ['name', 'role', 'userCategory', 'city']);
 
   if (query.mobile && String(query.mobile).trim()) {
-    filter.mobile = { $regex: String(query.mobile).trim(), $options: 'i' };
+    filter.mobile = { $regex: escapeRegex(String(query.mobile).trim()), $options: 'i' };
   }
   if (query.companyId && String(query.companyId).trim()) {
-    filter.companyId = { $regex: String(query.companyId).trim(), $options: 'i' };
+    filter.companyId = { $regex: escapeRegex(String(query.companyId).trim()), $options: 'i' };
   }
   if (query.corporate_id && String(query.corporate_id).trim()) {
-    filter.corporate_id = { $regex: String(query.corporate_id).trim(), $options: 'i' };
+    filter.corporate_id = { $regex: escapeRegex(String(query.corporate_id).trim()), $options: 'i' };
   }
   if (query.status !== undefined && query.status !== '') {
     filter.status = query.status === 'true' || query.status === true;
@@ -210,7 +207,7 @@ const buildUserListFilter = async (query) => {
   const andClauses = [];
 
   if (query.search && String(query.search).trim()) {
-    const term = String(query.search).trim();
+    const term = escapeRegex(String(query.search).trim().slice(0, 100));
     andClauses.push({
       $or: [
         { name: { $regex: term, $options: 'i' } },
@@ -222,7 +219,7 @@ const buildUserListFilter = async (query) => {
 
   if (query.companyName && String(query.companyName).trim()) {
     const companies = await Company.find({
-      companyName: { $regex: String(query.companyName).trim(), $options: 'i' },
+      companyName: { $regex: escapeRegex(String(query.companyName).trim().slice(0, 100)), $options: 'i' },
     }).select('_id companyId');
     const mongoIds = companies.map((c) => c._id);
     const idStrings = companies.map((c) => c.companyId).filter(Boolean);
@@ -298,7 +295,8 @@ const getUserById = async (id) => {
  * @returns {Promise<User>}
  */
 const getUserByEmail = async (email) => {
-  return User.findOne({ email });
+  const normalized = String(email || '').trim().toLowerCase();
+  return User.findOne({ email: normalized });
 };
 
 /**
@@ -351,11 +349,29 @@ const updateUserById = async (userId, updateBody) => {
  * @returns {Promise<User>}
  */
 const deleteUserById = async (userId) => {
-  const user = await getUserById(userId);
+  // Must bypass the cache: getUserById returns a plain JSON object on a cache
+  // hit, which has no .remove() and no _id — deletion then 500s at random.
+  const user = await User.findById(userId);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
+
+  // Clear the user's health, cycle, assessment and engagement records before
+  // the account row goes. Without this they are orphaned but still readable
+  // through any per-user endpoint, and the account is not actually deleted in
+  // the sense the app stores require.
+  const purge = await purgeUserData(userId);
+
   await user.remove();
+
+  await cacheService.del(CacheKeys.user(userId));
+  await cacheService.del(CacheKeys.userProfile(userId));
+  await cacheService.del(CacheKeys.userSettings(userId));
+
+  if (purge.failed.length) {
+    console.warn(`deleteUserById(${userId}): ${purge.failed.length} collection(s) failed to purge`, purge.failed);
+  }
+
   return user;
 };
 
@@ -390,9 +406,34 @@ const bulkDeleteUsersById = async (userIds) => {
  * @param {number} [options.page] - Current page (default = 1)
  * @returns {Promise<QueryResult>}
  */
+/** Personal fields never needed by a public teacher listing. */
+const TEACHER_LIST_EXCLUDED_FIELDS = [
+  'password',
+  'mobile',
+  'emergencyMobile',
+  'dob',
+  'age',
+  'Address',
+  'pincode',
+  'country',
+  'corporate_id',
+  'companyId',
+  'notificationToken',
+  'passwordResetToken',
+  'passwordResetExpires',
+  'metadata',
+  'referralCode',
+  'referredBy',
+]
+  .map((f) => `-${f}`)
+  .join(' ');
+
 const getUsersByRole = async (role, options = {}) => {
   const filter = { role };
-  const users = await User.paginate(filter, options);
+  // Exclusion rather than an allow-list: consumers keep every field they use
+  // today, they just stop receiving personal data (see H-08 for the same fix
+  // on the public class/event endpoints).
+  const users = await User.paginate(filter, { ...options, select: TEACHER_LIST_EXCLUDED_FIELDS });
   return users;
 };
 

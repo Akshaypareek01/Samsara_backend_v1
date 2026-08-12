@@ -1,5 +1,6 @@
 import httpStatus from 'http-status';
 import catchAsync from '../utils/catchAsync.js';
+import isAdminUser from '../utils/isAdminUser.js';
 import {
   adminGetUserMembershipOverview,
   adminGetUserMembershipHistory,
@@ -33,7 +34,11 @@ export const assignLifetimePlan = catchAsync(async (req, res) => {
 });
 
 export const assignWithCoupon = catchAsync(async (req, res) => {
-  const membership = await adminAssignMembershipWithCoupon(req.body);
+  // Reachable from the consumer app (user redeems a 100%-off coupon), so a
+  // non-admin may only ever assign to themselves — never to an arbitrary userId.
+  const payload = isAdminUser(req.user) ? req.body : { ...req.body, userId: req.user.id };
+
+  const membership = await adminAssignMembershipWithCoupon(payload);
 
   res.status(httpStatus.CREATED).send({
     success: true,

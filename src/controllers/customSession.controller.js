@@ -17,7 +17,7 @@ const createSession = async (req, res) => {
 const getAllSessions = async (req, res) => {
   try {
     const sessions = await CustomSession.find()
-        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
         .populate('user', 'name email profileImage AboutMe mobile gender dob age Address city pincode country status active userCategory corporate_id')
         .populate('timeSlot', 'timeRange')
         .exec();
@@ -32,7 +32,7 @@ const getSessionById = async (req, res) => {
   const sessionId = req.params.id;
   try {
     const session = await CustomSession.findById(sessionId)
-        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
         .populate('user', 'name email profileImage AboutMe mobile gender dob age Address city pincode country status active userCategory corporate_id')
         .populate('timeSlot', 'timeRange')
         .exec();
@@ -175,7 +175,7 @@ const approveSession = async (req, res) => {
         }
 
         const sessions = await CustomSession.find({ user: userId })
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')  // Populating teacher details
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')  // Populating teacher details
             .populate('timeSlot', 'timeRange') // Populating time slot details
             .exec();
 
@@ -200,7 +200,7 @@ export const getAllSessionsByUserIdUpcoming = async (req, res) => {
           user: userId,
           date: { $gte: currentDate.toISOString().split('T')[0] } // Filter only today's and future sessions
       })
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')  
+      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')  
       .populate('timeSlot', 'timeRange') 
       .exec();
 
@@ -220,7 +220,7 @@ export const getSessionDetails = async (req, res) => {
         }
 
         const session = await CustomSession.findOne({ _id: sessionId, user: userId })
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements mobile gender dob age Address city pincode country status active')
+            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
             .populate('timeSlot', 'timeRange')
             .exec();
 

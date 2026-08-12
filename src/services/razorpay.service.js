@@ -55,7 +55,9 @@ class RazorpayService {
         .update(body.toString())
         .digest('hex');
 
-      return expectedSignature === razorpaySignature;
+      const a = Buffer.from(expectedSignature);
+      const b = Buffer.from(String(razorpaySignature || ''));
+      return a.length === b.length && crypto.timingSafeEqual(a, b);
     } catch (error) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,

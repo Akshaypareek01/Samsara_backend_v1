@@ -21,6 +21,11 @@ const otpSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    /** Failed verification attempts; the OTP is burned once this hits MAX_OTP_ATTEMPTS. */
+    attempts: {
+      type: Number,
+      default: 0,
+    },
     expiresAt: {
       type: Date,
       required: true,

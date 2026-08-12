@@ -44,7 +44,9 @@ const jwtVerify = async (payload, done) => {
       return done(null, trainer);
     } else {
       const user = await User.findById(payload.sub);
-      if (!user) {
+      // status === false means deactivated/suspended in the CRM; it must
+      // actually cut off API access, not just change a flag.
+      if (!user || user.status === false) {
         return done(null, false);
       }
       return done(null, user);

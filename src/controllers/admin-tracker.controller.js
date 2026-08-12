@@ -7,9 +7,6 @@ import ApiError from '../utils/ApiError.js';
  * Get user's today water data (ADMIN)
  */
 const getAdminUserTodayWaterData = catchAsync(async (req, res) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/5f6679be-04c6-4efb-aaf8-56fa2fb8e96c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/controllers/admin-tracker.controller.js:9',message:'ADMIN getAdminUserTodayWaterData called - ADMIN ENDPOINT USED',data:{userId:req.params?.userId,callerUserId:req.user?.id,callerRole:req.user?.role,reqUrl:req.originalUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'admin-endpoint-test',hypothesisId:'admin-endpoint-check'})}).catch(()=>{});
-  // #endregion
   console.log('req.params:', req.params);
   console.log('req.user:', req.user);
 
@@ -22,10 +19,6 @@ const getAdminUserTodayWaterData = catchAsync(async (req, res) => {
   console.log('Fetching water data for userId:', userId);
   const data = await trackerService.getTodayWaterData(userId);
   console.log('Water data found:', { totalIntake: data?.totalIntake, status: data?.status, userId: data?.userId });
-
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/5f6679be-04c6-4efb-aaf8-56fa2fb8e96c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'src/controllers/admin-tracker.controller.js:25',message:'ADMIN getAdminUserTodayWaterData response',data:{userId:req.params?.userId,hasData:!!data,totalIntake:data?.totalIntake,status:data?.status},timestamp:Date.now(),sessionId:'debug-session',runId:'admin-endpoint-test',hypothesisId:'admin-endpoint-check'})}).catch(()=>{});
-  // #endregion
 
   res.send(data);
 });

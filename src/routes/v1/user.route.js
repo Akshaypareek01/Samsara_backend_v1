@@ -3,6 +3,8 @@ import auth from '../../middlewares/auth.js';
 import validate from '../../middlewares/validate.js';
 import * as userValidation from '../../validations/user.validation.js';
 import * as userController from '../../controllers/user.controller.js';
+import adminOnly from '../../middlewares/admin.middleware.js';
+import { selfOrAdmin } from '../../middlewares/ownership.js';
 
 const router = express.Router();
 
@@ -21,44 +23,44 @@ router.route('/notification-token').post(auth(), validate(userValidation.updateN
 // User management routes
 router
   .route('/')
-  .post(auth(), validate(userValidation.createUser), userController.createUser)
-  .get(auth(), validate(userValidation.getUsers), userController.getUsers);
+  .post(auth(), adminOnly(), validate(userValidation.createUser), userController.createUser)
+  .get(auth(), adminOnly(), validate(userValidation.getUsers), userController.getUsers);
 
 // Get users by role
 router.route('/role/:role').get(auth(), userController.getUsersByRole);
 
 router
   .route('/bulk-delete')
-  .post(auth(), validate(userValidation.bulkDeleteUsers), userController.bulkDeleteUsers);
+  .post(auth(), adminOnly(), validate(userValidation.bulkDeleteUsers), userController.bulkDeleteUsers);
 
 router
   .route('/:userId')
-  .get(auth(), validate(userValidation.getUser), userController.getUser)
-  .patch(auth(), validate(userValidation.updateUser), userController.updateUser)
-  .delete(auth(), validate(userValidation.deleteUser), userController.deleteUser);
+  .get(auth(), selfOrAdmin(), validate(userValidation.getUser), userController.getUser)
+  .patch(auth(), selfOrAdmin(), validate(userValidation.updateUser), userController.updateUser)
+  .delete(auth(), selfOrAdmin(), validate(userValidation.deleteUser), userController.deleteUser);
 
 // User profile routes
-router.route('/:userId/profile').get(userController.getUserProfile);
+router.route('/:userId/profile').get(auth(), userController.getUserProfile);
 
 // Image management routes
 router
   .route('/:userId/images')
-  .post(auth(), userController.uploadUserImage)
-  .get(auth(), userController.getUserImages)
-  .delete(auth(), userController.deleteUserImageByKey);
+  .post(auth(), selfOrAdmin(), userController.uploadUserImage)
+  .get(auth(), selfOrAdmin(), userController.getUserImages)
+  .delete(auth(), selfOrAdmin(), userController.deleteUserImageByKey);
 
-router.route('/:userId/images/:imageIndex').delete(auth(), userController.deleteUserImage);
+router.route('/:userId/images/:imageIndex').delete(auth(), selfOrAdmin(), userController.deleteUserImage);
 
-router.route('/:userId/images/delete-by-filename').delete(auth(), userController.deleteUserImageByFilename);
+router.route('/:userId/images/delete-by-filename').delete(auth(), selfOrAdmin(), userController.deleteUserImageByFilename);
 
 // Attendance routes
-router.route('/:userId/attendance/:classId').post(auth(), userController.markAttendance);
+router.route('/:userId/attendance/:classId').post(auth(), selfOrAdmin(), userController.markAttendance);
 
 // Achievement routes
-router.route('/:userId/achievements').post(auth(), userController.addAchievement);
+router.route('/:userId/achievements').post(auth(), selfOrAdmin(), userController.addAchievement);
 
 // Assessment routes
-router.route('/:userId/assessments').post(auth(), userController.addAssessment);
+router.route('/:userId/assessments').post(auth(), selfOrAdmin(), userController.addAssessment);
 
 router.route('/assessment-form').post(auth(), userController.submitAssessmentForm);
 

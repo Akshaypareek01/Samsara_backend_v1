@@ -15,6 +15,7 @@ const paginate = (schema) => {
    * @param {Object} [options] - Query options
    * @param {string} [options.sortBy] - Sorting criteria using the format: sortField:(desc|asc). Multiple sorting criteria should be separated by commas (,)
    * @param {string} [options.populate] - Populate data fields. Hierarchy of fields should be separated by (.). Multiple populating criteria should be separated by commas (,)
+   * @param {string} [options.select] - Mongoose projection string, e.g. '-password -mobile'
    * @param {number} [options.limit] - Maximum number of results per page (default = 10)
    * @param {number} [options.page] - Current page (default = 1)
    * @returns {Promise<QueryResult>}
@@ -38,6 +39,12 @@ const paginate = (schema) => {
 
     const countPromise = this.countDocuments(filter).exec();
     let docsPromise = this.find(filter).sort(sort).skip(skip).limit(limit);
+
+    // Optional field projection. Omitted by every existing caller, so this is
+    // additive — nothing changes unless a caller opts in.
+    if (options.select) {
+      docsPromise = docsPromise.select(options.select);
+    }
 
     if (options.populate) {
       options.populate.split(',').forEach((populateOption) => {

@@ -4,7 +4,14 @@ import validate from '../../middlewares/validate.js';
 import * as userAnalyticsValidation from '../../validations/userAnalytics.validation.js';
 import * as userAnalyticsController from '../../controllers/userAnalytics.controller.js';
 
+import { selfOrAdmin } from '../../middlewares/ownership.js';
+
 const router = express.Router();
+
+// Every route below is scoped to /:userId and returns that user's health,
+// booking and attendance data. Authenticate, then enforce ownership.
+router.use(auth());
+router.use('/:userId', selfOrAdmin('userId'));
 
 // ==================== UPCOMING ACTIVITIES ====================
 

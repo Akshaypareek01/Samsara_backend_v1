@@ -10,6 +10,7 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Class, CustomSession, Event } from '../models/index.js';
+import isAdminUser from '../utils/isAdminUser.js';
 import {
   createZoomMeeting as createZoomMeetingService,
   generateSDKSignature,
@@ -579,6 +580,53 @@ export const getMeeting = async(req, res, next) => {
 }
 
 /**
+ * Whether this caller may take the host branch for a meeting.
+ *
+ * Host access is decided from the meeting record's assigned teacher, never
+ * from the `role` field in the request body.
+ *
+ * @param {object|null} caller - req.user
+ * @param {{classId?:string, sessionId?:string, eventId?:string, meetingNumber?:string|number}} ids
+ * @returns {Promise<boolean>}
+ */
+const callerMayHostMeeting = async (caller, ids = {}) => {
+    if (!caller) return false;
+
+    // CRM staff (admin/trainer/company) run sessions on behalf of the platform.
+    if (isAdminUser(caller) || caller.role === 'trainer' || caller.role === 'company') {
+        return true;
+    }
+
+    const callerId = String(caller.id ?? caller._id ?? '');
+    if (!callerId) return false;
+
+    const { classId, sessionId, eventId, meetingNumber } = ids;
+    const meetingNo = meetingNumber != null ? String(meetingNumber) : null;
+
+    /** @param {any} doc */
+    const ownsDoc = (doc) => {
+        if (!doc) return false;
+        const teacherId = String(doc.teacher?._id ?? doc.teacher ?? '');
+        return Boolean(teacherId) && teacherId === callerId;
+    };
+
+    if (classId) return ownsDoc(await Class.findById(classId).select('teacher'));
+    if (sessionId) return ownsDoc(await CustomSession.findById(sessionId).select('teacher'));
+    if (eventId) return ownsDoc(await Event.findById(eventId).select('teacher'));
+
+    // No id supplied — fall back to locating the meeting by number.
+    if (meetingNo) {
+        const byNumber =
+            (await Class.findOne({ meeting_number: meetingNo }).select('teacher')) ||
+            (await CustomSession.findOne({ meeting_number: meetingNo }).select('teacher')) ||
+            (await Event.findOne({ meeting_number: meetingNo }).select('teacher'));
+        return ownsDoc(byNumber);
+    }
+
+    return false;
+};
+
+/**
  * Generate SDK signature for joining Zoom meetings
  * This endpoint generates the signature using the correct SDK key/secret
  * based on the account that created the meeting
@@ -598,7 +646,21 @@ export const generateMeetingSDKSignature = async (req, res) => {
         // Default role to participant (0) if not provided.
         // Only role === 1 mints ZAK; everything else is attendee signature only (no ZAK).
         const requestedRole = Number(role);
-        const isHostRequest = requestedRole === 1;
+        let isHostRequest = requestedRole === 1;
+
+        // A host signature grants meeting control AND ends every other live
+        // meeting on the account. The client asks for role 1; only the assigned
+        // teacher (or CRM staff) may actually receive it.
+        if (isHostRequest) {
+            const allowed = await callerMayHostMeeting(req.user, { classId, sessionId, eventId, meetingNumber });
+            if (!allowed) {
+                return res.status(403).json({
+                    status: 'fail',
+                    message: 'You are not the host of this meeting.',
+                });
+            }
+        }
+
         const userRole = isHostRequest ? 1 : 0;
 
         let zoomAccountId = accountId;

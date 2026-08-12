@@ -122,3 +122,31 @@ export const validateUploadFile = (mimeType, originalFilename) => {
 
   return `Unsupported file type. Upload ${ALLOWED_IMAGE_FORMATS_LABEL} images or PDF documents only.`;
 };
+
+/**
+ * Canonical Content-Type for a validated upload, derived from the file
+ * extension rather than the client-supplied MIME type.
+ *
+ * The client controls `req.file.mimetype`, so echoing it back into R2 lets an
+ * attacker store `text/html` under an image filename and have it served as a
+ * live page from the public bucket. Always resolve the stored type here.
+ *
+ * @param {string} originalFilename - Original upload filename.
+ * @returns {string|null} Safe Content-Type, or null when the extension is not allowed.
+ */
+export const resolveSafeContentType = (originalFilename) => {
+  const extension = getImageFileExtension(originalFilename);
+  switch (extension) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'webp':
+      return 'image/webp';
+    case 'pdf':
+      return 'application/pdf';
+    default:
+      return null;
+  }
+};

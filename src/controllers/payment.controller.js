@@ -360,7 +360,14 @@ const verifyPayment = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.FORBIDDEN, 'Unauthorized access to transaction');
   }
 
-  if (transaction.status !== 'pending') {
+  // Atomic claim: checking status then updating later lets two concurrent
+  // verifications of the same order both pass and create two memberships.
+  const claimed = await Transaction.findOneAndUpdate(
+    { _id: transaction._id, status: 'pending' },
+    { $set: { status: 'processing' } },
+    { new: true }
+  );
+  if (!claimed) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Transaction already processed');
   }
 

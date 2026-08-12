@@ -1,3 +1,17 @@
 node_modules
 .git
 .gitignore
+
+# One-off scripts / test harnesses — not part of the running service.
+# get-user-token.js in particular mints tokens for arbitrary users.
+get-user-token.js
+check-*.js
+create-*.js
+migrate-*.js
+comprehensive-*.js
+quick-test-*.js
+*postman_collection.json
+exports/
+docs/
+tests/
+.env.bak*
