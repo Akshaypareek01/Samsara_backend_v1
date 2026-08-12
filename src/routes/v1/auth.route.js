@@ -3,6 +3,7 @@ import validate from '../../middlewares/validate.js';
 import * as authValidation from '../../validations/auth.validation.js';
 import * as authController from '../../controllers/auth.controller.js';
 import auth from '../../middlewares/auth.js';
+import { sendOtpLimiter, sendOtpIpLimiter } from '../../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
@@ -13,6 +14,8 @@ router.post('/login', validate(authValidation.login), authController.login);
 // OTP-based registration flow
 router.post(
   '/send-registration-otp',
+  sendOtpIpLimiter,
+  sendOtpLimiter,
   validate(authValidation.sendRegistrationOTP),
   authController.sendRegistrationOTPController
 );
@@ -23,7 +26,13 @@ router.post(
 );
 
 // OTP-based login flow
-router.post('/send-login-otp', validate(authValidation.sendLoginOTP), authController.sendLoginOTPController);
+router.post(
+  '/send-login-otp',
+  sendOtpIpLimiter,
+  sendOtpLimiter,
+  validate(authValidation.sendLoginOTP),
+  authController.sendLoginOTPController
+);
 router.post('/verify-login-otp', validate(authValidation.verifyLoginOTP), authController.verifyLoginOTPController);
 
 // Other auth endpoints

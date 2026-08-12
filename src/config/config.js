@@ -54,6 +54,10 @@ const envVarsSchema = Joi.object()
       .optional()
       .description('CRM portal base URL (company/trainer/admin links in emails)'),
     CLIENT_URL: Joi.string().uri().optional().description('Alias for FRONTEND_URL'),
+    CONSUMER_WEB_URL: Joi.string()
+      .uri()
+      .optional()
+      .description('Consumer web app base URL (user/teacher OTP email links)'),
   })
   .unknown();
 
@@ -148,6 +152,12 @@ const config = {
       envVars.CLIENT_URL ||
       (envVars.NODE_ENV === 'production'
         ? 'https://corporate.samsarawellness.in'
+        : 'http://localhost:3000'),
+    /** Consumer web (Samsara_web_app) — OTP emails for user/teacher roles */
+    consumerUrl:
+      envVars.CONSUMER_WEB_URL ||
+      (envVars.NODE_ENV === 'production'
+        ? 'https://main.d21u027aqec24o.amplifyapp.com'
         : 'http://localhost:3000'),
   },
   wellnessFeedback: {

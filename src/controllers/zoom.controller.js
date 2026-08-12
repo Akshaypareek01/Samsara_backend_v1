@@ -595,8 +595,11 @@ export const generateMeetingSDKSignature = async (req, res) => {
             });
         }
 
-        // Default role to participant (0) if not provided
-        const userRole = role !== undefined ? role : 0;
+        // Default role to participant (0) if not provided.
+        // Only role === 1 mints ZAK; everything else is attendee signature only (no ZAK).
+        const requestedRole = Number(role);
+        const isHostRequest = requestedRole === 1;
+        const userRole = isHostRequest ? 1 : 0;
 
         let zoomAccountId = accountId;
 
@@ -646,9 +649,9 @@ export const generateMeetingSDKSignature = async (req, res) => {
             );
         }
 
-        // Participant join: signature only (fast path — no ZAK / no end-session churn)
-        if (Number(userRole) !== 1) {
-            const signatureData = generateSDKSignature(meetingNumber, userRole, zoomAccountId);
+        // Participant join: signature only — never return zak for attendees
+        if (!isHostRequest) {
+            const signatureData = generateSDKSignature(meetingNumber, 0, zoomAccountId);
             return res.json({
                 status: 'success',
                 data: {
@@ -656,7 +659,8 @@ export const generateMeetingSDKSignature = async (req, res) => {
                     sdkKey: signatureData.sdkKey,
                     accountId: signatureData.accountId,
                     meetingNumber: meetingNumber,
-                    role: userRole,
+                    role: 0,
+                    // Explicit: no zak for attendees
                 }
             });
         }

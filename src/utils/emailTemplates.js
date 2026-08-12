@@ -20,7 +20,8 @@ const BRAND = {
 const PORTAL_PATHS = {
   company: '/company/login',
   trainer: '/trainer/login',
-  user: '/authentication/sign-in/signin-cover',
+  // Consumer web app login lives at site root (not CRM)
+  user: '/',
 };
 
 const OTP_EXPIRY_MINUTES = 10;
@@ -71,6 +72,14 @@ export function getLogoUrl() {
 }
 
 /**
+ * Consumer (user/teacher) web portal base URL without trailing slash.
+ * @returns {string} Consumer web origin
+ */
+export function getConsumerWebBaseUrl() {
+  return String(config.frontend.consumerUrl || getFrontendBaseUrl()).replace(/\/$/, '');
+}
+
+/**
  * Resolve portal login URL for OTP and alert emails.
  *
  * @param {'company'|'trainer'|'user'|string} [portal] - Recipient portal.
@@ -78,7 +87,9 @@ export function getLogoUrl() {
  */
 export function getPortalLoginUrl(portal) {
   const path = PORTAL_PATHS[portal] || PORTAL_PATHS.company;
-  return `${getFrontendBaseUrl()}${path}`;
+  const base =
+    portal === 'user' ? getConsumerWebBaseUrl() : getFrontendBaseUrl();
+  return `${base}${path}`;
 }
 
 /** Brand tokens for consumer app emails (same as CRM portal orange). */
@@ -246,7 +257,11 @@ export function buildEmailLayout({
  */
 export function buildOtpEmailContent({ otp, type, portal = 'company' }) {
   const portalLabel =
-    portal === 'trainer' ? 'Trainer Portal' : portal === 'user' ? 'Samsara CRM' : 'Company Portal';
+    portal === 'trainer'
+      ? 'Trainer Portal'
+      : portal === 'user'
+        ? 'Samsara Web'
+        : 'Company Portal';
   const loginUrl = getPortalLoginUrl(portal);
   const isRegistration = type === 'registration';
 

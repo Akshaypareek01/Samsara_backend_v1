@@ -20,6 +20,11 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// One reverse-proxy hop (nginx/ALB) so rate-limit keys use the real client IP
+if (config.env === 'production') {
+  app.set('trust proxy', 1);
+}
+
 if (config.env !== 'test') {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
@@ -110,10 +115,8 @@ app.options('*', cors());
 app.use(passport.initialize());
 passport.use('jwt', jwtStrategy);
 
-// limit repeated failed requests to auth endpoints
-if (config.env === 'production') {
-  app.use('/v1/auth', authLimiter);
-}
+// limit repeated requests to auth endpoints (all environments)
+app.use('/v1/auth', authLimiter);
 
 // public static assets (feedback form HTML, join-meeting page, etc.)
 app.use('/public', express.static(path.join(__dirname, '../public')));

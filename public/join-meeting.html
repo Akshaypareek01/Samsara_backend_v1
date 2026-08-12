@@ -304,8 +304,24 @@
                 let password = urlParams.get('password') || urlParams.get('pwd') || '';
                 let userName = urlParams.get('userName') || urlParams.get('name') || 'Guest';
                 const userEmail = urlParams.get('email') || urlParams.get('userEmail') || '';
-                const role = parseInt(urlParams.get('role') || '0'); // 0 = participant, 1 = host
-                const forceHost = urlParams.get('forceHost') === '1'; // CRM admin desktop host
+                const appRole = String(urlParams.get('appRole') || '').toLowerCase();
+                // Zoom SDK role from query (0=attendee, 1=host)
+                let role = parseInt(urlParams.get('role') || '0', 10);
+                let forceHost = urlParams.get('forceHost') === '1';
+                if (Number.isNaN(role)) role = 0;
+
+                // Samsara consumer: `user` never hosts / never ZAK. `teacher` hosts only with forceHost.
+                // CRM/legacy (no appRole): keep role + forceHost as passed.
+                if (appRole === 'user') {
+                    role = 0;
+                    forceHost = false;
+                } else if (appRole === 'teacher') {
+                    if (!(role === 1 && forceHost)) {
+                        role = 0;
+                        forceHost = false;
+                    }
+                }
+                const isHostJoin = role === 1 && forceHost;
                 let accountId = urlParams.get('accountId') || null;
                 const classId = urlParams.get('classId') || null;
                 const sessionId = urlParams.get('sessionId') || null;
@@ -360,9 +376,15 @@
                     userName,
                     userEmail,
                     role,
+                    appRole: appRole || '(none)',
+                    forceHost,
+                    isHostJoin,
                     accountId,
                     hasPassword: !!password
                 });
+
+                // role=0 / !isHostJoin → Meeting SDK signature role 0, never ZAK.
+                // isHostJoin → signature role 1 + ZAK (classic /s/ for Basic accounts).
 
                 // Fetch SDK signature from backend
                 const signatureResponse = await fetch(`${baseUrl}/v1/zoom/generateSDKSignature`, {
@@ -372,7 +394,7 @@
                     },
                     body: JSON.stringify({
                         meetingNumber: meetingNumber,
-                        role: role,
+                        role: isHostJoin ? 1 : 0,
                         accountId: accountId,
                         classId: classId,
                         sessionId: sessionId,
@@ -391,29 +413,32 @@
                     throw new Error(signatureData.message || 'Failed to generate signature');
                 }
 
-                const { signature, sdkKey, zak, hostEmail, hostName, zoomAccountType } = signatureData.data;
+                const { signature, sdkKey, zak: zakRaw, hostEmail, hostName, zoomAccountType } = signatureData.data;
+                // Never apply ZAK for attendees / Samsara `user` — even if API mistakenly returns it
+                const zak = isHostJoin ? zakRaw : null;
                 // Host start requires ZAK + the Zoom host email (CRM often sends empty email)
-                const joinEmail = (role === 1 ? (hostEmail || userEmail) : userEmail) || '';
-                if (role === 1 && hostName && (!userName || userName === 'Admin' || userName === 'Guest')) {
+                const joinEmail = (isHostJoin ? (hostEmail || userEmail) : userEmail) || '';
+                if (isHostJoin && hostName && (!userName || userName === 'Admin' || userName === 'Guest')) {
                     userName = hostName;
                 }
                 console.log('SDK signature generated successfully');
                 console.log('Account info:', {
                     accountId: signatureData.data.accountId,
                     sdkKey: sdkKey.substring(0, 10) + '...',
-                    role: role,
+                    role,
+                    isHostJoin,
                     hasZak: !!zak,
                     joinEmail: joinEmail || '(none)',
                     userName,
                     zoomAccountType
                 });
 
-                if (role === 1 && !zak) {
+                if (isHostJoin && !zak) {
                     throw new Error('Host join requires a Zoom ZAK token, but none was returned by the server.');
                 }
                 // Basic Zoom: Meeting SDK role=1 fails with "We don't support this login way".
                 // CRM forceHost → classic /s/{mn}?zak= (real host). Teachers → WC join.
-                if (role === 1 && zoomAccountType === 1) {
+                if (isHostJoin && zoomAccountType === 1) {
                     if (forceHost) {
                         console.warn('⚠️ Zoom Basic + CRM host — classic Zoom start with ZAK (SDK host unsupported).');
                         startAsHostViaClassicZoom(meetingNumber, zak);
@@ -423,7 +448,7 @@
                     fallbackInstructorToWebClient(meetingNumber, password);
                     return;
                 }
-                if (role === 1) {
+                if (isHostJoin) {
                     watchHostConflictDialog(meetingNumber, password, forceHost);
                 }
 
@@ -476,9 +501,9 @@
                     sdkKey: sdkKey,
                     userEmail: joinEmail,
                     passWord: password,
-                    role: role,
+                    role: isHostJoin ? 1 : 0,
                     accountId: signatureData.data.accountId,
-                    zak: zak || undefined
+                    ...(isHostJoin && zak ? { zak } : {}),
                 };
                 window.ZoomMeetingConfig = window.meetingConfig;
                 
@@ -535,15 +560,15 @@
                             sdkKey: sdkKey.substring(0, 10) + '...'
                         });
                         
-                        // Define meeting config — host role MUST include zak
+                        // Define meeting config — host (ZAK) only when isHostJoin; attendees never get zak
                         const meetingConfig = {
                             meetingNumber: meetingNumber,
-                            userName: userName || (role === 1 ? 'Host' : 'Participant'),
+                            userName: userName || (isHostJoin ? 'Host' : 'Participant'),
                             signature: signature,
                             sdkKey: sdkKey,
                             userEmail: joinEmail,
                             passWord: password,
-                            ...(zak ? { zak } : {}),
+                            ...(isHostJoin && zak ? { zak } : {}),
                             success: function(res) {
                                 joinCallbacksFired = true;
                                 updateDebugStatus('✅ JOIN SUCCESS! Hiding loading...');
@@ -649,13 +674,13 @@
                                     errorText.includes('cannot not host another');
 
                                 // Basic / token host start rejected by Zoom SDK
-                                if (role === 1 && isUnsupportedHostLogin && zak) {
+                                if (isHostJoin && isUnsupportedHostLogin && zak) {
                                     startAsHostViaClassicZoom(meetingNumber, zak);
                                     return;
                                 }
 
                                 // Host conflict: never End and Start
-                                if (role === 1 && isHostConflict) {
+                                if (isHostJoin && isHostConflict) {
                                     if (forceHost) {
                                         showHostConflictHelp();
                                     } else {
