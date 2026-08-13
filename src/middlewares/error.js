@@ -7,14 +7,21 @@ import ApiError from '../utils/ApiError.js';
 const errorConverter = (err, req, res, next) => {
   let error = err;
   if (!(error instanceof ApiError)) {
-    // Precedence matters: keep the error's own status when it has one,
-    // otherwise map mongoose validation/cast errors to 400 and the rest to 500.
-    let statusCode = error.statusCode;
-    if (!statusCode) {
-      statusCode = error instanceof mongoose.Error ? httpStatus.BAD_REQUEST : httpStatus.INTERNAL_SERVER_ERROR;
+    if (err.name === 'MulterError') {
+      const isTooLarge = err.code === 'LIMIT_FILE_SIZE';
+      const statusCode = isTooLarge ? httpStatus.REQUEST_ENTITY_TOO_LARGE : httpStatus.BAD_REQUEST;
+      const message = isTooLarge ? 'File too large. Maximum size is 25MB.' : err.message || 'Upload failed';
+      error = new ApiError(statusCode, message, true, err.stack);
+    } else {
+      // Precedence matters: keep the error's own status when it has one,
+      // otherwise map mongoose validation/cast errors to 400 and the rest to 500.
+      let statusCode = error.statusCode;
+      if (!statusCode) {
+        statusCode = error instanceof mongoose.Error ? httpStatus.BAD_REQUEST : httpStatus.INTERNAL_SERVER_ERROR;
+      }
+      const message = error.message || httpStatus[statusCode];
+      error = new ApiError(statusCode, message, false, err.stack);
     }
-    const message = error.message || httpStatus[statusCode];
-    error = new ApiError(statusCode, message, false, err.stack);
   }
   next(error);
 };

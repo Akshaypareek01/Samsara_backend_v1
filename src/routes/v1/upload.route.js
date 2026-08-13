@@ -11,7 +11,7 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 15 * 1024 * 1024, // 15MB — covers high-res photos and PDF reports
+    fileSize: 25 * 1024 * 1024, // 25MB — photos, PDFs, and larger reports
     files: 1,
     fields: 10,
   },

@@ -9,7 +9,7 @@ import * as marketingController from '../../controllers/marketing.controller.js'
 const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB — CSV/XLSX imports
 });
 
 router.use(auth(), adminOnly());
