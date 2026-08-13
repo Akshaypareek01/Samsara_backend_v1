@@ -7,6 +7,13 @@ import {
 } from '../../../src/utils/emailTemplates.js';
 
 describe('emailTemplates', () => {
+  test('OTP emails state a 10-minute expiry, not the client resend cooldown', () => {
+    const { text, html } = buildOtpEmailContent({ otp: '1234', type: 'login', portal: 'user' });
+
+    expect(text).toContain('This code expires in 10 minutes.');
+    expect(html).toContain('This code expires in <strong>10 minutes</strong>.');
+  });
+
   test('uses Samsara Wellness brand orange across OTP emails', () => {
     const { html } = buildOtpEmailContent({ otp: '123456', type: 'login', portal: 'trainer' });
 

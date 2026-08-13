@@ -14,6 +14,7 @@ import {
   CaloriesTarget
 } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
+import { normalizeSleepEntry } from '../utils/sleepTracker.js';
 
 /**
  * Create initial trackers for a new user
@@ -664,37 +665,47 @@ const getWeeklyWaterSummary = async (userId, days = 7) => {
 };
 
 /**
- * Delete water intake entry
- * @param {ObjectId} userId
- * @param {ObjectId} trackerId - water tracker ID
+ * Delete one water intake event from today's timeline.
+ * Prefers amountMl + time when time is sent so duplicate 250ml sips delete the right row.
+ *
+ * @param {import('mongoose').Types.ObjectId|string} userId
+ * @param {import('mongoose').Types.ObjectId|string} trackerId - water tracker ID
  * @param {number} amountMl - amount to remove
+ * @param {string} [time] - optional clock string from the timeline row
  * @returns {Promise<Object>}
  */
-const deleteWaterIntake = async (userId, trackerId, amountMl) => {
-  const waterTracker = await WaterTracker.findOne({ 
+const deleteWaterIntake = async (userId, trackerId, amountMl, time) => {
+  const waterTracker = await WaterTracker.findOne({
     _id: trackerId,
-    userId
+    userId,
   });
 
   if (!waterTracker) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Water tracker not found');
   }
 
-  // Remove the specific intake event
-  const eventIndex = waterTracker.intakeTimeline.findIndex(
-    event => event.amountMl === amountMl
-  );
+  let eventIndex = -1;
+  if (time) {
+    eventIndex = waterTracker.intakeTimeline.findIndex(
+      (event) => event.amountMl === amountMl && event.time === time
+    );
+  }
+  if (eventIndex === -1) {
+    eventIndex = waterTracker.intakeTimeline.findIndex(
+      (event) => event.amountMl === amountMl
+    );
+  }
 
   if (eventIndex === -1) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Water intake event not found');
   }
 
-  // Remove the event and update total
   const removedEvent = waterTracker.intakeTimeline.splice(eventIndex, 1)[0];
-  waterTracker.totalIntake -= removedEvent.amountMl;
+  waterTracker.totalIntake = Math.max(0, waterTracker.totalIntake - removedEvent.amountMl);
 
-  // Recalculate status
-  const percentage = (waterTracker.totalIntake / waterTracker.targetMl) * 100;
+  const percentage = waterTracker.targetMl
+    ? (waterTracker.totalIntake / waterTracker.targetMl) * 100
+    : 0;
   if (percentage >= 100) {
     waterTracker.status = 'Hydrated';
   } else if (percentage >= 75) {
@@ -781,7 +792,7 @@ const addStepEntry = async (userId, stepData) => {
  * @returns {Promise<Object>}
  */
 const addSleepEntry = async (userId, sleepData) => {
-  return SleepTracker.create({ userId, ...sleepData });
+  return SleepTracker.create({ userId, ...normalizeSleepEntry(sleepData) });
 };
 
 /**
@@ -1101,12 +1112,13 @@ const deleteWorkoutEntry = async (userId, entryId) => {
 
 /**
  * Update tracker entry
+ * @param {import('mongoose').Types.ObjectId|string} userId
  * @param {string} trackerType
- * @param {ObjectId} entryId
+ * @param {import('mongoose').Types.ObjectId|string} entryId
  * @param {Object} updateData
  * @returns {Promise<Object>}
  */
-const updateTrackerEntry = async (trackerType, entryId, updateData) => {
+const updateTrackerEntry = async (userId, trackerType, entryId, updateData) => {
   const trackerModels = {
     weight: WeightTracker,
     water: WaterTracker,
@@ -1124,7 +1136,7 @@ const updateTrackerEntry = async (trackerType, entryId, updateData) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid tracker type');
   }
 
-  const entry = await model.findByIdAndUpdate(entryId, updateData, { new: true });
+  const entry = await model.findOneAndUpdate({ _id: entryId, userId }, updateData, { new: true });
   if (!entry) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Entry not found');
   }
@@ -1133,12 +1145,13 @@ const updateTrackerEntry = async (trackerType, entryId, updateData) => {
 };
 
 /**
- * Delete tracker entry
+ * Delete an entire tracker document (not a nested water sip).
+ * @param {import('mongoose').Types.ObjectId|string} userId
  * @param {string} trackerType
- * @param {ObjectId} entryId
+ * @param {import('mongoose').Types.ObjectId|string} entryId
  * @returns {Promise<void>}
  */
-const deleteTrackerEntry = async (trackerType, entryId) => {
+const deleteTrackerEntry = async (userId, trackerType, entryId) => {
   const trackerModels = {
     weight: WeightTracker,
     water: WaterTracker,
@@ -1156,7 +1169,7 @@ const deleteTrackerEntry = async (trackerType, entryId) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid tracker type');
   }
 
-  const entry = await model.findByIdAndDelete(entryId);
+  const entry = await model.findOneAndDelete({ _id: entryId, userId });
   if (!entry) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Entry not found');
   }
@@ -1401,10 +1414,38 @@ const upsertActivityEntry = async (userId, data) => {
   if (data.activeTime != null) set.activeTime = data.activeTime;
   if (data.source) set.source = data.source;
   if (data.notes) set.notes = data.notes;
+  if (data.goal != null) {
+    set.goal = data.goal;
+  } else {
+    const previous = await StepTracker.findOne({ userId, isActive: true }).sort({
+      measurementDate: -1,
+    });
+    if (previous?.goal) set.goal = previous.goal;
+  }
 
   return StepTracker.findOneAndUpdate(
     { userId, measurementDate: { $gte: start, $lt: end } },
     { $set: set },
+    { new: true, upsert: true, setDefaultsOnInsert: true }
+  );
+};
+
+/**
+ * Upsert today's daily step goal. Creates today's row if none exists yet
+ * so a goal-only update does not require a prior step log.
+ *
+ * @param {string} userId
+ * @param {number} goal
+ * @returns {Promise<import('mongoose').Document>}
+ */
+const updateStepGoal = async (userId, goal) => {
+  const { start, end } = dayRange();
+  return StepTracker.findOneAndUpdate(
+    { userId, measurementDate: { $gte: start, $lt: end } },
+    {
+      $set: { userId, measurementDate: start, isActive: true, goal },
+      $setOnInsert: { steps: 0, source: 'manual' },
+    },
     { new: true, upsert: true, setDefaultsOnInsert: true }
   );
 };
@@ -1481,6 +1522,7 @@ export {
   addWeightEntry,
   addWaterEntry,
   updateWaterTarget,
+  updateStepGoal,
   getTodayWaterData,
   getWeeklyWaterSummary,
   deleteWaterIntake,

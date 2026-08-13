@@ -1,9 +1,10 @@
 // controllers/eventController.js
 
 import axios from "axios";
-import { Event } from "../models/index.js";
+import { Event, User } from "../models/index.js";
 import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
 import { validateEventOverlap } from '../services/overlapCheck.service.js';
+import { notifyEnrollment } from '../utils/notificationUtils.js';
 
 // Helper function to get teacher data with first image
 const getTeacherData = (teacher) => {
@@ -400,6 +401,29 @@ export const isUserEnrolledInEvent = async (req, res) => {
 
         const eventData = populated.toObject();
         eventData.teacher = getTeacherData(eventData.teacher);
+
+        try {
+            const student = await User.findById(userId).select('name email');
+            const teacherRef = event.teacher?._id || event.teacher;
+            await notifyEnrollment({
+                teacherId: teacherRef,
+                studentId: userId,
+                studentName: student?.name || 'A student',
+                studentEmail: student?.email,
+                title: event.eventName,
+                kind: 'event',
+                resourceId: event._id,
+                scheduledAt: event.startDate,
+                extraMetadata: {
+                    eventId: event._id,
+                    eventName: event.eventName,
+                    totalStudents: claimed.students.length,
+                    teacherName: eventData.teacher?.name,
+                },
+            });
+        } catch (notificationError) {
+            console.error('Error sending event enrollment notifications:', notificationError);
+        }
 
         return res.status(200).json({ message: 'User registered successfully', event: eventData });
     } catch (error) {

@@ -194,12 +194,14 @@ const createHeartRateTracker = {
 const createSleepTracker = {
   body: Joi.object().keys({
     sleepRate: Joi.number().min(0).max(100),
-    sleepTime: Joi.number().min(0), // in minutes
-    hoursSlept: Joi.number().min(0).max(24),
+    sleepTime: Joi.number().min(0), // in minutes; overwritten from clock times in service
+    // No max(24): Android DateTimePicker date-subtraction can send huge values.
+    // addSleepEntry recomputes hoursSlept from bedtime/wakeUpTime.
+    hoursSlept: Joi.number().min(0),
     bedtime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:MM format
     wakeUpTime: Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/), // HH:MM format
     goal: Joi.number().min(1).max(24).default(8),
-    notes: Joi.string().max(500),
+    notes: Joi.string().max(500).allow(''),
   }),
 };
 
@@ -256,12 +258,19 @@ const updateWaterTarget = {
   }),
 };
 
+const updateStepGoal = {
+  body: Joi.object().keys({
+    goal: Joi.number().integer().min(1000).max(50000).required(),
+  }),
+};
+
 const deleteWaterIntake = {
   params: Joi.object().keys({
     trackerId: Joi.string().custom(objectId).required(),
   }),
   body: Joi.object().keys({
     amountMl: Joi.number().min(1).required(),
+    time: Joi.string(),
   }),
 };
 
@@ -376,6 +385,7 @@ export {
   getTrackerHistory,
   getTrackerEntryById,
   updateWaterTarget,
+  updateStepGoal,
   deleteWaterIntake,
   addWaterIntake,
   getTodayWaterData,

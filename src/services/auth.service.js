@@ -21,11 +21,14 @@ const loginUserWithEmailAndPassword = async (email, password) => {
 };
 
 /**
- * Send OTP for login
+ * Send OTP for login.
+ * Optional expectedRole (user | teacher) blocks the other account type
+ * so a student cannot OTP-login on the Wellness Coach radio, and vice versa.
  * @param {string} email
+ * @param {'user'|'teacher'} [expectedRole]
  * @returns {Promise<Object>}
  */
-const sendLoginOTPForUser = async (email) => {
+const sendLoginOTPForUser = async (email, expectedRole) => {
   const user = await getUserByEmail(email);
   if (!user) {
     // NOTE (SAM-H-19): this 404 is an account-enumeration oracle, but the app
@@ -33,6 +36,19 @@ const sendLoginOTPForUser = async (email) => {
     // from this error. Flattening the response here breaks signup, so the fix
     // must ship with a coordinated app change (dedicated account-check step).
     throw new ApiError(httpStatus.NOT_FOUND, 'Account not found. Please register first.');
+  }
+
+  if (expectedRole && user.role && user.role !== expectedRole) {
+    if (user.role === 'teacher') {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        'This email belongs to a wellness coach account. Please sign in as Wellness Coach.'
+      );
+    }
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      'This email belongs to a student account. Please sign in as Student.'
+    );
   }
 
   await sendLoginOTP(email, { portal: 'user' });

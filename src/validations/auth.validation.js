@@ -114,6 +114,7 @@ const verifyRegistrationOTP = {
 const sendLoginOTP = {
   body: Joi.object().keys({
     email: Joi.string().trim().lowercase().required().email(),
+    role: Joi.string().valid('user', 'teacher'),
   }),
 };
 

@@ -7,10 +7,28 @@ import { User } from '../models/index.js';
 User;
 
 /**
- * Create a notification
- * @param {Object} notificationBody
- * @returns {Promise<Notification>}
+ * Inbox visibility: sent/delivered, plus pending items whose send time has passed.
+ * (Older enrollment notifs were stuck as pending and never appeared.)
+ * @param {import('mongoose').Types.ObjectId|string} userId
+ * @returns {Object}
  */
+const buildInboxQuery = (userId) => ({
+  $and: [
+    {
+      $or: [{ userId }, { userId: null }],
+    },
+    {
+      $or: [
+        { status: { $in: ['sent', 'delivered'] } },
+        { status: 'pending', scheduledAt: { $lte: new Date() } },
+      ],
+    },
+    {
+      $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }],
+    },
+  ],
+});
+
 const createNotification = async (notificationBody) => {
   const notification = await Notification.create(notificationBody);
   return notification;
@@ -24,49 +42,34 @@ const createNotification = async (notificationBody) => {
  */
 const getUserNotifications = async (userId, options = {}) => {
   const { type, unreadOnly, limit = 50, page = 1 } = options;
-  
-  const query = {
-    $and: [
-      {
-        $or: [
-          { userId: userId },
-          { userId: null } // Global notifications
-        ]
-      },
-      {
-        status: { $in: ['sent', 'delivered'] }
-      },
-      {
-        $or: [
-          { expiresAt: null },
-          { expiresAt: { $gt: new Date() } }
-        ]
-      }
-    ]
-  };
-  
+  const limitNum = Math.min(100, Math.max(1, Number(limit) || 50));
+  const pageNum = Math.max(1, Number(page) || 1);
+
+  const query = buildInboxQuery(userId);
+
   if (type) {
-    query.$and.push({ type: type });
+    query.$and.push({ type });
   }
-  
-  if (unreadOnly) {
+
+  if (unreadOnly === true || unreadOnly === 'true') {
     query.$and.push({ 'readBy.user': { $ne: userId } });
   }
-  
-  const skip = (page - 1) * limit;
-  
+
+  const skip = (pageNum - 1) * limitNum;
+
   const notifications = await Notification.find(query)
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(limit)
+    .limit(limitNum)
     .lean();
-  
-  // Add read status for each notification
-  const notificationsWithReadStatus = notifications.map(notification => ({
+
+  const notificationsWithReadStatus = notifications.map((notification) => ({
     ...notification,
-    isRead: notification.readBy.some(read => read.user.toString() === userId.toString())
+    isRead: (notification.readBy || []).some(
+      (read) => read.user && read.user.toString() === userId.toString()
+    ),
   }));
-  
+
   return notificationsWithReadStatus;
 };
 
@@ -194,30 +197,9 @@ const markAllNotificationsAsRead = async (userId) => {
  * @returns {Promise<number>}
  */
 const getUnreadNotificationCount = async (userId) => {
-  const count = await Notification.countDocuments({
-    $and: [
-      {
-        $or: [
-          { userId: userId },
-          { userId: null }
-        ]
-      },
-      {
-        status: { $in: ['sent', 'delivered'] }
-      },
-      {
-        'readBy.user': { $ne: userId }
-      },
-      {
-        $or: [
-          { expiresAt: null },
-          { expiresAt: { $gt: new Date() } }
-        ]
-      }
-    ]
-  });
-  
-  return count;
+  const query = buildInboxQuery(userId);
+  query.$and.push({ 'readBy.user': { $ne: userId } });
+  return Notification.countDocuments(query);
 };
 
 /**

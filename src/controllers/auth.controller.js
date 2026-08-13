@@ -136,8 +136,8 @@ const verifyRegistrationOTPController = catchAsync(async (req, res) => {
 
 // OTP-based login flow
 const sendLoginOTPController = catchAsync(async (req, res) => {
-  const { email } = req.body;
-  const result = await sendLoginOTPForUser(email);
+  const { email, role } = req.body;
+  const result = await sendLoginOTPForUser(email, role);
   res.status(httpStatus.OK).send(result);
 });
 

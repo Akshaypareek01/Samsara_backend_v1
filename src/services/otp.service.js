@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import httpStatus from 'http-status';
+import { getOtpExpiresAt } from '../config/otp.js';
 import { OTP } from '../models/index.js';
 import { sendEmail } from './email.service.js';
 import { buildOtpEmailContent, COMPANY_SUPPORT_EMAIL } from '../utils/emailTemplates.js';
@@ -28,7 +29,7 @@ const createOTP = async (email, type) => {
   await OTP.deleteMany({ email: normalizedEmail, type });
 
   const otp = generateOTP();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+  const expiresAt = getOtpExpiresAt();
 
   const otpDoc = await OTP.create({
     email: normalizedEmail,

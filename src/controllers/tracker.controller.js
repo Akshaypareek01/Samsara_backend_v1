@@ -244,6 +244,7 @@ const toActivityShape = (doc) => ({
   distance: doc.distance,
   activeTime: doc.activeTime,
   source: doc.source,
+  goal: doc.goal ?? 10000,
 });
 
 /**
@@ -380,6 +381,14 @@ const updateWaterTarget = catchAsync(async (req, res) => {
 });
 
 /**
+ * Persist the user's daily step goal onto today's StepTracker row.
+ */
+const updateStepGoal = catchAsync(async (req, res) => {
+  const entry = await trackerService.updateStepGoal(req.user.id, req.body.goal);
+  res.send(toActivityShape(entry));
+});
+
+/**
  * Get today's water data
  */
 const getTodayWaterData = catchAsync(async (req, res) => {
@@ -402,8 +411,8 @@ const getWeeklyWaterSummary = catchAsync(async (req, res) => {
  */
 const deleteWaterIntake = catchAsync(async (req, res) => {
   const { trackerId } = req.params;
-  const { amountMl } = req.body;
-  const entry = await trackerService.deleteWaterIntake(req.user.id, trackerId, amountMl);
+  const { amountMl, time } = req.body;
+  const entry = await trackerService.deleteWaterIntake(req.user.id, trackerId, amountMl, time);
   res.send(entry);
 });
 
@@ -478,6 +487,7 @@ export {
   updateTrackerEntry,
   deleteTrackerEntry,
   updateWaterTarget,
+  updateStepGoal,
   getTodayWaterData,
   getWeeklyWaterSummary,
   deleteWaterIntake,

@@ -23,17 +23,17 @@ router.get(
   notificationController.getUnreadCount
 );
 
+// Mark all notifications as read (before /:notificationId/read)
+router.patch(
+  '/mark-all-read',
+  notificationController.markAllAsRead
+);
+
 // Mark notification as read
 router.patch(
   '/:notificationId/read',
   validate(notificationValidation.markAsRead),
   notificationController.markAsRead
-);
-
-// Mark all notifications as read
-router.patch(
-  '/mark-all-read',
-  notificationController.markAllAsRead
 );
 
 // Admin routes (admin only)

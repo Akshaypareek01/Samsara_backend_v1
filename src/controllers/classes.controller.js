@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Class, User } from "../models/index.js";
 import { createZoomMeeting as createZoomMeetingBackend } from './zoom.controller.js';
-import { createUserNotification } from '../utils/notificationUtils.js';
+import { createUserNotification, notifyEnrollment } from '../utils/notificationUtils.js';
 import {
   createZoomMeeting,
   endZoomMeeting,
@@ -581,61 +581,28 @@ export const addStudentToClass = async (req, res) => {
     const classData = updatedClass.toObject();
     classData.teacher = getTeacherData(classData.teacher);
 
-    // Send notification to teacher about new student enrollment
-    if (foundClass.teacher) {
-      try {
-        const student = await User.findById(studentId).select('name email');
-        await createUserNotification(
-          foundClass.teacher.toString(),
-          'New Student Enrolled! 👥',
-          `${student.name} has enrolled in your class "${foundClass.title}"`,
-          {
-            type: 'class_update',
-            priority: 'medium',
-            metadata: {
-              classId: foundClass._id,
-              className: foundClass.title,
-              studentId: studentId,
-              studentName: student.name,
-              studentEmail: student.email,
-              totalStudents: foundClass.students.length
-            },
-            actionUrl: `/classes/${foundClass._id}`,
-            actionText: 'View Class',
-            tags: ['class', 'enrollment', 'teacher']
-          }
-        );
-        console.log(`Notification sent to teacher ${foundClass.teacher} about new student enrollment`);
-      } catch (notificationError) {
-        console.error('Error sending notification to teacher:', notificationError);
-      }
-    }
-
-    // Send notification to student about successful enrollment
     try {
-      await createUserNotification(
+      const student = await User.findById(studentId).select('name email');
+      await notifyEnrollment({
+        teacherId: foundClass.teacher,
         studentId,
-        'Class Enrollment Successful! ✅',
-        `You have successfully enrolled in "${foundClass.title}" scheduled for ${new Date(foundClass.schedule).toLocaleDateString()}`,
-        {
-          type: 'upcoming_class',
-          priority: 'medium',
-          metadata: {
-            classId: foundClass._id,
-            className: foundClass.title,
-            scheduledDate: foundClass.schedule,
-            duration: foundClass.duration,
-            teacherName: classData.teacher?.name,
-            classType: foundClass.classType
-          },
-          actionUrl: `/classes/${foundClass._id}`,
-          actionText: 'View Class',
-          tags: ['class', 'enrollment', 'student']
-        }
-      );
-      console.log(`Notification sent to student ${studentId} about successful enrollment`);
+        studentName: student?.name || 'A student',
+        studentEmail: student?.email,
+        title: foundClass.title,
+        kind: 'class',
+        resourceId: foundClass._id,
+        scheduledAt: foundClass.schedule,
+        extraMetadata: {
+          classId: foundClass._id,
+          className: foundClass.title,
+          totalStudents: claimed.students.length,
+          duration: foundClass.duration,
+          teacherName: classData.teacher?.name,
+          classType: foundClass.classType,
+        },
+      });
     } catch (notificationError) {
-      console.error('Error sending notification to student:', notificationError);
+      console.error('Error sending enrollment notifications:', notificationError);
     }
 
     res.json({ 

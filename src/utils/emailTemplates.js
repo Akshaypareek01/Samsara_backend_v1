@@ -1,4 +1,5 @@
 import config from '../config/config.js';
+import { OTP_EXPIRY_MINUTES } from '../config/otp.js';
 
 /** Samsara Wellness brand tokens for HTML emails. */
 const BRAND = {
@@ -23,8 +24,6 @@ const PORTAL_PATHS = {
   // Consumer web app login lives at site root (not CRM)
   user: '/',
 };
-
-const OTP_EXPIRY_MINUTES = 10;
 
 /** Company portal support inbox shown in company-facing emails. */
 export const COMPANY_SUPPORT_EMAIL = 'assist@samsarawellness.in';

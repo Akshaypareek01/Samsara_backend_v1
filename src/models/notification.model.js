@@ -221,7 +221,7 @@ notificationSchema.statics.createBulkNotifications = function(notifications) {
 
 // Pre-save middleware to validate scheduled time
 notificationSchema.pre('save', function(next) {
-  if (this.scheduledAt && this.scheduledAt < new Date()) {
+  if (this.scheduledAt && this.scheduledAt <= new Date() && this.status === 'pending') {
     this.status = 'sent';
   }
   next();

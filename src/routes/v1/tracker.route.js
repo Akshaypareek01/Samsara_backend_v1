@@ -224,6 +224,13 @@ router.post('/body-status', validate(trackerValidation.createBodyStatusTracker),
 router.post('/step', validate(trackerValidation.createStepTracker), trackerController.addStepEntry);
 
 /**
+ * @route   PUT /v1/trackers/step/goal
+ * @desc    Update daily step goal (upserts today's StepTracker row)
+ * @access  Private
+ */
+router.put('/step/goal', validate(trackerValidation.updateStepGoal), trackerController.updateStepGoal);
+
+/**
  * @route   POST /v1/trackers/activity
  * @desc    Add/upsert today's activity (device steps + active calories)
  * @access  Private
