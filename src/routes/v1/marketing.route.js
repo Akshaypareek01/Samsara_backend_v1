@@ -5,11 +5,12 @@ import adminOnly from '../../middlewares/admin.middleware.js';
 import validate from '../../middlewares/validate.js';
 import * as marketingValidation from '../../validations/marketing.validation.js';
 import * as marketingController from '../../controllers/marketing.controller.js';
+import { MAX_UPLOAD_FILE_SIZE_BYTES } from '../../config/uploadLimits.js';
 
 const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB — CSV/XLSX imports
+  limits: { fileSize: MAX_UPLOAD_FILE_SIZE_BYTES },
 });
 
 router.use(auth(), adminOnly());

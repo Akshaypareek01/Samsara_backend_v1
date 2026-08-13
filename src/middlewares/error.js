@@ -3,6 +3,7 @@ import httpStatus from 'http-status';
 import config from '../config/config.js';
 import logger from '../config/logger.js';
 import ApiError from '../utils/ApiError.js';
+import { MAX_UPLOAD_FILE_SIZE_LABEL } from '../config/uploadLimits.js';
 
 const errorConverter = (err, req, res, next) => {
   let error = err;
@@ -10,7 +11,9 @@ const errorConverter = (err, req, res, next) => {
     if (err.name === 'MulterError') {
       const isTooLarge = err.code === 'LIMIT_FILE_SIZE';
       const statusCode = isTooLarge ? httpStatus.REQUEST_ENTITY_TOO_LARGE : httpStatus.BAD_REQUEST;
-      const message = isTooLarge ? 'File too large. Maximum size is 25MB.' : err.message || 'Upload failed';
+      const message = isTooLarge
+        ? `File too large. Maximum size is ${MAX_UPLOAD_FILE_SIZE_LABEL}.`
+        : err.message || 'Upload failed';
       error = new ApiError(statusCode, message, true, err.stack);
     } else {
       // Precedence matters: keep the error's own status when it has one,

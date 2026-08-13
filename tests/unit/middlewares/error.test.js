@@ -84,6 +84,41 @@ describe('Error middlewares', () => {
       );
     });
 
+    test('should convert a Multer LIMIT_FILE_SIZE error to 413 with the configured cap', () => {
+      const error = new Error('File too large');
+      error.name = 'MulterError';
+      error.code = 'LIMIT_FILE_SIZE';
+      const next = jest.fn();
+
+      errorConverter(error, httpMocks.createRequest(), httpMocks.createResponse(), next);
+
+      expect(next).toHaveBeenCalledWith(expect.any(ApiError));
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({
+          statusCode: httpStatus.REQUEST_ENTITY_TOO_LARGE,
+          message: 'File too large. Maximum size is 25MB.',
+          isOperational: true,
+        })
+      );
+    });
+
+    test('should convert other Multer errors to 400', () => {
+      const error = new Error('Unexpected field');
+      error.name = 'MulterError';
+      error.code = 'LIMIT_UNEXPECTED_FILE';
+      const next = jest.fn();
+
+      errorConverter(error, httpMocks.createRequest(), httpMocks.createResponse(), next);
+
+      expect(next).toHaveBeenCalledWith(
+        expect.objectContaining({
+          statusCode: httpStatus.BAD_REQUEST,
+          message: error.message,
+          isOperational: true,
+        })
+      );
+    });
+
     test('should convert any other object to ApiError with status 500 and its message', () => {
       const error = {};
       const next = jest.fn();
