@@ -1,12 +1,11 @@
 import express from 'express';
 import { createMeeting, getMeetingData } from '../../controllers/meeting.controller.js';
+import auth from '../../middlewares/auth.js';
 
 const meetingRouter = express.Router();
 
-// Create a new teacher
-meetingRouter.post('/', createMeeting);
-
-// Get all teachers
-meetingRouter.get('/', getMeetingData);
+// JWT required — GET was leaking meeting passwords.
+meetingRouter.post('/', auth(), createMeeting);
+meetingRouter.get('/', auth(), getMeetingData);
 
 export default meetingRouter;

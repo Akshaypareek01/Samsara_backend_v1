@@ -20,7 +20,9 @@ const checkDietGenerationEligibility = async (userId) => {
  */
 const generateDietFromAI = async (userData) => {
     try {
-        const dietUrl = config.dietModelUrl || 'https://diet.apis-samsarawellness.in/';
+        // Public diet.apis-samsarawellness.in/generate-diet-from-node-data is nginx 403.
+        // Node talks to gunicorn on loopback (prod: DIET_MODEL_URL=http://127.0.0.1:4000).
+        const dietUrl = String(config.dietModelUrl || 'http://127.0.0.1:4000').replace(/\/+$/, '');
         const response = await axios.post(`${dietUrl}/generate-diet-from-node-data`, userData, {
             timeout: 300000, // 5 minutes timeout
             headers: {

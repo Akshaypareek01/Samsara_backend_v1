@@ -30,7 +30,10 @@ const envVarsSchema = Joi.object()
     SES_SMTP_ENDPOINT: Joi.string().description('AWS SES SMTP endpoint'),
     SES_SMTP_PORT: Joi.alternatives().try(Joi.number(), Joi.string().pattern(/^\d+/)).description('AWS SES SMTP port'),
     SMTP_TIMEOUT: Joi.number().default(7).description('SMTP connection timeout in seconds'),
-    DIET_MODEL_URL: Joi.string().description('URL for the AI diet model API'),
+    HOST: Joi.string().description('Listen address (default 127.0.0.1; 0.0.0.0 for local LAN)'),
+    DIET_MODEL_URL: Joi.string()
+      .default('http://127.0.0.1:4000')
+      .description('Loopback URL for the AI diet gunicorn (not the public nginx host)'),
     RAZORPAY_KEY_ID: Joi.string().description('Razorpay Key ID'),
     RAZORPAY_SECRET: Joi.string().description('Razorpay Secret Key'),
     OPEN_AI_KEY: Joi.string().description('OpenAI API Key'),

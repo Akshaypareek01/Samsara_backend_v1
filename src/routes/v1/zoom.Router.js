@@ -23,17 +23,7 @@ import auth from '../../middlewares/auth.js';
 
 const zoomRouter = express.Router();
 
-zoomRouter.post('/fetchZoomToken', fetchZoomTokenServerOauth);
-zoomRouter.get('/zoom/oauth-token', getAccessToken);
-zoomRouter.post('/zoomuserInfo', zoomuserInfo);
-zoomRouter.post('/createZoomMeeting', createZoomMeeting);
-zoomRouter.post('/createZoomMeeting-session', createSessionZoomMeeting);
-
-zoomRouter.post('/createZoomMeeting-event', createEventZoomMeeting);
-zoomRouter.post('/getMeetingData', getMeeting);
-zoomRouter.delete('/deleteMeeting', deleteMeeting);
-zoomRouter.post('/generateSDKSignature', auth(), generateMeetingSDKSignature);
-zoomRouter.get('/getMeetingDetails', auth(), getMeetingDetails);
+// Public — join HTML + wellness feedback. Register BEFORE auth().
 zoomRouter.get('/join-meeting', serveJoinMeetingPage);
 zoomRouter.get('/wellness-feedback-form', serveFeedbackForm);
 zoomRouter.post(
@@ -41,5 +31,19 @@ zoomRouter.post(
   validate(wellnessFeedbackValidation.submitWellnessFeedback),
   submitWellnessFeedback
 );
+
+// CRM/web/app must send JWT on every Zoom write/token/SDK call below.
+zoomRouter.use(auth());
+
+zoomRouter.post('/fetchZoomToken', fetchZoomTokenServerOauth);
+zoomRouter.get('/zoom/oauth-token', getAccessToken);
+zoomRouter.post('/zoomuserInfo', zoomuserInfo);
+zoomRouter.post('/createZoomMeeting', createZoomMeeting);
+zoomRouter.post('/createZoomMeeting-session', createSessionZoomMeeting);
+zoomRouter.post('/createZoomMeeting-event', createEventZoomMeeting);
+zoomRouter.post('/getMeetingData', getMeeting);
+zoomRouter.delete('/deleteMeeting', deleteMeeting);
+zoomRouter.post('/generateSDKSignature', generateMeetingSDKSignature);
+zoomRouter.get('/getMeetingDetails', getMeetingDetails);
 
 export default zoomRouter;

@@ -9,24 +9,18 @@ import {
   updateClassStatus,
   updateRecordedClass,
 } from '../../controllers/recordedclasses.Controller.js';
+import auth from '../../middlewares/auth.js';
 
 const RecordedClassRouter = express.Router();
 
-// Get all classes
+// GETs stay public
 RecordedClassRouter.get('/', getAllRecordedClass);
-
-// Get a specific class by ID
 RecordedClassRouter.get('/:id', getRecordedClassById);
 
-// Create a new class
-RecordedClassRouter.post('/', createRecordedClass);
-
-// Update a class by ID
-RecordedClassRouter.put('/:id', updateRecordedClass);
-
-// Delete a class by ID
-RecordedClassRouter.delete('/:id', deleteRecordedClass);
-
-RecordedClassRouter.patch('/:id/update-status', updateClassStatus);
+// Writes require JWT
+RecordedClassRouter.post('/', auth(), createRecordedClass);
+RecordedClassRouter.put('/:id', auth(), updateRecordedClass);
+RecordedClassRouter.delete('/:id', auth(), deleteRecordedClass);
+RecordedClassRouter.patch('/:id/update-status', auth(), updateClassStatus);
 
 export default RecordedClassRouter;

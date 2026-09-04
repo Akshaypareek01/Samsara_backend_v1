@@ -51,9 +51,11 @@ const startServer = async () => {
       }
     }
 
-    // Start server
-    server = app.listen(config.port, () => {
-      logger.info(`Listening to port ${config.port}`);
+    // Start server. Default loopback; prod sets HOST=127.0.0.1 (nginx reverse-proxies).
+    // Local LAN access: HOST=0.0.0.0
+    const listenHost = process.env.HOST || '127.0.0.1';
+    server = app.listen(config.port, listenHost, () => {
+      logger.info(`Listening to ${listenHost}:${config.port}`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

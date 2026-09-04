@@ -344,7 +344,11 @@
                     if (sessionId) detailsParams.append('sessionId', sessionId);
                     if (eventId) detailsParams.append('eventId', eventId);
 
-                    const detailsResponse = await fetch(`${baseUrl}/v1/zoom/getMeetingDetails?${detailsParams.toString()}`);
+                    const detailsResponse = await fetch(`${baseUrl}/v1/zoom/getMeetingDetails?${detailsParams.toString()}`, {
+                        headers: {
+                            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+                        },
+                    });
                     
                     if (!detailsResponse.ok) {
                         const errorData = await detailsResponse.json().catch(() => ({}));

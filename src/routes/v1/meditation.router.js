@@ -9,7 +9,7 @@ const router = express.Router();
 // Meditation management routes
 router
   .route('/')
-  .post(validate(meditationValidation.createMeditation), meditationController.createMeditation)
+  .post(auth('admin'), validate(meditationValidation.createMeditation), meditationController.createMeditation)
   .get(validate(meditationValidation.getMeditations), meditationController.getMeditations);
 
 // Search route (must come before parameterized routes)
@@ -31,8 +31,8 @@ router
 router
   .route('/:meditationId')
   .get(validate(meditationValidation.getMeditation), meditationController.getMeditation)
-  .patch(validate(meditationValidation.updateMeditation), meditationController.updateMeditation)
-  .delete(validate(meditationValidation.deleteMeditation), meditationController.deleteMeditation);
+  .patch(auth('admin'), validate(meditationValidation.updateMeditation), meditationController.updateMeditation)
+  .delete(auth('admin'), validate(meditationValidation.deleteMeditation), meditationController.deleteMeditation);
 
 router
   .route('/:meditationId/recommended')

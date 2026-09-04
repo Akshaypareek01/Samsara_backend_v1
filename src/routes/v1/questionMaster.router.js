@@ -6,25 +6,29 @@ import * as questionMasterController from '../../controllers/questionMaster.cont
 
 const router = express.Router();
 
-// Question Master Routes (Admin only)
+// Question Master Routes (writes: admin JWT; GETs stay public)
 router
   .route('/questions')
-  .post(validate(questionMasterValidation.createQuestion), questionMasterController.createQuestion)
+  .post(auth('admin'), validate(questionMasterValidation.createQuestion), questionMasterController.createQuestion)
   .get(validate(questionMasterValidation.getQuestions), questionMasterController.getQuestions);
 
 router
   .route('/questions/bulk')
-  .post(validate(questionMasterValidation.bulkCreateQuestions), questionMasterController.bulkCreateQuestions);
+  .post(
+    auth('admin'),
+    validate(questionMasterValidation.bulkCreateQuestions),
+    questionMasterController.bulkCreateQuestions
+  );
 
 router
   .route('/questions/:questionId')
   .get(validate(questionMasterValidation.getQuestion), questionMasterController.getQuestionById)
-  .patch(validate(questionMasterValidation.updateQuestion), questionMasterController.updateQuestion)
-  .delete(validate(questionMasterValidation.getQuestion), questionMasterController.deleteQuestion);
+  .patch(auth('admin'), validate(questionMasterValidation.updateQuestion), questionMasterController.updateQuestion)
+  .delete(auth('admin'), validate(questionMasterValidation.getQuestion), questionMasterController.deleteQuestion);
 
 router
   .route('/questions/:questionId/toggle')
-  .patch(validate(questionMasterValidation.getQuestion), questionMasterController.toggleQuestionStatus);
+  .patch(auth('admin'), validate(questionMasterValidation.getQuestion), questionMasterController.toggleQuestionStatus);
 
 // Assessment Routes (Users)
 router
