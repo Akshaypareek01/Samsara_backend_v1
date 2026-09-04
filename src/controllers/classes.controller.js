@@ -11,6 +11,12 @@ import {
   patchMeetingPrivacySettings,
 } from '../services/zoomService.js';
 import { validateClassOverlap } from '../services/overlapCheck.service.js';
+import {
+  ACTIVE_CLASS_FILTER,
+  cancelClassById,
+  isClassCancelled,
+} from '../services/classCancellation.service.js';
+import { cancelStudentRegistration } from '../services/classEnrollment.service.js';
 
 // Helper to parse time string (HH:MM, HH:MM:SS, or "h:mm AM/PM") to minutes since midnight
 const parseTimeToMinutes = (timeStr) => {
@@ -252,7 +258,7 @@ export const createClass = async (req, res) => {
 
 export const getAllClasses = async (req, res) => {
   try {
-    const classes = await Class.find()
+    const classes = await Class.find(ACTIVE_CLASS_FILTER)
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
@@ -274,8 +280,8 @@ export const getAllUpcomingClasses = async (req, res) => {
     const currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0); // Reset time to 00:00:00 for the current day
     
-    // Get all classes (we'll filter them in JavaScript to handle recurring schedules)
-    const allClasses = await Class.find()
+    // Get all active classes (we'll filter them in JavaScript to handle recurring schedules)
+    const allClasses = await Class.find(ACTIVE_CLASS_FILTER)
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
       .exec();
@@ -318,8 +324,9 @@ export const getUpcomingClassesByCategory = async (req, res) => {
     }
 
     // Get all classes for this category (we'll filter by upcoming in JavaScript)
-    const allClasses = await Class.find({ 
-      classCategory: classCategory 
+    const allClasses = await Class.find({
+      classCategory: classCategory,
+      ...ACTIVE_CLASS_FILTER,
     })
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
       .populate('students', 'name email')
@@ -386,6 +393,9 @@ export const updateClass = async (req, res) => {
     const existingClass = await Class.findById(classId).lean();
     if (!existingClass) {
       return res.status(404).json({ success: false, error: 'Class not found' });
+    }
+    if (isClassCancelled(existingClass)) {
+      return res.status(400).json({ success: false, error: 'Cannot update a cancelled class' });
     }
 
     // Check for overlapping classes/events (exclude current class)
@@ -476,43 +486,26 @@ export const updateClass = async (req, res) => {
   }
 };
 
+/**
+ * Cancels a class (soft-delete). Enrolled students get in-app + push notification.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const deleteClass = async (req, res) => {
   const { classId } = req.params;
   try {
-    const classDoc = await Class.findById(classId);
-    if (!classDoc) {
-      return res.status(404).json({ success: false, error: "Class not found" });
-    }
-
-    // End Zoom meeting first when a live meeting exists, then delete the class
-    if (classDoc.meeting_number) {
-      try {
-        await endZoomMeeting(
-          classDoc.meeting_number,
-          classDoc.zoomAccountUsed || "account_1"
-        );
-      } catch (zoomError) {
-        console.error(
-          "Error ending Zoom meeting before class delete:",
-          zoomError?.message || zoomError
-        );
-        return res.status(500).json({
-          success: false,
-          error:
-            zoomError?.message ||
-            "Failed to end Zoom meeting before deleting class",
-        });
-      }
-    }
-
-    const deletedClass = await Class.findByIdAndDelete(classId);
+    const { classDoc, notified, zoomEnded } = await cancelClassById(classId);
+    const classData = classDoc.toObject ? classDoc.toObject() : classDoc;
     res.json({
       success: true,
-      data: deletedClass,
-      zoomEnded: Boolean(classDoc.meeting_number),
+      data: classData,
+      cancelled: true,
+      notified,
+      zoomEnded,
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    const status = error.statusCode || 500;
+    res.status(status).json({ success: false, error: error.message });
   }
 };
 
@@ -522,7 +515,7 @@ export const getClassesByTeacher = async (req, res) => {
     // Validate that the teacher exists and has role 'teacher'
     await validateTeacher(teacherId);
     
-    const classes = await Class.find({ teacher: teacherId })
+    const classes = await Class.find({ teacher: teacherId, ...ACTIVE_CLASS_FILTER })
       .populate('students', 'name email')
       .exec();
     res.json({ success: true, data: classes });
@@ -541,13 +534,20 @@ export const addStudentToClass = async (req, res) => {
     if (!foundClass) {
       return res.status(404).json({ success: false, message: "Class not found" });
     }
+    if (isClassCancelled(foundClass)) {
+      return res.status(400).json({
+        success: false,
+        message: 'This class has been cancelled',
+        code: 'CLASS_CANCELLED',
+      });
+    }
 
     // Validate that the student exists and has role 'user'
     await validateStudent(studentId);
 
     // Atomic claim: prevents both double-enrolment and overbooking when
     // several students book the last seat at the same moment.
-    const guard = { _id: classId, students: { $ne: studentId } };
+    const guard = { _id: classId, students: { $ne: studentId }, cancelled: { $ne: true } };
     if (Number.isFinite(foundClass.maxCapacity) && foundClass.maxCapacity > 0) {
       guard.$expr = { $lt: [{ $size: '$students' }, foundClass.maxCapacity] };
     }
@@ -559,6 +559,14 @@ export const addStudentToClass = async (req, res) => {
     );
 
     if (!claimed) {
+      const latest = await Class.findById(classId).select('cancelled students').lean();
+      if (isClassCancelled(latest)) {
+        return res.status(400).json({
+          success: false,
+          message: 'This class has been cancelled',
+          code: 'CLASS_CANCELLED',
+        });
+      }
       const alreadyIn = foundClass.students.some((s) => String(s?._id ?? s) === String(studentId));
       return res.status(409).json({
         success: false,
@@ -751,85 +759,34 @@ export const assignTeacherToClass = async (req, res) => {
   }
 };
 
+/**
+ * Student (or admin) cancels a class registration. Blocked after class start / live Zoom.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const removeStudentFromClass = async (req, res) => {
-    const { classId, studentId } = req.params;
-    try {
-      const updatedClass = await Class.findByIdAndUpdate(
-        classId,
-        { $pull: { students: studentId } },
-        { new: true }
-      )
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
-      .populate('students', 'name email')
-      .exec();
-      
-      if (!updatedClass) {
-        return res.status(404).json({ success: false, error: "Class not found" });
-      }
-      
-      const classData = updatedClass.toObject();
-      classData.teacher = getTeacherData(classData.teacher);
-      
-      // Send notification to teacher about student removal
-      if (updatedClass.teacher) {
-        try {
-          const student = await User.findById(studentId).select('name email');
-          await createUserNotification(
-            updatedClass.teacher.toString(),
-            'Student Removed from Class 👋',
-            `${student.name} has been removed from your class "${updatedClass.title}"`,
-            {
-              type: 'class_update',
-              priority: 'medium',
-              metadata: {
-                classId: updatedClass._id,
-                className: updatedClass.title,
-                studentId: studentId,
-                studentName: student.name,
-                studentEmail: student.email,
-                totalStudents: updatedClass.students.length
-              },
-              actionUrl: `/classes/${updatedClass._id}`,
-              actionText: 'View Class',
-              tags: ['class', 'removal', 'teacher']
-            }
-          );
-          console.log(`Notification sent to teacher ${updatedClass.teacher} about student removal`);
-        } catch (notificationError) {
-          console.error('Error sending notification to teacher:', notificationError);
-        }
-      }
-      
-      // Send notification to student about removal
-      try {
-        await createUserNotification(
-          studentId,
-          'Removed from Class 📤',
-          `You have been removed from the class "${updatedClass.title}"`,
-          {
-            type: 'class_update',
-            priority: 'medium',
-            metadata: {
-              classId: updatedClass._id,
-              className: updatedClass.title,
-              teacherName: classData.teacher?.name,
-              scheduledDate: updatedClass.schedule
-            },
-            actionUrl: `/classes`,
-            actionText: 'Browse Classes',
-            tags: ['class', 'removal', 'student']
-          }
-        );
-        console.log(`Notification sent to student ${studentId} about removal from class`);
-      } catch (notificationError) {
-        console.error('Error sending notification to student:', notificationError);
-      }
-      
-      res.json({ success: true, data: classData });
-    } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  };
+  const { classId, studentId } = req.params;
+  try {
+    const callerId = String(req.user?.id ?? req.user?._id ?? '');
+    const isSelf = callerId === String(studentId);
+    const updatedClass = await cancelStudentRegistration(classId, studentId, {
+      cancelledBy: isSelf ? 'self' : 'admin',
+    });
+
+    const classData = updatedClass.toObject();
+    classData.teacher = getTeacherData(classData.teacher);
+
+    res.json({ success: true, data: classData });
+  } catch (error) {
+    const status = error.statusCode || 500;
+    res.status(status).json({
+      success: false,
+      error: error.message,
+      message: error.message,
+      code: error.code,
+    });
+  }
+};
 
   export const uploadClassRecording = async (req, res) => {
     try {
@@ -1052,6 +1009,9 @@ const clearEndedConflictMeetingsFromDb = async (endedMeetingIds, keepClassId) =>
     const { classId } = req.params;
     const classDoc = await Class.findById(classId);
     if (!classDoc) return res.status(404).json({ success: false, error: "Class not found" });
+    if (isClassCancelled(classDoc)) {
+      return res.status(400).json({ success: false, error: 'Cannot start a cancelled class' });
+    }
 
     // Reuse only if Zoom still has this meeting (SDK "End and Start" often deletes it)
     if (classDoc.meeting_number && String(classDoc.meeting_number).trim() !== '') {

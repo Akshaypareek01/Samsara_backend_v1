@@ -105,7 +105,7 @@ const slotsOverlap = (a, b) => {
 export const checkTeacherOverlap = async (teacherId, newSlots, excludeClassId = null, excludeEventId = null) => {
   if (!teacherId || !newSlots || newSlots.length === 0) return { hasOverlap: false };
 
-  const existingClasses = await Class.find({ teacher: teacherId })
+  const existingClasses = await Class.find({ teacher: teacherId, cancelled: { $ne: true } })
     .select('_id title schedule startTime endTime duration schedules')
     .lean();
   const existingEvents = await Event.find({ teacher: teacherId })

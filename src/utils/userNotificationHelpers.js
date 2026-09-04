@@ -205,26 +205,51 @@ export const sendMissedClassNotification = async (userId, classData) => {
 };
 
 /**
- * Send class cancellation notification
+ * Notifies a student that a class they registered for has been cancelled.
+ * @param {string} userId
+ * @param {Object} classData
+ * @param {string|import('mongoose').Types.ObjectId} classData.id
+ * @param {string} classData.title
+ * @param {Date|string} [classData.schedule]
+ * @param {string} [classData.dateLabel]
+ * @param {string} [classData.timeLabel]
+ * @param {string} [classData.instructor]
+ * @param {string} [classData.cancellationReason]
+ * @returns {Promise<Object>}
  */
 export const sendClassCancellationNotification = async (userId, classData) => {
+  const dateLabel = classData.dateLabel
+    || (classData.schedule ? new Date(classData.schedule).toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'Asia/Kolkata',
+    }) : '');
+  const timeLabel = classData.timeLabel || '';
+  const when = [dateLabel, timeLabel].filter(Boolean).join(' at ');
+  const whenClause = when ? ` scheduled for ${when}` : '';
+
   return await createUserNotification(
     userId,
-    'Class Cancelled ❌',
-    `The class "${classData.title}" scheduled for ${new Date(classData.schedule).toLocaleDateString()} has been cancelled.`,
+    'Class Cancelled',
+    `The class "${classData.title}"${whenClause} has been cancelled.`,
     {
-      type: 'class_update',
+      type: 'cancellation',
       priority: 'high',
       metadata: {
         classId: classData.id,
         className: classData.title,
         instructor: classData.instructor,
         scheduledDate: classData.schedule,
-        cancellationReason: classData.cancellationReason
+        classDate: dateLabel,
+        classTime: timeLabel,
+        cancellationReason: classData.cancellationReason,
       },
-      actionUrl: '/classes',
-      actionText: 'View Other Classes',
-      tags: ['class', 'cancelled', 'update']
+      actionUrl: `/classes/${classData.id}`,
+      actionText: 'View Class',
+      tags: ['class', 'cancelled', 'student'],
+      source: 'automated',
     }
   );
 };

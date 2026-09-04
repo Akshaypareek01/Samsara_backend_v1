@@ -1,18 +1,21 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
 
+const dateKey = Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/);
+
 const createWeightTracker = {
   body: Joi.object().keys({
+    date: dateKey,
     currentWeight: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(500).required(),
       unit: Joi.string().valid('kg', 'lbs').default('kg'),
     }).required(),
     goalWeight: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(500).required(),
       unit: Joi.string().valid('kg', 'lbs').default('kg'),
     }).required(),
     startingWeight: Joi.object({
-      value: Joi.number(),
+      value: Joi.number().greater(0).max(500),
       unit: Joi.string().valid('kg', 'lbs').default('kg'),
     }),
     notes: Joi.string().max(500),
@@ -31,11 +34,13 @@ const createWaterTracker = {
     ),
     totalIntake: Joi.number().min(0),
     notes: Joi.string().max(500),
+    date: dateKey,
   }),
 };
 
 const createMoodTracker = {
   body: Joi.object().keys({
+    date: dateKey,
     mood: Joi.string()
       .valid('Normal', 'Angry', 'Happy', 'Sad', 'Exhausted', 'Anxious', 'Depressed', 'In Love', 'Bored', 'Confident', 'Excited', 'Relaxed')
       .required(),
@@ -54,8 +59,9 @@ const createMoodTracker = {
 
 const createTemperatureTracker = {
   body: Joi.object().keys({
+    date: dateKey,
     temperature: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(115).required(),
       unit: Joi.string().valid('F', 'C').default('F'),
     }).required(),
     notes: Joi.string().max(500),
@@ -64,35 +70,37 @@ const createTemperatureTracker = {
 
 const createFatTracker = {
   body: Joi.object().keys({
+    date: dateKey,
     age: Joi.number().min(1).max(120).required(),
     gender: Joi.string().valid('Male', 'Female', 'Other').required(),
     height: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(300).required(),
       unit: Joi.string().valid('cm', 'ft').default('cm'),
     }).required(),
     weight: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(500).required(),
       unit: Joi.string().valid('kg', 'lbs').default('kg'),
     }).required(),
     bodyFat: Joi.object({
-      value: Joi.number().min(0).max(100).required(),
+      value: Joi.number().greater(0).max(100).required(),
       unit: Joi.string().valid('%').default('%'),
     }).required(),
-    goal: Joi.number().min(0).max(100),
+    goal: Joi.number().greater(0).max(100),
     notes: Joi.string().max(500),
   }),
 };
 
 const createBmiTracker = {
   body: Joi.object().keys({
+    date: dateKey,
     age: Joi.number().min(1).max(120).required(),
     gender: Joi.string().valid('Male', 'Female', 'Other').required(),
     height: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(300).required(),
       unit: Joi.string().valid('cm', 'ft').default('cm'),
     }).required(),
     weight: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(500).required(),
       unit: Joi.string().valid('kg', 'lbs').default('kg'),
     }).required(),
     notes: Joi.string().max(500),
@@ -104,11 +112,11 @@ const createBodyStatusTracker = {
     age: Joi.number().min(1).max(120),
     gender: Joi.string().valid('Male', 'Female', 'Other'),
     height: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(300).required(),
       unit: Joi.string().valid('cm', 'ft').default('cm'),
     }).required(),
     weight: Joi.object({
-      value: Joi.number().required(),
+      value: Joi.number().greater(0).max(500).required(),
       unit: Joi.string().valid('kg', 'lbs').default('kg'),
     }).required(),
     chest: Joi.object({
@@ -193,6 +201,7 @@ const createHeartRateTracker = {
 
 const createSleepTracker = {
   body: Joi.object().keys({
+    date: dateKey,
     sleepRate: Joi.number().min(0).max(100),
     sleepTime: Joi.number().min(0), // in minutes; overwritten from clock times in service
     // No max(24): Android DateTimePicker date-subtraction can send huge values.
@@ -205,33 +214,26 @@ const createSleepTracker = {
   }),
 };
 
+const TRACKER_TYPES = ['weight', 'water', 'mood', 'temperature', 'fat', 'bmi', 'bodyStatus', 'step', 'sleep', 'heart-rate'];
+
 const updateTrackerEntry = {
   params: Joi.object().keys({
-    trackerType: Joi.string()
-      .valid('weight', 'water', 'mood', 'temperature', 'fat', 'bmi', 'bodyStatus', 'step', 'sleep')
-      .required(),
+    trackerType: Joi.string().valid(...TRACKER_TYPES).required(),
     entryId: Joi.string().custom(objectId).required(),
   }),
-  body: Joi.object()
-    .keys({
-      // Allow any valid tracker data based on type
-      // Validation will be handled in the service layer
-    })
-    .min(1),
+  body: Joi.object().min(1).unknown(true),
 };
 
 const deleteTrackerEntry = {
   params: Joi.object().keys({
-    trackerType: Joi.string()
-      .valid('weight', 'water', 'mood', 'temperature', 'fat', 'bmi', 'bodyStatus', 'step', 'sleep')
-      .required(),
+    trackerType: Joi.string().valid(...TRACKER_TYPES).required(),
     entryId: Joi.string().custom(objectId).required(),
   }),
 };
 
 const getTrackerHistory = {
   query: Joi.object().keys({
-    days: Joi.number().integer().min(1).max(365).default(30),
+    days: Joi.number().integer().min(1).max(730).default(30),
   }),
 };
 
@@ -244,6 +246,7 @@ const getTrackerEntryById = {
 const addWaterIntake = {
   body: Joi.object().keys({
     amountMl: Joi.number().min(1).max(5000).required(),
+    date: dateKey,
   }),
 };
 
@@ -276,34 +279,36 @@ const deleteWaterIntake = {
 
 const createWorkoutTracker = {
   body: Joi.object().keys({
+    date: dateKey,
     workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing').required(),
     intensity: Joi.string().valid('Low', 'Medium', 'High').required(),
     distance: Joi.object({
-      value: Joi.number().min(0),
+      value: Joi.number().greater(0).max(200).required(),
       unit: Joi.string().valid('km', 'mi').default('km'),
     }),
     duration: Joi.object({
-      value: Joi.number().min(0),
-      unit: Joi.string().default('h'),
-    }),
-    calories: Joi.number().min(0).required(),
+      value: Joi.number().greater(0).max(24).required(),
+      unit: Joi.string().valid('h', 'min').default('h'),
+    }).required(),
+    calories: Joi.number().integer().greater(0).max(9999).required(),
     notes: Joi.string().max(500),
   }),
 };
 
 const addWorkoutEntry = {
   body: Joi.object().keys({
+    date: dateKey,
     workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing').required(),
     intensity: Joi.string().valid('Low', 'Medium', 'High').required(),
     distance: Joi.object({
-      value: Joi.number().min(0),
+      value: Joi.number().greater(0).max(200).required(),
       unit: Joi.string().valid('km', 'mi').default('km'),
     }),
     duration: Joi.object({
-      value: Joi.number().min(0),
-      unit: Joi.string().default('h'),
-    }),
-    calories: Joi.number().min(0).required(),
+      value: Joi.number().greater(0).max(24).required(),
+      unit: Joi.string().valid('h', 'min').default('h'),
+    }).required(),
+    calories: Joi.number().integer().greater(0).max(9999).required(),
     notes: Joi.string().max(500),
   }),
 };
@@ -311,14 +316,14 @@ const addWorkoutEntry = {
 const getWorkoutByType = {
   query: Joi.object().keys({
     workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing'),
-    days: Joi.number().integer().min(1).max(365).default(30),
+    days: Joi.number().integer().min(1).max(730).default(30),
   }),
 };
 
 const getWorkoutSummary = {
   query: Joi.object().keys({
     period: Joi.string().valid('daily', 'weekly', 'monthly', '6months', 'yearly').default('weekly'),
-    days: Joi.number().integer().min(1).max(365).default(7),
+    days: Joi.number().integer().min(1).max(730).default(7),
   }),
 };
 
@@ -331,15 +336,16 @@ const updateWorkoutEntry = {
       workoutType: Joi.string().valid('Running', 'Yoga', 'Swimming', 'Cycling', 'Gym', 'Dancing'),
       intensity: Joi.string().valid('Low', 'Medium', 'High'),
       distance: Joi.object({
-        value: Joi.number().min(0),
+        value: Joi.number().greater(0).max(200).required(),
         unit: Joi.string().valid('km', 'mi'),
       }),
       duration: Joi.object({
-        value: Joi.number().min(0),
-        unit: Joi.string(),
+        value: Joi.number().greater(0).max(24).required(),
+        unit: Joi.string().valid('h', 'min'),
       }),
-      calories: Joi.number().min(0),
+      calories: Joi.number().integer().greater(0).max(9999),
       notes: Joi.string().max(500),
+      date: dateKey,
     })
     .min(1),
 };

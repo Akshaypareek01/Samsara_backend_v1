@@ -56,7 +56,7 @@ classRouter.get('/:classId', getClassById);
 // Route for updating a class
 classRouter.put('/:classId', auth(), validate(classValidation.updateClass), updateClass);
 
-// Route for deleting a class
+// Soft-cancel a class and notify enrolled students (keeps the record for My Classes)
 classRouter.delete('/:classId', auth(), validate(classValidation.classIdParam), deleteClass);
 classRouter.post('/add-pre-data', auth(), adminOnly(), addPredefinedClasses);
 // Route for assigning a teacher to a class

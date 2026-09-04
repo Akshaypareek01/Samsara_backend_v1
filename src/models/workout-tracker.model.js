@@ -33,9 +33,10 @@ const WorkoutEntrySchema = new mongoose.Schema(
       type: String,
       max: 500,
     },
-  },
-  { _id: false }
+  }
 );
+
+WorkoutEntrySchema.plugin(toJSON);
 
 const WeeklySummaryEntrySchema = new mongoose.Schema(
   {
@@ -123,5 +124,17 @@ WorkoutTrackerSchema.plugin(paginate);
 // Indexes
 WorkoutTrackerSchema.index({ userId: 1, date: -1 });
 WorkoutTrackerSchema.index({ userId: 1, 'workoutEntries.workoutType': 1 });
+
+/**
+ * Assign ObjectIds to legacy nested entries created while `_id: false`.
+ */
+WorkoutTrackerSchema.pre('save', function assignWorkoutEntryIds(next) {
+  this.workoutEntries.forEach((entry) => {
+    if (!entry._id) {
+      entry._id = new mongoose.Types.ObjectId();
+    }
+  });
+  next();
+});
 
 export const WorkoutTracker = mongoose.model('WorkoutTracker', WorkoutTrackerSchema);

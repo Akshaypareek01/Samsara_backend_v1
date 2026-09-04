@@ -34,6 +34,20 @@ const classSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  cancelled: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
+  cancelledAt: {
+    type: Date,
+    default: null,
+  },
+  cancellationReason: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
   schedule: { type: Date, default: Date.now, required: true },
   startTime: { type: String, required: false },

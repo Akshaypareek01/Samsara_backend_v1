@@ -42,8 +42,8 @@ const eventBody = {
   level: Joi.string().valid('Beginner', 'Intermediate', 'Advanced'),
   // String on the model; clients send a number. Accept both, reject nonsense.
   availableseats: Joi.alternatives().try(
-    Joi.number().integer().min(1).max(10000),
-    Joi.string().pattern(/^\d{1,5}$/)
+    Joi.number().integer().min(1).max(100),
+    Joi.string().pattern(/^(?:[1-9]|[1-9]\d|100)$/)
   ),
   image: Joi.string().uri().allow('', null),
   startDate: flexibleDate,
@@ -101,6 +101,9 @@ const classBody = {
   description: Joi.string().trim().max(5000).allow(''),
   teacher: Joi.string().custom(objectId),
   status: Joi.boolean(),
+  cancelled: Joi.any().forbidden(),
+  cancelledAt: Joi.any().forbidden(),
+  cancellationReason: Joi.any().forbidden(),
   // Either form is valid: `schedule` directly, or `schedules[]` from which the
   // model's pre-save hook derives it.
   schedule: flexibleDate,
@@ -112,7 +115,7 @@ const classBody = {
   classType: Joi.string().valid('online', 'offline'),
   classCategory: Joi.string().valid('yoga class', 'meditation class', 'pcos/pcod class', 'thyroid class'),
   duration: Joi.number().integer().min(5).max(480),
-  maxCapacity: Joi.number().integer().min(1).max(10000),
+  maxCapacity: Joi.number().integer().min(1).max(60),
   perfectFor: Joi.array().items(Joi.string().max(300)).max(20),
   skipIf: Joi.array().items(Joi.string().max(300)).max(20),
   whatYoullGain: Joi.array().items(Joi.string().max(300)).max(20),

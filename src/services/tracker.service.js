@@ -1,4 +1,5 @@
 import httpStatus from 'http-status';
+import mongoose from 'mongoose';
 import { 
   WeightTracker, 
   WaterTracker, 
@@ -15,6 +16,147 @@ import {
 } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { normalizeSleepEntry } from '../utils/sleepTracker.js';
+
+const TRACKER_MODELS = {
+  weight: WeightTracker,
+  water: WaterTracker,
+  mood: Mood,
+  temperature: TemperatureTracker,
+  fat: FatTracker,
+  bmi: BmiTracker,
+  bodyStatus: BodyStatus,
+  step: StepTracker,
+  sleep: SleepTracker,
+  'heart-rate': HeartRateTracker,
+};
+
+const MEASUREMENT_DATE_TYPES = [
+  'step',
+  'heart-rate',
+  'temperature',
+  'weight',
+  'fat',
+  'bmi',
+  'bodyStatus',
+];
+
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+/** Pad before UTC midnight so IST local-midnight docs (`T18:30:00.000Z`) still match. */
+const LEGACY_LOCAL_MIDNIGHT_PAD_MS = 14 * 60 * 60 * 1000;
+
+/**
+ * Resolve a YYYY-MM-DD string to that calendar day's [start, end) in UTC.
+ * `new Date("YYYY-MM-DD")` is UTC midnight; `setHours(0,0,0,0)` on an IST
+ * server then rolls it back to the previous UTC date — Sep 2 became Sep 1.
+ * @param {string|Date} [date]
+ * @returns {{ start: Date, end: Date, lookupStart: Date }}
+ */
+const dayRange = (date) => {
+  if (typeof date === 'string') {
+    const m = date.trim().match(DATE_ONLY);
+    if (m) {
+      const y = Number(m[1]);
+      const month = Number(m[2]) - 1;
+      const d = Number(m[3]);
+      const start = new Date(Date.UTC(y, month, d));
+      const end = new Date(Date.UTC(y, month, d + 1));
+      return {
+        start,
+        end,
+        lookupStart: new Date(start.getTime() - LEGACY_LOCAL_MIDNIGHT_PAD_MS),
+      };
+    }
+  }
+  const base = date ? new Date(date) : new Date();
+  const start = new Date(base);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return {
+    start,
+    end,
+    lookupStart: new Date(start.getTime() - LEGACY_LOCAL_MIDNIGHT_PAD_MS),
+  };
+};
+
+/**
+ * Map client `date: YYYY-MM-DD` onto the stored date field and strip `date`.
+ * @param {Object} data
+ * @param {'measurementDate'|'date'} fieldName
+ * @returns {Object}
+ */
+const applyClientDate = (data, fieldName = 'measurementDate') => {
+  if (!data?.date) return { ...data };
+  const { start } = dayRange(data.date);
+  const next = { ...data, [fieldName]: start };
+  delete next.date;
+  return next;
+};
+
+/**
+ * Persist ObjectIds on workout subdocs that were saved without `_id`.
+ * Mongoose hydrates missing subdoc ids in memory, so we inspect the raw BSON.
+ * @param {import('mongoose').Document[]} docs
+ * @returns {Promise<import('mongoose').Document[]>}
+ */
+const ensureWorkoutEntryIds = async (docs) => {
+  await Promise.all(
+    (docs || []).map(async (doc) => {
+      const raw = await WorkoutTracker.collection.findOne(
+        { _id: doc._id },
+        { projection: { workoutEntries: 1 } }
+      );
+      const stored = raw?.workoutEntries || [];
+      const needsIds = stored.some((entry) => !entry?._id);
+      if (!needsIds) return;
+      doc.workoutEntries.forEach((entry, index) => {
+        if (!stored[index]?._id && !entry._id) {
+          entry._id = new mongoose.Types.ObjectId();
+        }
+      });
+      doc.markModified('workoutEntries');
+      await doc.save();
+    })
+  );
+  return docs;
+};
+
+/**
+ * Map client payloads onto the stored tracker document shape.
+ * @param {string} trackerType
+ * @param {Object} updateData
+ * @returns {Object}
+ */
+const normalizeTrackerUpdate = (trackerType, updateData) => {
+  const data = { ...updateData };
+  if (trackerType === 'step') {
+    if (data.steps && typeof data.steps === 'object' && data.steps.value != null) {
+      data.steps = data.steps.value;
+    }
+    if (data.activeCalories?.value != null) {
+      data.calories = data.activeCalories.value;
+      delete data.activeCalories;
+    }
+    if (data.date) {
+      const { start } = dayRange(data.date);
+      data.measurementDate = start;
+      delete data.date;
+    }
+  }
+  if (MEASUREMENT_DATE_TYPES.includes(trackerType) && data.date) {
+    const { start } = dayRange(data.date);
+    data.measurementDate = start;
+    delete data.date;
+  }
+  if (trackerType === 'sleep' || trackerType === 'water') {
+    const next = data.date ? applyClientDate(data, 'date') : data;
+    if (trackerType === 'sleep') {
+      return { ...next, ...normalizeSleepEntry(next) };
+    }
+    return next;
+  }
+  return data;
+};
 
 /**
  * Create initial trackers for a new user
@@ -349,11 +491,13 @@ const getSleepById = async (userId, entryId) => {
 };
 
 /**
- * Get all tracker data for dashboard
+ * Get all tracker data for dashboard.
+ * `step` is today's activity row only (not the latest historical log).
  * @param {ObjectId} userId
  * @returns {Promise<Object>}
  */
 const getDashboardData = async (userId) => {
+  const { end: todayEnd, lookupStart: todayLookupStart } = dayRange();
   const [
     latestWeight,
     latestWater,
@@ -365,6 +509,7 @@ const getDashboardData = async (userId) => {
     latestStep,
     latestSleep,
     latestWorkout,
+    latestHeartRate,
     caloriesTarget
   ] = await Promise.all([
     WeightTracker.getLatestByUserId(userId),
@@ -374,9 +519,14 @@ const getDashboardData = async (userId) => {
     FatTracker.getLatestByUserId(userId),
     BmiTracker.getLatestByUserId(userId),
     BodyStatus.getLatestByUserId(userId),
-    StepTracker.getLatestByUserId(userId),
+    StepTracker.findOne({
+      userId,
+      isActive: true,
+      measurementDate: { $gte: todayLookupStart, $lt: todayEnd },
+    }).sort({ measurementDate: -1 }),
     SleepTracker.findOne({ userId }).sort({ date: -1 }),
     WorkoutTracker.findOne({ userId }).sort({ date: -1 }),
+    HeartRateTracker.getLatestByUserId(userId),
     getCaloriesTarget(userId)
   ]);
 
@@ -391,6 +541,7 @@ const getDashboardData = async (userId) => {
     step: latestStep,
     sleep: latestSleep,
     workout: latestWorkout,
+    heartRate: latestHeartRate,
     caloriesTarget
   };
 };
@@ -402,7 +553,7 @@ const getDashboardData = async (userId) => {
  * @returns {Promise<Object>}
  */
 const addWeightEntry = async (userId, weightData) => {
-  return WeightTracker.create({ userId, ...weightData });
+  return WeightTracker.create({ userId, ...applyClientDate(weightData) });
 };
 
 /**
@@ -412,23 +563,21 @@ const addWeightEntry = async (userId, weightData) => {
  * @returns {Promise<Object>}
  */
 const addWaterEntry = async (userId, waterData) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { start: dayStart, end: dayEnd, lookupStart } = dayRange(waterData.date);
   
-  // Find or create today's water tracker
+  // Find or create this day's water tracker
   let waterTracker = await WaterTracker.findOne({ 
     userId, 
     date: { 
-      $gte: today, 
-      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+      $gte: lookupStart, 
+      $lt: dayEnd 
     } 
   });
 
   if (!waterTracker) {
-    // Create new water tracker for today
     waterTracker = await WaterTracker.create({
       userId,
-      date: today,
+      date: dayStart,
       targetMl: 2000, // default target
       targetGlasses: 8,
       intakeTimeline: [],
@@ -465,21 +614,18 @@ const addWaterEntry = async (userId, waterData) => {
   }
 
   // Update weekly summary
-  const weekStart = new Date(today);
+  const weekStart = new Date(dayStart);
   weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
   
-  // Find or create weekly summary entry for today
   const existingWeekEntry = waterTracker.weeklySummary.find(
-    entry => entry.date.getTime() === today.getTime()
+    entry => entry.date.getTime() === dayStart.getTime()
   );
 
   if (existingWeekEntry) {
-    // Update existing entry
     existingWeekEntry.totalMl = waterTracker.totalIntake;
   } else {
-    // Add new weekly summary entry
     waterTracker.weeklySummary.push({
-      date: today,
+      date: dayStart,
       totalMl: waterTracker.totalIntake
     });
   }
@@ -725,13 +871,19 @@ const deleteWaterIntake = async (userId, trackerId, amountMl, time) => {
  * @returns {Promise<Object>}
  */
 const addMoodEntry = async (userId, moodData) => {
-  // Handle backward compatibility: map 'note' to 'comments' if 'comments' is not provided
   const processedMoodData = { ...moodData };
   if (moodData.note && !moodData.comments) {
     processedMoodData.comments = moodData.note;
     delete processedMoodData.note;
   }
-  
+  if (processedMoodData.date) {
+    const { start } = dayRange(processedMoodData.date);
+    const now = new Date();
+    start.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+    processedMoodData.createdAt = start;
+    processedMoodData.updatedAt = start;
+    delete processedMoodData.date;
+  }
   return Mood.create({ userId, ...processedMoodData });
 };
 
@@ -742,7 +894,7 @@ const addMoodEntry = async (userId, moodData) => {
  * @returns {Promise<Object>}
  */
 const addTemperatureEntry = async (userId, temperatureData) => {
-  return TemperatureTracker.create({ userId, ...temperatureData });
+  return TemperatureTracker.create({ userId, ...applyClientDate(temperatureData) });
 };
 
 /**
@@ -752,7 +904,7 @@ const addTemperatureEntry = async (userId, temperatureData) => {
  * @returns {Promise<Object>}
  */
 const addFatEntry = async (userId, fatData) => {
-  return FatTracker.create({ userId, ...fatData });
+  return FatTracker.create({ userId, ...applyClientDate(fatData) });
 };
 
 /**
@@ -762,7 +914,7 @@ const addFatEntry = async (userId, fatData) => {
  * @returns {Promise<Object>}
  */
 const addBmiEntry = async (userId, bmiData) => {
-  return BmiTracker.create({ userId, ...bmiData });
+  return BmiTracker.create({ userId, ...applyClientDate(bmiData) });
 };
 
 /**
@@ -792,7 +944,8 @@ const addStepEntry = async (userId, stepData) => {
  * @returns {Promise<Object>}
  */
 const addSleepEntry = async (userId, sleepData) => {
-  return SleepTracker.create({ userId, ...normalizeSleepEntry(sleepData) });
+  const dated = applyClientDate(sleepData, 'date');
+  return SleepTracker.create({ userId, ...normalizeSleepEntry(dated) });
 };
 
 /**
@@ -802,23 +955,20 @@ const addSleepEntry = async (userId, sleepData) => {
  * @returns {Promise<Object>}
  */
 const addWorkoutEntry = async (userId, workoutData) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { start: dayStart, end: dayEnd, lookupStart } = dayRange(workoutData.date);
   
-  // Find or create today's workout tracker
   let workoutTracker = await WorkoutTracker.findOne({ 
     userId, 
     date: { 
-      $gte: today, 
-      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+      $gte: lookupStart, 
+      $lt: dayEnd 
     } 
   });
 
   if (!workoutTracker) {
-    // Create new workout tracker for today
     workoutTracker = await WorkoutTracker.create({
       userId,
-      date: today,
+      date: dayStart,
       workoutEntries: [],
       totalWorkoutTime: 0,
       totalCaloriesBurned: 0,
@@ -836,7 +986,7 @@ const addWorkoutEntry = async (userId, workoutData) => {
     distance: workoutData.distance,
     duration: workoutData.duration,
     calories: workoutData.calories,
-    date: new Date(),
+    date: dayStart,
     notes: workoutData.notes
   };
 
@@ -847,23 +997,20 @@ const addWorkoutEntry = async (userId, workoutData) => {
   workoutTracker.totalCaloriesBurned += workoutData.calories;
 
   // Update weekly summary
-  const weekStart = new Date(today);
+  const weekStart = new Date(dayStart);
   weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
   
-  // Find or create weekly summary entry for today
   const existingWeekEntry = workoutTracker.weeklySummary.find(
-    entry => entry.date.getTime() === today.getTime()
+    entry => entry.date.getTime() === dayStart.getTime()
   );
 
   if (existingWeekEntry) {
-    // Update existing entry
     existingWeekEntry.totalTime = workoutTracker.totalWorkoutTime;
     existingWeekEntry.totalCalories = workoutTracker.totalCaloriesBurned;
     existingWeekEntry.workoutCount = workoutTracker.workoutEntries.length;
   } else {
-    // Add new weekly summary entry
     workoutTracker.weeklySummary.push({
-      date: today,
+      date: dayStart,
       totalTime: workoutTracker.totalWorkoutTime,
       totalCalories: workoutTracker.totalCaloriesBurned,
       workoutCount: workoutTracker.workoutEntries.length
@@ -934,10 +1081,11 @@ const getWorkoutHistory = async (userId, days = 30) => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   
-  return WorkoutTracker.find({
+  const docs = await WorkoutTracker.find({
     userId,
     date: { $gte: startDate }
   }).sort({ date: -1 });
+  return ensureWorkoutEntryIds(docs);
 };
 
 /**
@@ -960,7 +1108,8 @@ const getWorkoutByType = async (userId, workoutType, days = 30) => {
     query['workoutEntries.workoutType'] = workoutType;
   }
 
-  return WorkoutTracker.find(query).sort({ date: -1 });
+  const docs = await WorkoutTracker.find(query).sort({ date: -1 });
+  return ensureWorkoutEntryIds(docs);
 };
 
 /**
@@ -1048,7 +1197,7 @@ const updateWorkoutEntry = async (userId, entryId, updateData) => {
 
   // Find the specific entry
   const entryIndex = workoutTracker.workoutEntries.findIndex(
-    entry => entry._id.toString() === entryId
+    (entry) => entry._id && entry._id.toString() === entryId
   );
 
   if (entryIndex === -1) {
@@ -1058,6 +1207,7 @@ const updateWorkoutEntry = async (userId, entryId, updateData) => {
   // Update the entry
   const oldEntry = workoutTracker.workoutEntries[entryIndex];
   Object.assign(workoutTracker.workoutEntries[entryIndex], updateData);
+  workoutTracker.markModified('workoutEntries');
 
   // Recalculate totals
   workoutTracker.totalWorkoutTime = workoutTracker.workoutEntries.reduce(
@@ -1089,7 +1239,7 @@ const deleteWorkoutEntry = async (userId, entryId) => {
 
   // Find and remove the specific entry
   const entryIndex = workoutTracker.workoutEntries.findIndex(
-    entry => entry._id.toString() === entryId
+    (entry) => entry._id && entry._id.toString() === entryId
   );
 
   if (entryIndex === -1) {
@@ -1119,28 +1269,18 @@ const deleteWorkoutEntry = async (userId, entryId) => {
  * @returns {Promise<Object>}
  */
 const updateTrackerEntry = async (userId, trackerType, entryId, updateData) => {
-  const trackerModels = {
-    weight: WeightTracker,
-    water: WaterTracker,
-    mood: Mood,
-    temperature: TemperatureTracker,
-    fat: FatTracker,
-    bmi: BmiTracker,
-    bodyStatus: BodyStatus,
-    step: StepTracker,
-    sleep: SleepTracker
-  };
-
-  const model = trackerModels[trackerType];
+  const model = TRACKER_MODELS[trackerType];
   if (!model) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid tracker type');
   }
 
-  const entry = await model.findOneAndUpdate({ _id: entryId, userId }, updateData, { new: true });
+  const entry = await model.findOne({ _id: entryId, userId });
   if (!entry) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Entry not found');
   }
 
+  entry.set(normalizeTrackerUpdate(trackerType, updateData));
+  await entry.save();
   return entry;
 };
 
@@ -1152,19 +1292,7 @@ const updateTrackerEntry = async (userId, trackerType, entryId, updateData) => {
  * @returns {Promise<void>}
  */
 const deleteTrackerEntry = async (userId, trackerType, entryId) => {
-  const trackerModels = {
-    weight: WeightTracker,
-    water: WaterTracker,
-    mood: Mood,
-    temperature: TemperatureTracker,
-    fat: FatTracker,
-    bmi: BmiTracker,
-    bodyStatus: BodyStatus,
-    step: StepTracker,
-    sleep: SleepTracker
-  };
-
-  const model = trackerModels[trackerType];
+  const model = TRACKER_MODELS[trackerType];
   if (!model) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid tracker type');
   }
@@ -1384,16 +1512,41 @@ const updateCaloriesFromSource = async (userId, source, calories) => {
 };
 
 /**
- * Resolve a YYYY-MM-DD string (or Date) to that day's [start, end) window.
- * Falls back to today when no date is supplied.
+ * Non-negative integer from a step/calorie field.
+ * @param {unknown} value
+ * @returns {number}
  */
-const dayRange = (date) => {
-  const base = date ? new Date(date) : new Date();
-  const start = new Date(base);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  return { start, end };
+const activityCount = (value) => {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+/**
+ * Keep the higher same-day total so Health Connect cannot wipe a manual log with 0.
+ * @param {unknown} existing
+ * @param {unknown} incoming
+ * @returns {number}
+ */
+const maxActivityCount = (existing, incoming) =>
+  Math.max(activityCount(existing), activityCount(incoming));
+
+/**
+ * Source after a same-day merge. Manual stays unless the device strictly raised steps.
+ * @param {string|undefined} existingSource
+ * @param {string} incomingSource
+ * @param {number} existingSteps
+ * @param {number} mergedSteps
+ * @returns {string}
+ */
+const mergeActivitySource = (
+  existingSource,
+  incomingSource,
+  existingSteps,
+  mergedSteps
+) => {
+  if (incomingSource === 'manual') return 'manual';
+  if (existingSource === 'manual' && mergedSteps <= existingSteps) return 'manual';
+  return incomingSource || existingSource || 'manual';
 };
 
 /**
@@ -1405,18 +1558,45 @@ const dayRange = (date) => {
  * @param {{ date?: string, steps?: {value:number}, activeCalories?: {value:number, unit?:string}, distance?: object, activeTime?: number, source?: string, notes?: string }} data
  */
 const upsertActivityEntry = async (userId, data) => {
-  const { start, end } = dayRange(data.date);
+  const { start, end, lookupStart } = dayRange(data.date);
+  const existing = await StepTracker.findOne({
+    userId,
+    isActive: true,
+    measurementDate: { $gte: lookupStart, $lt: end },
+  }).sort({ measurementDate: -1 });
+
+  const incomingSource = data.source || 'manual';
+  const incomingSteps =
+    data.steps && data.steps.value != null ? data.steps.value : null;
+  const incomingCalories =
+    data.activeCalories && data.activeCalories.value != null
+      ? data.activeCalories.value
+      : null;
+
   const set = { userId, measurementDate: start, isActive: true };
 
-  if (data.steps && data.steps.value != null) set.steps = data.steps.value;
-  if (data.activeCalories && data.activeCalories.value != null) set.calories = data.activeCalories.value;
+  if (incomingSteps != null) {
+    set.steps = maxActivityCount(existing?.steps, incomingSteps);
+  }
+  if (incomingCalories != null) {
+    set.calories = maxActivityCount(existing?.calories, incomingCalories);
+  }
   if (data.distance) set.distance = data.distance;
   if (data.activeTime != null) set.activeTime = data.activeTime;
-  if (data.source) set.source = data.source;
   if (data.notes) set.notes = data.notes;
+
+  if (data.source || existing?.source) {
+    set.source = mergeActivitySource(
+      existing?.source,
+      incomingSource,
+      activityCount(existing?.steps),
+      set.steps != null ? set.steps : activityCount(existing?.steps)
+    );
+  }
+
   if (data.goal != null) {
     set.goal = data.goal;
-  } else {
+  } else if (!existing?.goal) {
     const previous = await StepTracker.findOne({ userId, isActive: true }).sort({
       measurementDate: -1,
     });
@@ -1424,9 +1604,9 @@ const upsertActivityEntry = async (userId, data) => {
   }
 
   return StepTracker.findOneAndUpdate(
-    { userId, measurementDate: { $gte: start, $lt: end } },
+    { userId, measurementDate: { $gte: lookupStart, $lt: end } },
     { $set: set },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { new: true, upsert: true, setDefaultsOnInsert: true, sort: { measurementDate: -1 } }
   );
 };
 
@@ -1439,14 +1619,14 @@ const upsertActivityEntry = async (userId, data) => {
  * @returns {Promise<import('mongoose').Document>}
  */
 const updateStepGoal = async (userId, goal) => {
-  const { start, end } = dayRange();
+  const { start, end, lookupStart } = dayRange();
   return StepTracker.findOneAndUpdate(
-    { userId, measurementDate: { $gte: start, $lt: end } },
+    { userId, measurementDate: { $gte: lookupStart, $lt: end } },
     {
       $set: { userId, measurementDate: start, isActive: true, goal },
       $setOnInsert: { steps: 0, source: 'manual' },
     },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { new: true, upsert: true, setDefaultsOnInsert: true, sort: { measurementDate: -1 } }
   );
 };
 
@@ -1470,7 +1650,18 @@ const getActivityHistory = async (userId, days = 30) => {
  * @param {{ date?: string, summary: {avg?:number,min?:number,max?:number,latest?:number,unit?:string}, measuredAt?: string, source?: string, notes?: string }} data
  */
 const upsertHeartRateEntry = async (userId, data) => {
-  const { start, end } = dayRange(data.date);
+  const { start, end, lookupStart } = dayRange(data.date);
+  const incomingSource = data.source || 'manual';
+  const existing = await HeartRateTracker.findOne({
+    userId,
+    measurementDate: { $gte: lookupStart, $lt: end },
+  }).sort({ measurementDate: -1 });
+
+  // Device sync must not replace a same-day manual reading.
+  if (existing && existing.source === 'manual' && incomingSource !== 'manual') {
+    return existing;
+  }
+
   const set = { userId, measurementDate: start, isActive: true };
 
   if (data.summary) set.summary = data.summary;
@@ -1479,9 +1670,9 @@ const upsertHeartRateEntry = async (userId, data) => {
   if (data.notes) set.notes = data.notes;
 
   return HeartRateTracker.findOneAndUpdate(
-    { userId, measurementDate: { $gte: start, $lt: end } },
+    { userId, measurementDate: { $gte: lookupStart, $lt: end } },
     { $set: set },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { new: true, upsert: true, setDefaultsOnInsert: true, sort: { measurementDate: -1 } }
   );
 };
 

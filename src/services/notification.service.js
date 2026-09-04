@@ -2,6 +2,7 @@ import httpStatus from 'http-status';
 import Notification from '../models/notification.model.js';
 import ApiError from '../utils/ApiError.js';
 import { User } from '../models/index.js';
+import { sendExpoPushToUser } from './expoPush.service.js';
 
 // Ensure User model is registered
 User;
@@ -31,6 +32,19 @@ const buildInboxQuery = (userId) => ({
 
 const createNotification = async (notificationBody) => {
   const notification = await Notification.create(notificationBody);
+  if (notification.status === 'sent' || notification.status === 'delivered') {
+    sendExpoPushToUser(notification.userId, {
+      title: notification.title,
+      body: notification.message,
+      data: {
+        type: notification.type,
+        notificationId: String(notification._id),
+        ...(notification.metadata || {}),
+      },
+    }).catch((error) => {
+      console.error('Push send after createNotification failed:', error?.message || error);
+    });
+  }
   return notification;
 };
 
@@ -295,36 +309,21 @@ const scheduleNotification = async (notificationId, scheduledAt) => {
 };
 
 /**
- * Send push notification (placeholder for actual implementation)
+ * Sends a device push for an already-persisted in-app notification.
  * @param {Notification} notification
  * @returns {Promise<void>}
  */
 const sendPushNotification = async (notification) => {
-  // This is a placeholder for actual push notification implementation
-  // You would integrate with services like:
-  // - Firebase Cloud Messaging (FCM)
-  // - OneSignal
-  // - Pusher
-  // - Expo Push Notifications
-  
-  console.log(`Sending notification: ${notification.title} to ${notification.userId || 'all users'}`);
-  
-  // Example implementation would look like:
-  // if (notification.userId) {
-  //   // Send to specific user
-  //   await fcmService.sendToUser(notification.userId, {
-  //     title: notification.title,
-  //     body: notification.message,
-  //     data: notification.metadata
-  //   });
-  // } else {
-  //   // Send to all users
-  //   await fcmService.sendToAll({
-  //     title: notification.title,
-  //     body: notification.message,
-  //     data: notification.metadata
-  //   });
-  // }
+  if (!notification) return;
+  await sendExpoPushToUser(notification.userId, {
+    title: notification.title,
+    body: notification.message,
+    data: {
+      type: notification.type,
+      notificationId: String(notification._id),
+      ...(notification.metadata || {}),
+    },
+  });
 };
 
 /**
