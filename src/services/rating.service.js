@@ -4,42 +4,76 @@ import { ClassRating } from '../models/class-rating.model.js';
 import { EventRating } from '../models/event-rating.model.js';
 import { Class } from '../models/class.model.js';
 import Event from '../models/event.model.js';
-import { User } from '../models/user.model.js';
 import ApiError from '../utils/ApiError.js';
+import {
+  formatRatingStats,
+  isDuplicateKeyError,
+  ratingStatsGroupStage,
+} from '../utils/rating-stats.util.js';
+
+const CLASS_ENROLL_SELECT = 'teacher';
+const EVENT_ENROLL_SELECT = 'teacher';
+
+/**
+ * Load class teacher only if the student is on the roster (indexed `students` query).
+ * @param {string} classId
+ * @param {string} userId
+ * @returns {Promise<{ teacher: import('mongoose').Types.ObjectId }>}
+ */
+const getEnrolledClassForRating = async (classId, userId) => {
+  const enrolled = await Class.findOne({ _id: classId, students: userId }).select(CLASS_ENROLL_SELECT).lean();
+  if (enrolled) {
+    return enrolled;
+  }
+
+  const classExists = await Class.exists({ _id: classId });
+  if (!classExists) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Class not found');
+  }
+  throw new ApiError(httpStatus.FORBIDDEN, 'You must be enrolled in the class to rate it');
+};
+
+/**
+ * Load event teacher only if the student is registered.
+ * @param {string} eventId
+ * @param {string} userId
+ * @returns {Promise<{ teacher?: import('mongoose').Types.ObjectId }>}
+ */
+const getRegisteredEventForRating = async (eventId, userId) => {
+  const enrolled = await Event.findOne({ _id: eventId, students: userId }).select(EVENT_ENROLL_SELECT).lean();
+  if (enrolled) {
+    return enrolled;
+  }
+
+  const eventExists = await Event.exists({ _id: eventId });
+  if (!eventExists) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Event not found');
+  }
+  throw new ApiError(httpStatus.FORBIDDEN, 'You must be registered for the event to rate it');
+};
 
 /**
  * Add class rating
  */
 const addClassRating = async (userId, classId, ratingData) => {
   const { rating, review, isAnonymous = false } = ratingData;
+  const classDoc = await getEnrolledClassForRating(classId, userId);
 
-  // Check if class exists
-  const classExists = await Class.findById(classId);
-  if (!classExists) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Class not found');
+  try {
+    return await ClassRating.create({
+      classId,
+      userId,
+      teacherId: classDoc.teacher,
+      rating,
+      review,
+      isAnonymous,
+    });
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'You have already rated this class');
+    }
+    throw error;
   }
-
-  // Check if user is enrolled in the class
-  if (!classExists.students.includes(userId)) {
-    throw new ApiError(httpStatus.FORBIDDEN, 'You must be enrolled in the class to rate it');
-  }
-
-  // Check if user already rated this class
-  const existingRating = await ClassRating.findOne({ classId, userId });
-  if (existingRating) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'You have already rated this class');
-  }
-
-  const classRating = await ClassRating.create({
-    classId,
-    userId,
-    teacherId: classExists.teacher,
-    rating,
-    review,
-    isAnonymous,
-  });
-
-  return classRating;
 };
 
 /**
@@ -76,34 +110,23 @@ const deleteClassRating = async (userId, classId) => {
  */
 const addEventRating = async (userId, eventId, ratingData) => {
   const { rating, review, isAnonymous = false } = ratingData;
+  const eventDoc = await getRegisteredEventForRating(eventId, userId);
 
-  // Check if event exists
-  const eventExists = await Event.findById(eventId);
-  if (!eventExists) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Event not found');
+  try {
+    return await EventRating.create({
+      eventId,
+      userId,
+      teacherId: eventDoc.teacher,
+      rating,
+      review,
+      isAnonymous,
+    });
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'You have already rated this event');
+    }
+    throw error;
   }
-
-  // Check if user is registered for the event
-  if (!eventExists.students.includes(userId)) {
-    throw new ApiError(httpStatus.FORBIDDEN, 'You must be registered for the event to rate it');
-  }
-
-  // Check if user already rated this event
-  const existingRating = await EventRating.findOne({ eventId, userId });
-  if (existingRating) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'You have already rated this event');
-  }
-
-  const eventRating = await EventRating.create({
-    eventId,
-    userId,
-    teacherId: eventExists.teacher,
-    rating,
-    review,
-    isAnonymous,
-  });
-
-  return eventRating;
 };
 
 /**
@@ -148,15 +171,17 @@ const getClassRatings = async (classId, options = {}) => {
   const sortOptions = {};
   sortOptions[sortBy] = -1;
 
-  const ratings = await ClassRating.find(query)
-    .populate('userId', 'name email')
-    .populate('teacherId', 'name email teacherCategory')
-    .sort(sortOptions)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .exec();
-
-  const total = await ClassRating.countDocuments(query);
+  const skip = (page - 1) * limit;
+  const [ratings, total] = await Promise.all([
+    ClassRating.find(query)
+      .select('-reported -helpfulCount')
+      .populate('userId', 'name')
+      .sort(sortOptions)
+      .limit(limit * 1)
+      .skip(skip)
+      .exec(),
+    ClassRating.countDocuments(query),
+  ]);
 
   return {
     ratings,
@@ -180,15 +205,17 @@ const getEventRatings = async (eventId, options = {}) => {
   const sortOptions = {};
   sortOptions[sortBy] = -1;
 
-  const ratings = await EventRating.find(query)
-    .populate('userId', 'name email')
-    .populate('teacherId', 'name email teacherCategory')
-    .sort(sortOptions)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .exec();
-
-  const total = await EventRating.countDocuments(query);
+  const skip = (page - 1) * limit;
+  const [ratings, total] = await Promise.all([
+    EventRating.find(query)
+      .select('-reported -helpfulCount')
+      .populate('userId', 'name')
+      .sort(sortOptions)
+      .limit(limit * 1)
+      .skip(skip)
+      .exec(),
+    EventRating.countDocuments(query),
+  ]);
 
   return {
     ratings,
@@ -213,20 +240,23 @@ const getTeacherRatings = async (teacherId, options = {}) => {
   sortOptions[sortBy] = -1;
 
   // Get both class and event ratings
+  const skip = (page - 1) * limit;
   const [classRatings, eventRatings] = await Promise.all([
     ClassRating.find(query)
-      .populate('userId', 'name email')
+      .select('-reported -helpfulCount')
+      .populate('userId', 'name')
       .populate('classId', 'title')
       .sort(sortOptions)
       .limit(limit * 1)
-      .skip((page - 1) * limit)
+      .skip(skip)
       .exec(),
     EventRating.find(query)
-      .populate('userId', 'name email')
+      .select('-reported -helpfulCount')
+      .populate('userId', 'name')
       .populate('eventId', 'eventName')
       .sort(sortOptions)
       .limit(limit * 1)
-      .skip((page - 1) * limit)
+      .skip(skip)
       .exec(),
   ]);
 
@@ -250,39 +280,9 @@ const getTeacherRatings = async (teacherId, options = {}) => {
 const getClassAverageRating = async (classId) => {
   const result = await ClassRating.aggregate([
     { $match: { classId: new mongoose.Types.ObjectId(classId) } },
-    {
-      $group: {
-        _id: null,
-        averageRating: { $avg: '$rating' },
-        totalRatings: { $sum: 1 },
-        ratingDistribution: {
-          $push: '$rating',
-        },
-      },
-    },
+    ratingStatsGroupStage(),
   ]);
-
-  if (result.length === 0) {
-    return {
-      averageRating: 0,
-      totalRatings: 0,
-      ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-    };
-  }
-
-  const { averageRating, totalRatings, ratingDistribution } = result[0];
-
-  // Calculate rating distribution
-  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  ratingDistribution.forEach((rating) => {
-    distribution[rating]++;
-  });
-
-  return {
-    averageRating: Math.round(averageRating * 10) / 10,
-    totalRatings,
-    ratingDistribution: distribution,
-  };
+  return formatRatingStats(result[0]);
 };
 
 /**
@@ -291,39 +291,9 @@ const getClassAverageRating = async (classId) => {
 const getEventAverageRating = async (eventId) => {
   const result = await EventRating.aggregate([
     { $match: { eventId: new mongoose.Types.ObjectId(eventId) } },
-    {
-      $group: {
-        _id: null,
-        averageRating: { $avg: '$rating' },
-        totalRatings: { $sum: 1 },
-        ratingDistribution: {
-          $push: '$rating',
-        },
-      },
-    },
+    ratingStatsGroupStage(),
   ]);
-
-  if (result.length === 0) {
-    return {
-      averageRating: 0,
-      totalRatings: 0,
-      ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-    };
-  }
-
-  const { averageRating, totalRatings, ratingDistribution } = result[0];
-
-  // Calculate rating distribution
-  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  ratingDistribution.forEach((rating) => {
-    distribution[rating]++;
-  });
-
-  return {
-    averageRating: Math.round(averageRating * 10) / 10,
-    totalRatings,
-    ratingDistribution: distribution,
-  };
+  return formatRatingStats(result[0]);
 };
 
 /**

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { toJSON, paginate } from './plugins/index.js';
+import { dayRange } from '../utils/trackerDayRange.js';
 
 const CaloriesTargetSchema = new mongoose.Schema(
   {
@@ -79,13 +80,19 @@ CaloriesTargetSchema.plugin(paginate);
 CaloriesTargetSchema.index({ userId: 1, date: -1 });
 CaloriesTargetSchema.index({ userId: 1, isActive: 1 });
 
-// Pre-save middleware to calculate progress
-CaloriesTargetSchema.pre('save', function (next) {
-  // Calculate progress percentage
-  this.progressPercentage = Math.round((this.currentCalories / this.dailyTarget) * 100);
+/**
+ * Cap progress at 100 before validators run. Existing docs can already store >100,
+ * and pre('save') is too late — mongoose rejects them first.
+ * @param {Function} next
+ */
+function applyCaloriesProgress(next) {
+  const target = Number(this.dailyTarget) || 2000;
+  const rawPct = target > 0
+    ? (Number(this.currentCalories) / target) * 100
+    : 0;
+  this.progressPercentage = Math.min(100, Math.max(0, Math.round(rawPct)));
 
-  // Determine status based on progress
-  if (this.progressPercentage >= 100) {
+  if (rawPct >= 100) {
     this.status = 'Above Target';
   } else if (this.progressPercentage >= 80) {
     this.status = 'On Track';
@@ -93,8 +100,18 @@ CaloriesTargetSchema.pre('save', function (next) {
     this.status = 'Below Target';
   }
 
+  (this.weeklySummary || []).forEach((row) => {
+    const rowTarget = Number(row.targetCalories) || target;
+    const rowRaw = rowTarget > 0
+      ? (Number(row.totalCalories) / rowTarget) * 100
+      : 0;
+    row.progressPercentage = Math.min(100, Math.max(0, Math.round(rowRaw)));
+  });
+
   next();
-});
+}
+
+CaloriesTargetSchema.pre('validate', applyCaloriesProgress);
 
 // Method to get latest calories target for a user
 CaloriesTargetSchema.statics.getLatestByUserId = function (userId) {
@@ -102,18 +119,23 @@ CaloriesTargetSchema.statics.getLatestByUserId = function (userId) {
 };
 
 // Method to get today's calories target
-CaloriesTargetSchema.statics.getTodayByUserId = function (userId) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+/**
+ * Today's calories target using the UTC calendar-day window (not IST setHours).
+ * @param {import('mongoose').Types.ObjectId|string} userId
+ * @param {string|Date} [date]
+ * @returns {Promise<import('mongoose').Document|null>}
+ */
+CaloriesTargetSchema.statics.getTodayByUserId = function (userId, date) {
+  const { end, lookupStart } = dayRange(date);
 
   return this.findOne({
     userId,
     date: {
-      $gte: today,
-      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+      $gte: lookupStart,
+      $lt: end,
     },
     isActive: true,
-  });
+  }).sort({ date: -1 });
 };
 
 // Method to update calories from different sources
@@ -126,8 +148,14 @@ CaloriesTargetSchema.methods.updateCalories = function (source, calories) {
     this.caloriesBreakdown.other = calories;
   }
 
-  // Recalculate total calories
-  this.currentCalories = this.caloriesBreakdown.workout + this.caloriesBreakdown.steps + this.caloriesBreakdown.other;
+  this.currentCalories = Math.max(
+    Number(this.caloriesBreakdown.workout) || 0,
+    Number(this.caloriesBreakdown.steps) || 0,
+  );
+  const target = Number(this.dailyTarget) || 2000;
+  const rawPct = target > 0 ? (this.currentCalories / target) * 100 : 0;
+  this.progressPercentage = Math.min(100, Math.max(0, Math.round(rawPct)));
+  this.status = rawPct >= 100 ? 'Above Target' : rawPct >= 80 ? 'On Track' : 'Below Target';
 
   return this.save();
 };

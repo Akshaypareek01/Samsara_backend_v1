@@ -34,6 +34,7 @@ const createRole = {
             support: permissionSchema,
             roleManagement: permissionSchema,
             teamManagement: permissionSchema,
+            homeBanners: permissionSchema,
         }),
     }),
 };
@@ -83,6 +84,7 @@ const updateRole = {
                 support: permissionSchema,
                 roleManagement: permissionSchema,
                 teamManagement: permissionSchema,
+                homeBanners: permissionSchema,
             }),
         })
         .min(1),

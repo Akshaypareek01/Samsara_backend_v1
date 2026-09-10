@@ -58,6 +58,7 @@ import MarketingFolder from './marketing-folder.model.js';
 import MarketingContact from './marketing-contact.model.js';
 import EmailTemplate from './email-template.model.js';
 import EmailCampaign from './email-campaign.model.js';
+import HomeBanner from './home-banner.model.js';
 
 export {
   Token,
@@ -122,5 +123,6 @@ export {
   MarketingContact,
   EmailTemplate,
   EmailCampaign,
+  HomeBanner,
 };
 

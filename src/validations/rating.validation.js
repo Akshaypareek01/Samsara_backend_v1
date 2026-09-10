@@ -9,7 +9,7 @@ const addClassRating = {
   }),
   body: Joi.object().keys({
     rating: Joi.number().integer().min(1).max(5).required(),
-    review: Joi.string().max(1000).optional(),
+    review: Joi.string().trim().max(1000).allow('').optional(),
     isAnonymous: Joi.boolean().default(false),
   }),
 };
@@ -20,7 +20,7 @@ const updateClassRating = {
   }),
   body: Joi.object().keys({
     rating: Joi.number().integer().min(1).max(5).required(),
-    review: Joi.string().max(1000).optional(),
+    review: Joi.string().trim().max(1000).allow('').optional(),
     isAnonymous: Joi.boolean(),
   }),
 };
@@ -58,7 +58,7 @@ const addEventRating = {
   }),
   body: Joi.object().keys({
     rating: Joi.number().integer().min(1).max(5).required(),
-    review: Joi.string().max(1000).optional(),
+    review: Joi.string().trim().max(1000).allow('').optional(),
     isAnonymous: Joi.boolean().default(false),
   }),
 };
@@ -69,7 +69,7 @@ const updateEventRating = {
   }),
   body: Joi.object().keys({
     rating: Joi.number().integer().min(1).max(5).required(),
-    review: Joi.string().max(1000).optional(),
+    review: Joi.string().trim().max(1000).allow('').optional(),
     isAnonymous: Joi.boolean(),
   }),
 };

@@ -58,6 +58,7 @@ import platformAccountDetailsRoute from './platform-account-details.route.js';
 import eapTrainingRoute from './eap-training.route.js';
 import trainerRatingRoute from './trainer-rating.route.js';
 import marketingRoute from './marketing.route.js';
+import homeBannerRoute from './home-banner.route.js';
 
 const router = express.Router();
 
@@ -289,6 +290,10 @@ const defaultRoutes = [
   {
     path: '/marketing',
     route: marketingRoute,
+  },
+  {
+    path: '/home-banners',
+    route: homeBannerRoute,
   },
 ];
 

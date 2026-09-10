@@ -48,6 +48,9 @@ const eventRatingSchema = new mongoose.Schema(
 
 // Ensure one rating per user per event
 eventRatingSchema.index({ eventId: 1, userId: 1 }, { unique: true });
+eventRatingSchema.index({ eventId: 1, createdAt: -1 });
+eventRatingSchema.index({ teacherId: 1, createdAt: -1 });
+eventRatingSchema.index({ userId: 1 });
 
 // Apply plugins
 eventRatingSchema.plugin(toJSON);

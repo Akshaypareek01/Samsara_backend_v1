@@ -17,9 +17,10 @@ const checkPermission = (module, action) => async (req, res, next) => {
     }
 
     const userRole = req.user.role;
+    const roleName = userRole && typeof userRole === 'object' ? String(userRole.name || '') : '';
 
-    // If role is a system role named 'admin', grant all permissions
-    if (userRole && userRole.name === 'admin') {
+    // CRM Super Admin is named 'Super Admin', not 'admin'
+    if (roleName === 'admin' || roleName === 'Super Admin') {
         return next();
     }
 

@@ -563,7 +563,7 @@ const getUserMemberships = catchAsync(async (req, res) => {
  */
 const getActiveMembership = catchAsync(async (req, res) => {
   const userId = req.user.id;
-
+  // Don't Redis-cache this — assign/cancel must be visible immediately on Home.
   const membership = await Membership.getActiveMembership(userId);
 
   if (!membership) {

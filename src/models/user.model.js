@@ -121,11 +121,11 @@ const userSchema = new mongoose.Schema(
     },
     dob: {
       type: String,
-      required: [false, 'Please provide date of birth'],
+      required: false,
     },
     age: {
       type: String,
-      required: [false, 'Please provide user age'],
+      required: false,
     },
     Address: {
       type: String,

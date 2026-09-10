@@ -10,6 +10,9 @@ import {
   getPastClasses,
 } from './scheduleService.js';
 
+const ATTENDED_CLASS_SELECT = 'title image classType classCategory schedule startTime endTime duration teacher';
+const ATTENDED_TEACHER_SELECT = 'name profileImage teacherCategory';
+
 /**
  * Get user's upcoming classes
  */
@@ -46,16 +49,21 @@ const getUserPastClasses = async (userId) => {
 };
 
 /**
- * Get user's attended classes
+ * Attended-class list for rating/history. Does not hydrate the full user or Zoom class docs.
+ * @param {string} userId
+ * @returns {Promise<object[]>}
  */
 const getUserAttendedClasses = async (userId) => {
-  const user = await User.findById(userId).populate({
-    path: 'attendance.classId',
-    populate: {
-      path: 'teacher',
-      select: 'name email teacherCategory expertise teachingExperience qualification images',
-    },
-  });
+  const user = await User.findById(userId)
+    .select('attendance')
+    .populate({
+      path: 'attendance.classId',
+      select: ATTENDED_CLASS_SELECT,
+      populate: {
+        path: 'teacher',
+        select: ATTENDED_TEACHER_SELECT,
+      },
+    });
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
@@ -68,13 +76,16 @@ const getUserAttendedClasses = async (userId) => {
  * Get user's attended classes by date range
  */
 const getUserAttendedClassesByDateRange = async (userId, startDate, endDate) => {
-  const user = await User.findById(userId).populate({
-    path: 'attendance.classId',
-    populate: {
-      path: 'teacher',
-      select: 'name email teacherCategory expertise teachingExperience qualification images',
-    },
-  });
+  const user = await User.findById(userId)
+    .select('attendance')
+    .populate({
+      path: 'attendance.classId',
+      select: ATTENDED_CLASS_SELECT,
+      populate: {
+        path: 'teacher',
+        select: ATTENDED_TEACHER_SELECT,
+      },
+    });
 
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');

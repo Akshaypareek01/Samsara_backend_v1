@@ -22,8 +22,13 @@ const errorConverter = (err, req, res, next) => {
       if (!statusCode) {
         statusCode = error instanceof mongoose.Error ? httpStatus.BAD_REQUEST : httpStatus.INTERNAL_SERVER_ERROR;
       }
-      const message = error.message || httpStatus[statusCode];
-      error = new ApiError(statusCode, message, false, err.stack);
+      const isSchemaDump =
+        error instanceof mongoose.Error.ValidationError &&
+        /Path `|validation failed/i.test(error.message || '');
+      const message = isSchemaDump
+        ? 'Could not save your data. Please try again.'
+        : error.message || httpStatus[statusCode];
+      error = new ApiError(statusCode, message, !isSchemaDump, err.stack);
     }
   }
   next(error);

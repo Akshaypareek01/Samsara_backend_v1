@@ -147,6 +147,7 @@ const membershipSchema = new mongoose.Schema(
 
 // Indexes for efficient queries
 membershipSchema.index({ userId: 1 });
+membershipSchema.index({ userId: 1, status: 1, endDate: 1 });
 membershipSchema.index({ status: 1 });
 membershipSchema.index({ startDate: 1, endDate: 1 });
 membershipSchema.index({ razorpayPaymentId: 1 });
@@ -221,7 +222,8 @@ membershipSchema.statics.getActiveMembership = function (userId) {
     endDate: { $gte: new Date() }
   })
     .sort({ createdAt: -1 })
-    .populate('planId');
+    .populate('planId')
+    .lean();
 };
 
 // Static method to get user's membership history

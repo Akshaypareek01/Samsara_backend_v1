@@ -105,6 +105,13 @@ router.get('/mood/history', validate(trackerValidation.getTrackerHistory), track
 router.get('/temperature/history', validate(trackerValidation.getTrackerHistory), trackerController.getTemperatureHistory);
 
 /**
+ * @route   GET /v1/trackers/fat/summary
+ * @desc    Fat tracker profile, latest %, history, health ranges
+ * @access  Private
+ */
+router.get('/fat/summary', validate(trackerValidation.getTrackerHistory), trackerController.getFatSummary);
+
+/**
  * @route   GET /v1/trackers/fat/history
  * @desc    Get fat tracker history
  * @access  Private
@@ -201,6 +208,13 @@ router.post('/temperature', validate(trackerValidation.createTemperatureTracker)
  * @access  Private
  */
 router.post('/fat', validate(trackerValidation.createFatTracker), trackerController.addFatEntry);
+
+/**
+ * @route   PUT /v1/trackers/fat/goal
+ * @desc    Set body-fat goal (does not log a measurement)
+ * @access  Private
+ */
+router.put('/fat/goal', validate(trackerValidation.updateFatGoal), trackerController.updateFatGoal);
 
 /**
  * @route   POST /v1/trackers/bmi

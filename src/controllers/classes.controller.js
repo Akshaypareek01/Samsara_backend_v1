@@ -17,6 +17,11 @@ import {
   isClassCancelled,
 } from '../services/classCancellation.service.js';
 import { cancelStudentRegistration } from '../services/classEnrollment.service.js';
+import {
+  TEACHER_DETAILS_SELECT,
+  enrichDetailsPayload,
+} from '../services/classEventDetails.service.js';
+import { getUpcomingClassesPayload } from '../services/upcomingList.service.js';
 
 // Helper to parse time string (HH:MM, HH:MM:SS, or "h:mm AM/PM") to minutes since midnight
 const parseTimeToMinutes = (timeStr) => {
@@ -149,6 +154,7 @@ const getTeacherData = (teacher) => {
         pincode: teacher.pincode,
         country: teacher.country,
         status: teacher.status,
+        createdAt: teacher.createdAt,
         active: teacher.active
     };
 };
@@ -277,34 +283,12 @@ export const getAllClasses = async (req, res) => {
 
 export const getAllUpcomingClasses = async (req, res) => {
   try {
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Reset time to 00:00:00 for the current day
-    
-    // Get all active classes (we'll filter them in JavaScript to handle recurring schedules)
-    const allClasses = await Class.find(ACTIVE_CLASS_FILTER)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
-      .populate('students', 'name email')
-      .exec();
-
-    // Filter classes that are upcoming (handles both schedule date and recurring schedules)
-    const upcomingClasses = filterUpcomingClasses(allClasses, currentDate);
-
-    const classesWithTeacherData = upcomingClasses.map(classItem => {
-      const classData = classItem.toObject ? classItem.toObject() : classItem;
-      classData.teacher = getTeacherData(classData.teacher);
-      return classData;
-    });
-
-    // Sort by schedule date
-    classesWithTeacherData.sort((a, b) => {
-      const dateA = new Date(a.schedule || 0);
-      const dateB = new Date(b.schedule || 0);
-      return dateA - dateB;
-    });
-
-    res.json({ success: true, data: classesWithTeacherData });
+    const skipCache = Boolean(req.query._t);
+    const payload = await getUpcomingClassesPayload(filterUpcomingClasses, { skipCache });
+    res.json(payload);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('getAllUpcomingClasses:', error);
+    res.status(500).json({ success: false, error: error.message || String(error) });
   }
 };
 
@@ -363,8 +347,7 @@ export const getClassById = async (req, res) => {
   const { classId } = req.params;
   try {
     const foundClass = await Class.findById(classId)
-      .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
-      .populate('students', 'name email')
+      .populate('teacher', TEACHER_DETAILS_SELECT)
       .exec();
     
     if (!foundClass) {
@@ -373,6 +356,8 @@ export const getClassById = async (req, res) => {
     
     const classData = foundClass.toObject();
     classData.teacher = getTeacherData(classData.teacher);
+    const viewerId = req.query.studentId || req.query.userId || req.user?.id;
+    await enrichDetailsPayload(classData, viewerId);
     
     res.json({ success: true, data: classData });
   } catch (error) {
@@ -695,7 +680,7 @@ export const isStudentEnrolled = async (req, res) => {
 
   try {
     // Find the class by ID
-    const foundClass = await Class.findById(classId);
+    const foundClass = await Class.findById(classId).select('students').lean();
 
     if (!foundClass) {
       return res.status(404).json({ success: false, message: "Class not found" });

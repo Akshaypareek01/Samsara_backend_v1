@@ -16,6 +16,29 @@ import {
 } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import { normalizeSleepEntry } from '../utils/sleepTracker.js';
+import { dayRange, todayRange, lastNDaysRange, dateKeyFromStored, shiftDateKey, todayDateKey } from '../utils/trackerDayRange.js';
+import {
+  aggregateWorkoutDocs,
+  getOrMergeWorkoutDay,
+  recalcWorkoutDayTotals,
+  syncWorkoutCaloriesForDate,
+} from '../utils/trackerWorkoutDay.js';
+import {
+  assertManualAllowed,
+  buildActivitySet,
+  canonicalDailyCalories,
+  clampDeviceKcal,
+  pickBestActivityDoc,
+} from '../utils/trackerActivityDay.js';
+import { bodyFatValue } from '../utils/fatTracker.js';
+import { canonicalizeBodyStatus, serializeBodyStatus } from '../utils/bodyStatus.js';
+import {
+  getFatHistory,
+  getFatSummary,
+  addFatEntry,
+  updateFatGoal,
+  syncFatFromBodyStatus,
+} from './fatTracker.service.js';
 
 const TRACKER_MODELS = {
   weight: WeightTracker,
@@ -39,45 +62,6 @@ const MEASUREMENT_DATE_TYPES = [
   'bmi',
   'bodyStatus',
 ];
-
-const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
-/** Pad before UTC midnight so IST local-midnight docs (`T18:30:00.000Z`) still match. */
-const LEGACY_LOCAL_MIDNIGHT_PAD_MS = 14 * 60 * 60 * 1000;
-
-/**
- * Resolve a YYYY-MM-DD string to that calendar day's [start, end) in UTC.
- * `new Date("YYYY-MM-DD")` is UTC midnight; `setHours(0,0,0,0)` on an IST
- * server then rolls it back to the previous UTC date — Sep 2 became Sep 1.
- * @param {string|Date} [date]
- * @returns {{ start: Date, end: Date, lookupStart: Date }}
- */
-const dayRange = (date) => {
-  if (typeof date === 'string') {
-    const m = date.trim().match(DATE_ONLY);
-    if (m) {
-      const y = Number(m[1]);
-      const month = Number(m[2]) - 1;
-      const d = Number(m[3]);
-      const start = new Date(Date.UTC(y, month, d));
-      const end = new Date(Date.UTC(y, month, d + 1));
-      return {
-        start,
-        end,
-        lookupStart: new Date(start.getTime() - LEGACY_LOCAL_MIDNIGHT_PAD_MS),
-      };
-    }
-  }
-  const base = date ? new Date(date) : new Date();
-  const start = new Date(base);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  return {
-    start,
-    end,
-    lookupStart: new Date(start.getTime() - LEGACY_LOCAL_MIDNIGHT_PAD_MS),
-  };
-};
 
 /**
  * Map client `date: YYYY-MM-DD` onto the stored date field and strip `date`.
@@ -203,8 +187,10 @@ const updateTrackersFromProfile = async (userId, profileData) => {
       return null; // Invalid gender value
     };
 
-    // Create new BMI Tracker entry if height, weight, age, or gender is provided
-    if (profileData.height || profileData.weight || profileData.age || profileData.gender) {
+    // Height/weight are My Body measurements. Do not spawn BMI/BodyStatus rows
+    // from profile PATCH age/gender — that overwrote the latest My Body entry
+    // with a sparse document (no age/height/weight).
+    if (profileData.height || profileData.weight) {
       const bmiData = {};
       if (profileData.height) bmiData.height = { value: parseFloat(profileData.height), unit: 'cm' };
       if (profileData.weight) bmiData.weight = { value: parseFloat(profileData.weight), unit: 'kg' };
@@ -217,22 +203,7 @@ const updateTrackersFromProfile = async (userId, profileData) => {
       );
     }
 
-    // Create new Fat Tracker entry if height, weight, age, or gender is provided
-    if (profileData.height || profileData.weight || profileData.age || profileData.gender) {
-      const fatData = {};
-      if (profileData.height) fatData.height = { value: parseFloat(profileData.height), unit: 'cm' };
-      if (profileData.weight) fatData.weight = { value: parseFloat(profileData.weight), unit: 'kg' };
-      if (profileData.age) fatData.age = parseInt(profileData.age);
-      const normalizedGender = normalizeGender(profileData.gender);
-      if (normalizedGender) fatData.gender = normalizedGender;
-      
-      updates.push(
-        FatTracker.create({ userId, ...fatData })
-      );
-    }
-
-    // Create new Body Status entry if height, weight, age, or gender is provided
-     if (profileData.height || profileData.weight || profileData.age || profileData.gender) {
+    if (profileData.height || profileData.weight) {
       const bodyStatusData = {};
       if (profileData.height) bodyStatusData.height = { value: parseFloat(profileData.height), unit: 'cm' };
       if (profileData.weight) bodyStatusData.weight = { value: parseFloat(profileData.weight), unit: 'kg' };
@@ -371,23 +342,6 @@ const getTemperatureHistory = async (userId, days = 30) => {
 };
 
 /**
- * Get fat tracker history
- * @param {ObjectId} userId
- * @param {number} days
- * @returns {Promise<Array>}
- */
-const getFatHistory = async (userId, days = 30) => {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  
-  return FatTracker.find({
-    userId,
-    measurementDate: { $gte: startDate },
-    isActive: true
-  }).sort({ measurementDate: -1 });
-};
-
-/**
  * Get BMI tracker history
  * @param {ObjectId} userId
  * @param {number} days
@@ -405,20 +359,32 @@ const getBmiHistory = async (userId, days = 30) => {
 };
 
 /**
- * Get body status history
+ * Get body status history (lean, optional cap). Dashboard should pass limit=2.
  * @param {ObjectId} userId
  * @param {number} days
+ * @param {number} [limit]
  * @returns {Promise<Array>}
  */
-const getBodyStatusHistory = async (userId, days = 30) => {
+const getBodyStatusHistory = async (userId, days = 30, limit) => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
-  return BodyStatus.find({
+
+  const query = BodyStatus.find({
     userId,
     measurementDate: { $gte: startDate },
-    isActive: true
-  }).sort({ measurementDate: -1 });
+    isActive: true,
+  })
+    .sort({ measurementDate: -1 })
+    .select('-__v -createdAt -updatedAt')
+    .lean();
+
+  const cap = Number(limit);
+  if (Number.isFinite(cap) && cap > 0) {
+    query.limit(Math.min(cap, 100));
+  }
+
+  const docs = await query;
+  return docs.map(serializeBodyStatus);
 };
 
 /**
@@ -428,11 +394,13 @@ const getBodyStatusHistory = async (userId, days = 30) => {
  * @returns {Promise<Object>}
  */
 const getBodyStatusById = async (userId, entryId) => {
-  const entry = await BodyStatus.findOne({ _id: entryId, userId });
+  const entry = await BodyStatus.findOne({ _id: entryId, userId })
+    .select('-__v -createdAt -updatedAt')
+    .lean();
   if (!entry) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Body status entry not found');
   }
-  return entry;
+  return serializeBodyStatus(entry);
 };
 
 /**
@@ -492,57 +460,105 @@ const getSleepById = async (userId, entryId) => {
 
 /**
  * Get all tracker data for dashboard.
- * `step` is today's activity row only (not the latest historical log).
+ * Workout / step / heart / sleep / water / temp are today's rows only.
  * @param {ObjectId} userId
  * @returns {Promise<Object>}
  */
 const getDashboardData = async (userId) => {
-  const { end: todayEnd, lookupStart: todayLookupStart } = dayRange();
+  const { end: todayEnd, lookupStart: todayLookupStart } = todayRange();
+  const todayKey = todayDateKey();
+  const todayQuery = { $gte: todayLookupStart, $lt: todayEnd };
   const [
     latestWeight,
-    latestWater,
+    todayWater,
     latestMood,
-    latestTemperature,
+    todayTemperature,
     latestFat,
     latestBmi,
     latestBodyStatus,
-    latestStep,
-    latestSleep,
-    latestWorkout,
-    latestHeartRate,
-    caloriesTarget
+    todaySteps,
+    todaySleep,
+    todayWorkouts,
+    todayHeartRate,
+    caloriesTarget,
   ] = await Promise.all([
     WeightTracker.getLatestByUserId(userId),
-    WaterTracker.findOne({ userId }).sort({ date: -1 }),
+    WaterTracker.findOne({ userId, date: todayQuery }).sort({ date: -1 }),
     Mood.findOne({ userId }).sort({ createdAt: -1 }),
-    TemperatureTracker.getLatestByUserId(userId),
-    FatTracker.getLatestByUserId(userId),
-    BmiTracker.getLatestByUserId(userId),
-    BodyStatus.getLatestByUserId(userId),
-    StepTracker.findOne({
+    TemperatureTracker.findOne({
       userId,
       isActive: true,
-      measurementDate: { $gte: todayLookupStart, $lt: todayEnd },
+      measurementDate: todayQuery,
     }).sort({ measurementDate: -1 }),
-    SleepTracker.findOne({ userId }).sort({ date: -1 }),
-    WorkoutTracker.findOne({ userId }).sort({ date: -1 }),
-    HeartRateTracker.getLatestByUserId(userId),
-    getCaloriesTarget(userId)
+    FatTracker.findOne({
+      userId,
+      isActive: true,
+      'bodyFat.value': { $gt: 0 },
+    }).sort({ measurementDate: -1 }),
+    BmiTracker.getLatestByUserId(userId),
+    BodyStatus.getLatestByUserId(userId),
+    StepTracker.find({
+      userId,
+      isActive: true,
+      measurementDate: todayQuery,
+    }).sort({ measurementDate: -1 }),
+    SleepTracker.findOne({ userId, date: todayQuery }).sort({ date: -1 }),
+    WorkoutTracker.find({ userId, date: todayQuery }),
+    HeartRateTracker.findOne({
+      userId,
+      isActive: true,
+      measurementDate: todayQuery,
+    }).sort({ measurementDate: -1 }),
+    getCaloriesTarget(userId),
   ]);
+
+  const latestStep = pickBestActivityDoc(
+    (todaySteps || []).filter((doc) => dateKeyFromStored(doc.measurementDate) === todayKey),
+  );
+
+  const workout = aggregateWorkoutDocs(
+    (todayWorkouts || []).filter((doc) => dateKeyFromStored(doc.date) === todayKey),
+    todayKey,
+  );
+  const deviceKcal = clampDeviceKcal(latestStep?.calories);
+  const dailyCalories = canonicalDailyCalories(deviceKcal, workout.totalCaloriesBurned);
+  const caloriesTargetJson =
+    typeof caloriesTarget?.toJSON === 'function' ? caloriesTarget.toJSON() : caloriesTarget;
+  const dailyTarget = Number(caloriesTargetJson?.dailyTarget) || 2000;
+  const calories = { current: dailyCalories, dailyTarget };
+
+  let fat = latestFat;
+  if (!bodyFatValue(latestFat?.bodyFat) && bodyFatValue(latestBodyStatus?.bodyFat)) {
+    fat = {
+      ...(latestFat?.toJSON?.() || latestFat || {}),
+      bodyFat: latestBodyStatus.bodyFat,
+      age: latestBodyStatus.age,
+      gender: latestBodyStatus.gender,
+      height: latestBodyStatus.height,
+      weight: latestBodyStatus.weight,
+    };
+  }
 
   return {
     weight: latestWeight,
-    water: latestWater,
+    water: todayWater,
     mood: latestMood,
-    temperature: latestTemperature,
-    fat: latestFat,
+    temperature: todayTemperature,
+    fat,
     bmi: latestBmi,
     bodyStatus: latestBodyStatus,
     step: latestStep,
-    sleep: latestSleep,
-    workout: latestWorkout,
-    heartRate: latestHeartRate,
-    caloriesTarget
+    sleep: todaySleep,
+    workout,
+    heartRate: todayHeartRate,
+    calories,
+    caloriesTarget: {
+      ...(caloriesTargetJson || {}),
+      currentCalories: dailyCalories,
+      dailyTarget,
+      remainingCalories: Math.max(0, dailyTarget - dailyCalories),
+      progressDisplay: `${dailyCalories}/${dailyTarget}`,
+    },
   };
 };
 
@@ -663,22 +679,21 @@ const addWaterEntry = async (userId, waterData) => {
  * @returns {Promise<Object>}
  */
 const updateWaterTarget = async (userId, targetData) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { start, end, lookupStart } = todayRange();
   
   let waterTracker = await WaterTracker.findOne({ 
     userId, 
     date: { 
-      $gte: today, 
-      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+      $gte: lookupStart, 
+      $lt: end,
     } 
-  });
+  }).sort({ date: -1 });
 
   if (!waterTracker) {
     // Create new water tracker for today
     waterTracker = await WaterTracker.create({
       userId,
-      date: today,
+      date: start,
       targetMl: targetData.targetMl || 2000,
       targetGlasses: targetData.targetGlasses || 8,
       intakeTimeline: [],
@@ -713,22 +728,20 @@ const updateWaterTarget = async (userId, targetData) => {
  * @returns {Promise<Object>}
  */
 const getTodayWaterData = async (userId) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { start, end, lookupStart } = todayRange();
   
   let waterTracker = await WaterTracker.findOne({ 
     userId, 
     date: { 
-      $gte: today, 
-      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+      $gte: lookupStart, 
+      $lt: end,
     } 
-  });
+  }).sort({ date: -1 });
 
   if (!waterTracker) {
-    // Create default water tracker for today
     waterTracker = await WaterTracker.create({
       userId,
-      date: today,
+      date: start,
       targetMl: 2000,
       targetGlasses: 8,
       intakeTimeline: [],
@@ -748,54 +761,43 @@ const getTodayWaterData = async (userId) => {
  * @returns {Promise<Object>}
  */
 const getWeeklyWaterSummary = async (userId, days = 7) => {
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
-  
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  startDate.setHours(0, 0, 0, 0);
+  const { startKey, endKey, lookupStart, end } = lastNDaysRange(days);
 
   const weeklyData = await WaterTracker.find({
     userId,
-    date: { $gte: startDate, $lte: endDate }
+    date: { $gte: lookupStart, $lt: end },
   }).sort({ date: 1 });
 
-  // Calculate statistics
   const totalDays = weeklyData.length;
   const totalIntake = weeklyData.reduce((sum, day) => sum + day.totalIntake, 0);
   const dailyAverage = totalDays > 0 ? Math.round(totalIntake / totalDays) : 0;
-  const bestDay = Math.max(...weeklyData.map(day => day.totalIntake), 0);
+  const bestDay = Math.max(...weeklyData.map((day) => day.totalIntake), 0);
 
-  // Calculate streak (consecutive days with water intake)
+  const byKey = {};
+  weeklyData.forEach((day) => {
+    byKey[dateKeyFromStored(day.date)] = day;
+  });
+
   let streak = 0;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  for (let i = 0; i < days; i++) {
-    const checkDate = new Date(today);
-    checkDate.setDate(checkDate.getDate() - i);
-    
-    const dayData = weeklyData.find(day => 
-      day.date.getTime() === checkDate.getTime()
-    );
-    
+  for (let i = 0; i < days; i += 1) {
+    const key = shiftDateKey(endKey, -i);
+    const dayData = byKey[key];
     if (dayData && dayData.totalIntake > 0) {
-      streak++;
+      streak += 1;
     } else {
       break;
     }
   }
 
-  // Format data for charts
-  const chartData = weeklyData.map(day => ({
-    date: day.date.toISOString().split('T')[0],
+  const chartData = weeklyData.map((day) => ({
+    date: dateKeyFromStored(day.date),
     totalMl: day.totalIntake,
     targetMl: day.targetMl,
-    status: day.status
+    status: day.status,
   }));
 
   return {
-    period: `${startDate.toISOString().split('T')[0]} - ${endDate.toISOString().split('T')[0]}`,
+    period: `${startKey} - ${endKey}`,
     totalDays,
     dailyAverage,
     bestDay,
@@ -805,8 +807,8 @@ const getWeeklyWaterSummary = async (userId, days = 7) => {
       totalIntake,
       averagePerDay: dailyAverage,
       bestDay,
-      currentStreak: streak
-    }
+      currentStreak: streak,
+    },
   };
 };
 
@@ -898,16 +900,6 @@ const addTemperatureEntry = async (userId, temperatureData) => {
 };
 
 /**
- * Add fat entry
- * @param {ObjectId} userId
- * @param {Object} fatData
- * @returns {Promise<Object>}
- */
-const addFatEntry = async (userId, fatData) => {
-  return FatTracker.create({ userId, ...applyClientDate(fatData) });
-};
-
-/**
  * Add BMI entry
  * @param {ObjectId} userId
  * @param {Object} bmiData
@@ -924,7 +916,12 @@ const addBmiEntry = async (userId, bmiData) => {
  * @returns {Promise<Object>}
  */
 const addBodyStatusEntry = async (userId, bodyStatusData) => {
-  return BodyStatus.create({ userId, ...bodyStatusData });
+  const entry = await BodyStatus.create({
+    userId,
+    ...canonicalizeBodyStatus(bodyStatusData),
+  });
+  await syncFatFromBodyStatus(userId, entry);
+  return entry;
 };
 
 /**
@@ -955,55 +952,24 @@ const addSleepEntry = async (userId, sleepData) => {
  * @returns {Promise<Object>}
  */
 const addWorkoutEntry = async (userId, workoutData) => {
-  const { start: dayStart, end: dayEnd, lookupStart } = dayRange(workoutData.date);
-  
-  let workoutTracker = await WorkoutTracker.findOne({ 
-    userId, 
-    date: { 
-      $gte: lookupStart, 
-      $lt: dayEnd 
-    } 
-  });
+  const { start: dayStart } = dayRange(workoutData.date);
+  const workoutTracker = await getOrMergeWorkoutDay(userId, workoutData.date);
 
-  if (!workoutTracker) {
-    workoutTracker = await WorkoutTracker.create({
-      userId,
-      date: dayStart,
-      workoutEntries: [],
-      totalWorkoutTime: 0,
-      totalCaloriesBurned: 0,
-      weeklySummary: [],
-      workoutTypeSummary: [],
-      totalWeeklyTime: 0,
-      totalWeeklyCalories: 0
-    });
-  }
-
-  // Add new workout entry
-  const workoutEntry = {
+  workoutTracker.workoutEntries.push({
     workoutType: workoutData.workoutType,
     intensity: workoutData.intensity,
     distance: workoutData.distance,
     duration: workoutData.duration,
     calories: workoutData.calories,
     date: dayStart,
-    notes: workoutData.notes
-  };
+    notes: workoutData.notes,
+  });
+  workoutTracker.markModified('workoutEntries');
+  recalcWorkoutDayTotals(workoutTracker);
 
-  workoutTracker.workoutEntries.push(workoutEntry);
-  
-  // Update daily totals
-  workoutTracker.totalWorkoutTime += (workoutData.duration?.value || 0);
-  workoutTracker.totalCaloriesBurned += workoutData.calories;
-
-  // Update weekly summary
-  const weekStart = new Date(dayStart);
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Start of week (Sunday)
-  
-  const existingWeekEntry = workoutTracker.weeklySummary.find(
-    entry => entry.date.getTime() === dayStart.getTime()
+  const existingWeekEntry = (workoutTracker.weeklySummary || []).find(
+    (entry) => new Date(entry.date).getTime() === dayStart.getTime()
   );
-
   if (existingWeekEntry) {
     existingWeekEntry.totalTime = workoutTracker.totalWorkoutTime;
     existingWeekEntry.totalCalories = workoutTracker.totalCaloriesBurned;
@@ -1013,61 +979,12 @@ const addWorkoutEntry = async (userId, workoutData) => {
       date: dayStart,
       totalTime: workoutTracker.totalWorkoutTime,
       totalCalories: workoutTracker.totalCaloriesBurned,
-      workoutCount: workoutTracker.workoutEntries.length
+      workoutCount: workoutTracker.workoutEntries.length,
     });
-  }
-
-  // Update workout type summary
-  const existingTypeSummary = workoutTracker.workoutTypeSummary.find(
-    summary => summary.workoutType === workoutData.workoutType
-  );
-
-  if (existingTypeSummary) {
-    // Update existing type summary
-    existingTypeSummary.totalTime += (workoutData.duration?.value || 0);
-    existingTypeSummary.totalCalories += workoutData.calories;
-    existingTypeSummary.workoutCount += 1;
-    existingTypeSummary.averageTime = existingTypeSummary.totalTime / existingTypeSummary.workoutCount;
-    existingTypeSummary.averageCalories = existingTypeSummary.totalCalories / existingTypeSummary.workoutCount;
-  } else {
-    // Add new workout type summary
-    workoutTracker.workoutTypeSummary.push({
-      workoutType: workoutData.workoutType,
-      totalTime: workoutData.duration?.value || 0,
-      totalCalories: workoutData.calories,
-      workoutCount: 1,
-      averageTime: workoutData.duration?.value || 0,
-      averageCalories: workoutData.calories
-    });
-  }
-
-  // Calculate weekly statistics
-  if (workoutTracker.weeklySummary.length > 0) {
-    const totalWeeklyTime = workoutTracker.weeklySummary.reduce((sum, entry) => sum + entry.totalTime, 0);
-    const totalWeeklyCalories = workoutTracker.weeklySummary.reduce((sum, entry) => sum + entry.totalCalories, 0);
-    const daysWithData = workoutTracker.weeklySummary.length;
-    
-    workoutTracker.totalWeeklyTime = totalWeeklyTime;
-    workoutTracker.totalWeeklyCalories = totalWeeklyCalories;
-    workoutTracker.dailyAverage = Math.round((totalWeeklyTime / daysWithData) * 100) / 100;
-    workoutTracker.bestDay = Math.max(...workoutTracker.weeklySummary.map(entry => entry.totalCalories));
-    
-    // Calculate streak (consecutive days with workouts)
-    let streak = 0;
-    const sortedEntries = workoutTracker.weeklySummary
-      .sort((a, b) => b.date.getTime() - a.date.getTime());
-    
-    for (const entry of sortedEntries) {
-      if (entry.totalCalories > 0) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-    workoutTracker.streak = streak;
   }
 
   await workoutTracker.save();
+  await syncWorkoutCaloriesForDate(userId, workoutData.date);
   return workoutTracker;
 };
 
@@ -1120,16 +1037,11 @@ const getWorkoutByType = async (userId, workoutType, days = 30) => {
  * @returns {Promise<Object>}
  */
 const getWorkoutSummary = async (userId, period = 'weekly', days = 7) => {
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
-  
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-  startDate.setHours(0, 0, 0, 0);
+  const { startKey, endKey, lookupStart, end } = lastNDaysRange(days);
 
   const workoutData = await WorkoutTracker.find({
     userId,
-    date: { $gte: startDate, $lte: endDate }
+    date: { $gte: lookupStart, $lt: end },
   }).sort({ date: 1 });
 
   // Calculate summary statistics
@@ -1155,15 +1067,15 @@ const getWorkoutSummary = async (userId, period = 'weekly', days = 7) => {
   });
 
   // Format data for charts
-  const chartData = workoutData.map(day => ({
-    date: day.date.toISOString().split('T')[0],
+  const chartData = workoutData.map((day) => ({
+    date: dateKeyFromStored(day.date),
     totalTime: day.totalWorkoutTime,
     totalCalories: day.totalCaloriesBurned,
-    workoutCount: day.workoutEntries.length
+    workoutCount: day.workoutEntries.length,
   }));
 
   return {
-    period: `${startDate.toISOString().split('T')[0]} - ${endDate.toISOString().split('T')[0]}`,
+    period: `${startKey} - ${endKey}`,
     totalWorkoutTime: Math.round(totalWorkoutTime * 100) / 100,
     totalCaloriesBurned,
     totalWorkouts,
@@ -1204,20 +1116,12 @@ const updateWorkoutEntry = async (userId, entryId, updateData) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Workout entry not found');
   }
 
-  // Update the entry
-  const oldEntry = workoutTracker.workoutEntries[entryIndex];
   Object.assign(workoutTracker.workoutEntries[entryIndex], updateData);
   workoutTracker.markModified('workoutEntries');
-
-  // Recalculate totals
-  workoutTracker.totalWorkoutTime = workoutTracker.workoutEntries.reduce(
-    (sum, entry) => sum + (entry.duration?.value || 0), 0
-  );
-  workoutTracker.totalCaloriesBurned = workoutTracker.workoutEntries.reduce(
-    (sum, entry) => sum + entry.calories, 0
-  );
+  recalcWorkoutDayTotals(workoutTracker);
 
   await workoutTracker.save();
+  await syncWorkoutCaloriesForDate(userId, workoutTracker.date);
   return workoutTracker;
 };
 
@@ -1247,16 +1151,11 @@ const deleteWorkoutEntry = async (userId, entryId) => {
   }
 
   const removedEntry = workoutTracker.workoutEntries.splice(entryIndex, 1)[0];
-
-  // Recalculate totals
-  workoutTracker.totalWorkoutTime = workoutTracker.workoutEntries.reduce(
-    (sum, entry) => sum + (entry.duration?.value || 0), 0
-  );
-  workoutTracker.totalCaloriesBurned = workoutTracker.workoutEntries.reduce(
-    (sum, entry) => sum + entry.calories, 0
-  );
+  workoutTracker.markModified('workoutEntries');
+  recalcWorkoutDayTotals(workoutTracker);
 
   await workoutTracker.save();
+  await syncWorkoutCaloriesForDate(userId, workoutTracker.date);
   return workoutTracker;
 };
 
@@ -1277,6 +1176,10 @@ const updateTrackerEntry = async (userId, trackerType, entryId, updateData) => {
   const entry = await model.findOne({ _id: entryId, userId });
   if (!entry) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Entry not found');
+  }
+
+  if (trackerType === 'step') {
+    assertManualAllowed(entry);
   }
 
   entry.set(normalizeTrackerUpdate(trackerType, updateData));
@@ -1309,22 +1212,20 @@ const deleteTrackerEntry = async (userId, trackerType, entryId) => {
  * @returns {Promise<Object>}
  */
 const getHydrationStatus = async (userId) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { start, end, lookupStart } = todayRange();
   
   let waterTracker = await WaterTracker.findOne({ 
     userId, 
     date: { 
-      $gte: today, 
-      $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+      $gte: lookupStart, 
+      $lt: end,
     } 
-  });
+  }).sort({ date: -1 });
 
   if (!waterTracker) {
-    // Create default water tracker for today
     waterTracker = await WaterTracker.create({
       userId,
-      date: today,
+      date: start,
       targetMl: 2000,
       targetGlasses: 8,
       intakeTimeline: [],
@@ -1373,34 +1274,27 @@ const getHydrationStatus = async (userId) => {
  * @returns {Promise<Object>}
  */
 const createCaloriesTarget = async (userId, targetData) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  // Check if today's calories target already exists
+  const { start } = todayRange();
   let caloriesTarget = await CaloriesTarget.getTodayByUserId(userId);
-  
+
   if (!caloriesTarget) {
-    // Create new calories target for today
     caloriesTarget = await CaloriesTarget.create({
       userId,
-      date: today,
+      date: start,
       dailyTarget: targetData.dailyTarget || 2000,
       currentCalories: 0,
       caloriesBreakdown: {
         workout: 0,
         steps: 0,
-        other: 0
+        other: 0,
       },
-      weeklySummary: []
+      weeklySummary: [],
     });
-  } else {
-    // Update existing target
-    if (targetData.dailyTarget) {
-      caloriesTarget.dailyTarget = targetData.dailyTarget;
-      await caloriesTarget.save();
-    }
+  } else if (targetData.dailyTarget) {
+    caloriesTarget.dailyTarget = targetData.dailyTarget;
+    await caloriesTarget.save();
   }
-  
+
   return caloriesTarget;
 };
 
@@ -1411,31 +1305,27 @@ const createCaloriesTarget = async (userId, targetData) => {
  * @returns {Promise<Object>}
  */
 const updateCaloriesTarget = async (userId, targetData) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
+  const { start } = todayRange();
   let caloriesTarget = await CaloriesTarget.getTodayByUserId(userId);
-  
+
   if (!caloriesTarget) {
-    // Create new calories target for today
     caloriesTarget = await CaloriesTarget.create({
       userId,
-      date: today,
+      date: start,
       dailyTarget: targetData.dailyTarget,
       currentCalories: 0,
       caloriesBreakdown: {
         workout: 0,
         steps: 0,
-        other: 0
+        other: 0,
       },
-      weeklySummary: []
+      weeklySummary: [],
     });
   } else {
-    // Update existing target
     caloriesTarget.dailyTarget = targetData.dailyTarget;
     await caloriesTarget.save();
   }
-  
+
   return caloriesTarget;
 };
 
@@ -1445,34 +1335,33 @@ const updateCaloriesTarget = async (userId, targetData) => {
  * @returns {Promise<Object>}
  */
 const getCaloriesTarget = async (userId) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
+  await syncWorkoutCaloriesForDate(userId);
   let caloriesTarget = await CaloriesTarget.getTodayByUserId(userId);
-  
   if (!caloriesTarget) {
-    // Create default calories target for today
+    const { start } = todayRange();
     caloriesTarget = await CaloriesTarget.create({
       userId,
-      date: today,
-      dailyTarget: 2000, // Default globally accepted calories target
+      date: start,
+      dailyTarget: 2000,
       currentCalories: 0,
       caloriesBreakdown: {
         workout: 0,
         steps: 0,
-        other: 0
+        other: 0,
       },
-      weeklySummary: []
+      weeklySummary: [],
     });
   }
-  
-  // Calculate remaining calories
-  const remainingCalories = Math.max(0, caloriesTarget.dailyTarget - caloriesTarget.currentCalories);
-  
+
+  const remainingCalories = Math.max(
+    0,
+    caloriesTarget.dailyTarget - caloriesTarget.currentCalories
+  );
+
   return {
     ...caloriesTarget.toJSON(),
     remainingCalories,
-    progressDisplay: `${caloriesTarget.currentCalories}/${caloriesTarget.dailyTarget}`
+    progressDisplay: `${caloriesTarget.currentCalories}/${caloriesTarget.dailyTarget}`,
   };
 };
 
@@ -1484,69 +1373,26 @@ const getCaloriesTarget = async (userId) => {
  * @returns {Promise<Object>}
  */
 const updateCaloriesFromSource = async (userId, source, calories) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
+  const { start } = todayRange();
   let caloriesTarget = await CaloriesTarget.getTodayByUserId(userId);
-  
+
   if (!caloriesTarget) {
-    // Create new calories target for today
     caloriesTarget = await CaloriesTarget.create({
       userId,
-      date: today,
+      date: start,
       dailyTarget: 2000,
       currentCalories: 0,
       caloriesBreakdown: {
         workout: 0,
         steps: 0,
-        other: 0
+        other: 0,
       },
-      weeklySummary: []
+      weeklySummary: [],
     });
   }
-  
-  // Update calories from the specific source
+
   await caloriesTarget.updateCalories(source, calories);
-  
   return caloriesTarget;
-};
-
-/**
- * Non-negative integer from a step/calorie field.
- * @param {unknown} value
- * @returns {number}
- */
-const activityCount = (value) => {
-  const n = Number(value);
-  return Number.isFinite(n) && n > 0 ? n : 0;
-};
-
-/**
- * Keep the higher same-day total so Health Connect cannot wipe a manual log with 0.
- * @param {unknown} existing
- * @param {unknown} incoming
- * @returns {number}
- */
-const maxActivityCount = (existing, incoming) =>
-  Math.max(activityCount(existing), activityCount(incoming));
-
-/**
- * Source after a same-day merge. Manual stays unless the device strictly raised steps.
- * @param {string|undefined} existingSource
- * @param {string} incomingSource
- * @param {number} existingSteps
- * @param {number} mergedSteps
- * @returns {string}
- */
-const mergeActivitySource = (
-  existingSource,
-  incomingSource,
-  existingSteps,
-  mergedSteps
-) => {
-  if (incomingSource === 'manual') return 'manual';
-  if (existingSource === 'manual' && mergedSteps <= existingSteps) return 'manual';
-  return incomingSource || existingSource || 'manual';
 };
 
 /**
@@ -1565,34 +1411,7 @@ const upsertActivityEntry = async (userId, data) => {
     measurementDate: { $gte: lookupStart, $lt: end },
   }).sort({ measurementDate: -1 });
 
-  const incomingSource = data.source || 'manual';
-  const incomingSteps =
-    data.steps && data.steps.value != null ? data.steps.value : null;
-  const incomingCalories =
-    data.activeCalories && data.activeCalories.value != null
-      ? data.activeCalories.value
-      : null;
-
-  const set = { userId, measurementDate: start, isActive: true };
-
-  if (incomingSteps != null) {
-    set.steps = maxActivityCount(existing?.steps, incomingSteps);
-  }
-  if (incomingCalories != null) {
-    set.calories = maxActivityCount(existing?.calories, incomingCalories);
-  }
-  if (data.distance) set.distance = data.distance;
-  if (data.activeTime != null) set.activeTime = data.activeTime;
-  if (data.notes) set.notes = data.notes;
-
-  if (data.source || existing?.source) {
-    set.source = mergeActivitySource(
-      existing?.source,
-      incomingSource,
-      activityCount(existing?.steps),
-      set.steps != null ? set.steps : activityCount(existing?.steps)
-    );
-  }
+  const set = buildActivitySet(existing, data, { userId, start });
 
   if (data.goal != null) {
     set.goal = data.goal;
@@ -1603,11 +1422,21 @@ const upsertActivityEntry = async (userId, data) => {
     if (previous?.goal) set.goal = previous.goal;
   }
 
-  return StepTracker.findOneAndUpdate(
+  const doc = await StepTracker.findOneAndUpdate(
     { userId, measurementDate: { $gte: lookupStart, $lt: end } },
     { $set: set },
     { new: true, upsert: true, setDefaultsOnInsert: true, sort: { measurementDate: -1 } }
   );
+  try {
+    await syncWorkoutCaloriesForDate(userId, data.date);
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      err?.message || 'Failed to recompute daily calories after activity save',
+    );
+  }
+  return doc;
 };
 
 /**
@@ -1703,6 +1532,7 @@ export {
   getMoodHistory,
   getTemperatureHistory,
   getFatHistory,
+  getFatSummary,
   getBmiHistory,
   getBodyStatusHistory,
   getBodyStatusById,
@@ -1720,6 +1550,7 @@ export {
   addMoodEntry,
   addTemperatureEntry,
   addFatEntry,
+  updateFatGoal,
   addBmiEntry,
   addBodyStatusEntry,
   addStepEntry,

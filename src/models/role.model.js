@@ -45,6 +45,7 @@ const roleSchema = new mongoose.Schema(
             support: permissionSchema,
             roleManagement: permissionSchema,
             teamManagement: permissionSchema,
+            homeBanners: permissionSchema,
         },
         isSystemRole: {
             type: Boolean,

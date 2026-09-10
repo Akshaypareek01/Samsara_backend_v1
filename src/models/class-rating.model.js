@@ -48,6 +48,9 @@ const classRatingSchema = new mongoose.Schema(
 
 // Ensure one rating per user per class
 classRatingSchema.index({ classId: 1, userId: 1 }, { unique: true });
+classRatingSchema.index({ classId: 1, createdAt: -1 });
+classRatingSchema.index({ teacherId: 1, createdAt: -1 });
+classRatingSchema.index({ userId: 1 });
 
 // Apply plugins
 classRatingSchema.plugin(toJSON);

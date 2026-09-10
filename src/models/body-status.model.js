@@ -136,9 +136,8 @@ const BodyStatusSchema = new mongoose.Schema(
 BodyStatusSchema.plugin(toJSON);
 BodyStatusSchema.plugin(paginate);
 
-// Create indexes for efficient queries
-BodyStatusSchema.index({ userId: 1, measurementDate: -1 });
-BodyStatusSchema.index({ userId: 1, isActive: 1 });
+// History + latest: filter userId+isActive, sort measurementDate
+BodyStatusSchema.index({ userId: 1, isActive: 1, measurementDate: -1 });
 
 // Pre-save middleware to calculate BMI
 BodyStatusSchema.pre('save', function (next) {
@@ -182,9 +181,14 @@ BodyStatusSchema.statics.getLatestByUserId = function (userId) {
   return this.findOne({ userId, isActive: true }).sort({ measurementDate: -1 });
 };
 
-// Method to get body status history for a user
+/**
+ * Recent body-status rows for a user.
+ * @param {import('mongoose').Types.ObjectId} userId
+ * @param {number} [limit]
+ * @returns {import('mongoose').Query}
+ */
 BodyStatusSchema.statics.getHistoryByUserId = function (userId, limit = 10) {
-  return this.find({ userId }).sort({ measurementDate: -1 }).limit(limit);
+  return this.find({ userId, isActive: true }).sort({ measurementDate: -1 }).limit(limit);
 };
 
 export const BodyStatus = mongoose.model('BodyStatus', BodyStatusSchema);

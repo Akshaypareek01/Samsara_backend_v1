@@ -4,6 +4,40 @@ import { AssessmentResult, QuestionMaster } from '../models/index.js';
 import catchAsync from '../utils/catchAsync.js';
 import ApiError from '../utils/ApiError.js';
 
+/**
+ * Clamps a dosha share into the inclusive 0–100 range.
+ * @param {unknown} value
+ * @returns {number}
+ */
+const clampDoshaPercentage = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(100, Math.max(0, n));
+};
+
+/**
+ * Returns dosha percentages with each share capped at 0–100.
+ * @param {{ vata?: number, pitta?: number, kapha?: number } | null | undefined} percentages
+ * @returns {{ vata: number, pitta: number, kapha: number }}
+ */
+const clampDoshaPercentages = (percentages) => ({
+  vata: clampDoshaPercentage(percentages?.vata),
+  pitta: clampDoshaPercentage(percentages?.pitta),
+  kapha: clampDoshaPercentage(percentages?.kapha),
+});
+
+/**
+ * Serializes an assessment and clamps stored percentages for API responses.
+ * @param {object} assessment
+ * @returns {object}
+ */
+const withClampedPercentages = (assessment) => {
+  if (!assessment) return assessment;
+  const json = typeof assessment.toJSON === 'function' ? assessment.toJSON() : { ...assessment };
+  json.doshaPercentages = clampDoshaPercentages(json.doshaPercentages);
+  return json;
+};
+
 // Helper function to calculate dosha scores and percentages
 const calculateDoshaScores = async (answers, assessmentType) => {
   const doshaScore = { vata: 0, pitta: 0, kapha: 0 };
@@ -41,16 +75,20 @@ const calculateDoshaScores = async (answers, assessmentType) => {
     }
   }
 
-  // Calculate percentages with proper rounding to ensure total = 100%
-  const totalAnswers = answers.length;
+  // Weighted Vikriti scores can exceed question count; divide by total score, not answers.length.
+  const positiveScores = {
+    vata: Math.max(0, doshaScore.vata),
+    pitta: Math.max(0, doshaScore.pitta),
+    kapha: Math.max(0, doshaScore.kapha),
+  };
+  const totalScore = positiveScores.vata + positiveScores.pitta + positiveScores.kapha;
   let doshaPercentages = { vata: 0, pitta: 0, kapha: 0 };
 
-  if (totalAnswers > 0) {
-    // Calculate raw percentages
+  if (totalScore > 0) {
     const rawPercentages = {
-      vata: (doshaScore.vata / totalAnswers) * 100,
-      pitta: (doshaScore.pitta / totalAnswers) * 100,
-      kapha: (doshaScore.kapha / totalAnswers) * 100,
+      vata: (positiveScores.vata / totalScore) * 100,
+      pitta: (positiveScores.pitta / totalScore) * 100,
+      kapha: (positiveScores.kapha / totalScore) * 100,
     };
 
     // Round to nearest integer
@@ -102,7 +140,7 @@ const calculateDoshaScores = async (answers, assessmentType) => {
       roundedPercentages[targetDosha] += difference;
     }
 
-    doshaPercentages = roundedPercentages;
+    doshaPercentages = clampDoshaPercentages(roundedPercentages);
   }
 
   return { doshaScore, doshaPercentages };
@@ -215,7 +253,7 @@ export const getAssessmentResults = catchAsync(async (req, res) => {
   const filter = { userId };
   if (assessmentType) filter.assessmentType = assessmentType;
   const results = await AssessmentResult.find(filter).populate('answers.questionId').sort({ submittedAt: -1 });
-  res.send(results);
+  res.send(results.map(withClampedPercentages));
 });
 
 // Get assessment by ID
@@ -228,7 +266,7 @@ export const getAssessmentById = catchAsync(async (req, res) => {
     userId,
   }).populate('answers.questionId');
   if (!assessment) throw new ApiError(httpStatus.NOT_FOUND, 'Assessment not found');
-  res.send(assessment);
+  res.send(withClampedPercentages(assessment));
 });
 
 // Get latest Prakriti and Vikriti assessment results for user
@@ -261,7 +299,7 @@ export const getLatestAssessmentResults = catchAsync(async (req, res) => {
         id: latestPrakriti._id,
         assessmentType: latestPrakriti.assessmentType,
         doshaScore: latestPrakriti.doshaScore,
-        doshaPercentages: latestPrakriti.doshaPercentages,
+        doshaPercentages: clampDoshaPercentages(latestPrakriti.doshaPercentages),
         submittedAt: latestPrakriti.submittedAt,
         isCompleted: latestPrakriti.isCompleted,
         dominantDosha: getDominantDosha(latestPrakriti.doshaScore),
@@ -271,7 +309,7 @@ export const getLatestAssessmentResults = catchAsync(async (req, res) => {
         id: latestVikriti._id,
         assessmentType: latestVikriti.assessmentType,
         doshaScore: latestVikriti.doshaScore,
-        doshaPercentages: latestVikriti.doshaPercentages,
+        doshaPercentages: clampDoshaPercentages(latestVikriti.doshaPercentages),
         submittedAt: latestVikriti.submittedAt,
         isCompleted: latestVikriti.isCompleted,
         dominantDosha: getDominantDosha(latestVikriti.doshaScore),

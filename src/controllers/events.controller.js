@@ -5,6 +5,11 @@ import { Event, User } from "../models/index.js";
 import { createZoomMeeting, endZoomMeeting } from '../services/zoomService.js';
 import { validateEventOverlap } from '../services/overlapCheck.service.js';
 import { notifyEnrollment } from '../utils/notificationUtils.js';
+import {
+  TEACHER_DETAILS_SELECT,
+  enrichDetailsPayload,
+} from '../services/classEventDetails.service.js';
+import { getUpcomingEventsPayload } from '../services/upcomingList.service.js';
 
 // Helper function to get teacher data with first image
 const getTeacherData = (teacher) => {
@@ -34,6 +39,7 @@ const getTeacherData = (teacher) => {
         pincode: teacher.pincode,
         country: teacher.country,
         status: teacher.status,
+        createdAt: teacher.createdAt,
         active: teacher.active
     };
 };
@@ -77,8 +83,7 @@ export const createEvent = async (req, res) => {
 export const getEventById = async (req, res) => {
     try {
         const event = await Event.findById(req.params.id)
-            .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
-            .populate('students', 'name email')
+            .populate('teacher', TEACHER_DETAILS_SELECT)
             .exec();
             
         if (!event) {
@@ -87,6 +92,8 @@ export const getEventById = async (req, res) => {
         
         const eventData = event.toObject();
         eventData.teacher = getTeacherData(eventData.teacher);
+        const viewerId = req.query.studentId || req.query.userId || req.user?.id;
+        await enrichDetailsPayload(eventData, viewerId);
         
         res.status(200).json(eventData);
     } catch (error) {
@@ -116,24 +123,9 @@ export const getAllEvents = async (req, res) => {
 
 export const getAllEventsUpcoming = async (req, res) => {
     try {
-        const currentDate = new Date();
-        currentDate.setHours(0, 0, 0, 0); // Reset time to 00:00:00 to include today's events
-
-        // Fetch only today's and future events
-        const events = await Event.find({ 
-            startDate: { $gte: currentDate } 
-        })
-        .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
-        .populate('students', 'name email')
-        .exec();
-
-        const eventsWithTeacherData = events.map(event => {
-            const eventData = event.toObject();
-            eventData.teacher = getTeacherData(eventData.teacher);
-            return eventData;
-        });
-
-        res.status(200).json(eventsWithTeacherData);
+        const skipCache = Boolean(req.query._t);
+        const events = await getUpcomingEventsPayload({ skipCache });
+        res.status(200).json(events);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -322,7 +314,7 @@ export const isUserEnrolledInEvent = async (req, res) => {
 
   try {
     // Find the event by ID
-    const foundEvent = await Event.findById(eventId);
+    const foundEvent = await Event.findById(eventId).select('students').lean();
 
     if (!foundEvent) {
       return res.status(404).json({ success: false, message: "Event not found" });

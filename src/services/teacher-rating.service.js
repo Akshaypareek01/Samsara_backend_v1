@@ -3,6 +3,11 @@ import mongoose from 'mongoose';
 import { TeacherRating } from '../models/teacher-rating.model.js';
 import { User } from '../models/user.model.js';
 import ApiError from '../utils/ApiError.js';
+import {
+  formatRatingStats,
+  isDuplicateKeyError,
+  ratingStatsGroupStage,
+} from '../utils/rating-stats.util.js';
 
 /**
  * Add teacher rating
@@ -10,8 +15,7 @@ import ApiError from '../utils/ApiError.js';
 const addTeacherRating = async (userId, teacherId, ratingData) => {
   const { rating, review, isAnonymous = false } = ratingData;
 
-  // Check if teacher exists and is actually a teacher
-  const teacher = await User.findById(teacherId);
+  const teacher = await User.findById(teacherId).select('role').lean();
   if (!teacher) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Teacher not found');
   }
@@ -19,27 +23,20 @@ const addTeacherRating = async (userId, teacherId, ratingData) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'User is not a teacher');
   }
 
-  // Check if user exists
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  try {
+    return await TeacherRating.create({
+      teacherId,
+      userId,
+      rating,
+      review,
+      isAnonymous,
+    });
+  } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'You have already rated this teacher');
+    }
+    throw error;
   }
-
-  // Check if user already rated this teacher
-  const existingRating = await TeacherRating.findOne({ teacherId, userId });
-  if (existingRating) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'You have already rated this teacher');
-  }
-
-  const teacherRating = await TeacherRating.create({
-    teacherId,
-    userId,
-    rating,
-    review,
-    isAnonymous,
-  });
-
-  return teacherRating;
 };
 
 /**
@@ -84,15 +81,17 @@ const getTeacherRatingsByTeacherId = async (teacherId, options = {}) => {
   const sortOptions = {};
   sortOptions[sortBy] = -1;
 
-  const ratings = await TeacherRating.find(query)
-    .populate('userId', 'name email profileImage')
-    .populate('teacherId', 'name email teacherCategory')
-    .sort(sortOptions)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .exec();
-
-  const total = await TeacherRating.countDocuments(query);
+  const skip = (page - 1) * limit;
+  const [ratings, total] = await Promise.all([
+    TeacherRating.find(query)
+      .select('-reported -helpfulCount')
+      .populate('userId', 'name profileImage')
+      .sort(sortOptions)
+      .limit(limit * 1)
+      .skip(skip)
+      .exec(),
+    TeacherRating.countDocuments(query),
+  ]);
 
   return {
     ratings,
@@ -116,15 +115,17 @@ const getTeacherRatingsByUserId = async (userId, options = {}) => {
   const sortOptions = {};
   sortOptions[sortBy] = -1;
 
-  const ratings = await TeacherRating.find(query)
-    .populate('userId', 'name email profileImage')
-    .populate('teacherId', 'name email teacherCategory profileImage')
-    .sort(sortOptions)
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .exec();
-
-  const total = await TeacherRating.countDocuments(query);
+  const skip = (page - 1) * limit;
+  const [ratings, total] = await Promise.all([
+    TeacherRating.find(query)
+      .select('-reported -helpfulCount')
+      .populate('teacherId', 'name teacherCategory profileImage')
+      .sort(sortOptions)
+      .limit(limit * 1)
+      .skip(skip)
+      .exec(),
+    TeacherRating.countDocuments(query),
+  ]);
 
   return {
     ratings,
@@ -141,39 +142,9 @@ const getTeacherRatingsByUserId = async (userId, options = {}) => {
 const getTeacherAverageRating = async (teacherId) => {
   const result = await TeacherRating.aggregate([
     { $match: { teacherId: new mongoose.Types.ObjectId(teacherId) } },
-    {
-      $group: {
-        _id: null,
-        averageRating: { $avg: '$rating' },
-        totalRatings: { $sum: 1 },
-        ratingDistribution: {
-          $push: '$rating',
-        },
-      },
-    },
+    ratingStatsGroupStage(),
   ]);
-
-  if (result.length === 0) {
-    return {
-      averageRating: 0,
-      totalRatings: 0,
-      ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-    };
-  }
-
-  const { averageRating, totalRatings, ratingDistribution } = result[0];
-
-  // Calculate rating distribution
-  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  ratingDistribution.forEach((rating) => {
-    distribution[rating]++;
-  });
-
-  return {
-    averageRating: Math.round(averageRating * 10) / 10,
-    totalRatings,
-    ratingDistribution: distribution,
-  };
+  return formatRatingStats(result[0]);
 };
 
 /**
@@ -181,8 +152,8 @@ const getTeacherAverageRating = async (teacherId) => {
  */
 const getTeacherRatingByUserAndTeacher = async (userId, teacherId) => {
   const rating = await TeacherRating.findOne({ userId, teacherId })
-    .populate('userId', 'name email profileImage')
-    .populate('teacherId', 'name email teacherCategory profileImage');
+    .select('-reported -helpfulCount')
+    .populate('teacherId', 'name teacherCategory profileImage');
 
   return rating;
 };

@@ -40,9 +40,13 @@ const getUser = {
 const adminUserProfileKeys = {
   mobile: Joi.string().min(10).max(15).allow(''),
   emergencyMobile: Joi.string().min(10).max(15).allow(''),
-  gender: Joi.string().allow(''),
-  dob: Joi.string().allow(''),
-  age: Joi.string().allow(''),
+  gender: Joi.string().allow('', null).optional(),
+  // Age/DOB live on My Body. Never required on profile PATCH (new users have neither).
+  dob: Joi.string().allow('', null).optional(),
+  age: Joi.alternatives()
+    .try(Joi.string(), Joi.number().integer().min(1).max(120))
+    .allow('', null)
+    .optional(),
   Address: Joi.string().allow(''),
   city: Joi.string().allow(''),
   pincode: Joi.string().allow(''),
@@ -101,7 +105,7 @@ const updateUser = {
 const updateProfile = {
   body: Joi.object()
     .keys({
-      name: Joi.string().max(20),
+      name: Joi.string().max(60),
       profileImage: Joi.string().uri().allow('').optional(),
       AboutMe: Joi.string().allow('').optional(),
       ...adminUserProfileKeys,

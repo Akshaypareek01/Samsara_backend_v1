@@ -21,6 +21,10 @@ export const CacheKeys = {
     const filterStr = JSON.stringify(filters);
     return `class:list:${filterStr}`;
   },
+  eventList: (filters = {}) => {
+    const filterStr = JSON.stringify(filters);
+    return `event:list:${filterStr}`;
+  },
   userClasses: (userId) => `class:user:${userId}`,
 
   // Trainer cache keys

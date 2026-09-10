@@ -97,6 +97,7 @@ classSchema.pre('save', function(next) {
 
 // perf indexes — schedule/teacher/roster lookups were full collection scans
 classSchema.index({ schedule: 1 });
+classSchema.index({ cancelled: 1, schedule: 1 });
 classSchema.index({ teacher: 1, schedule: -1 });
 classSchema.index({ students: 1 });
 classSchema.index({ meeting_number: 1 });

@@ -9,7 +9,7 @@ const createTeacher = {
     gender: Joi.string().valid('male', 'female', 'other'),
     mobile: Joi.string().required().min(10).max(15),
     teachingExperience: Joi.number().min(0).max(50),
-    dob: Joi.date().required().max('now'),
+    dob: Joi.date().max('now'),
     images: Joi.array().items(
       Joi.object().keys({
         filename: Joi.string().required(),

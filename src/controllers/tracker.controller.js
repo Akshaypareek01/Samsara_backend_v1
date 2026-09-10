@@ -13,7 +13,7 @@ import {
 } from '../models/index.js';
 
 /**
- * Get dashboard data (latest entries from all trackers)
+ * Get dashboard data (today's activity + latest composition).
  */
 const getDashboardData = catchAsync(async (req, res) => {
   const data = await trackerService.getDashboardData(req.user.id);
@@ -116,6 +116,15 @@ const getFatHistory = catchAsync(async (req, res) => {
 });
 
 /**
+ * Fat tracker screen payload (profile + history + health bands).
+ */
+const getFatSummary = catchAsync(async (req, res) => {
+  const days = parseInt(req.query.days) || 730;
+  const summary = await trackerService.getFatSummary(req.user.id, days);
+  res.send(summary);
+});
+
+/**
  * Get BMI tracker history
  */
 const getBmiHistory = catchAsync(async (req, res) => {
@@ -128,8 +137,9 @@ const getBmiHistory = catchAsync(async (req, res) => {
  * Get body status history
  */
 const getBodyStatusHistory = catchAsync(async (req, res) => {
-  const days = parseInt(req.query.days) || 30;
-  const history = await trackerService.getBodyStatusHistory(req.user.id, days);
+  const days = parseInt(req.query.days, 10) || 30;
+  const limit = req.query.limit != null ? parseInt(req.query.limit, 10) : undefined;
+  const history = await trackerService.getBodyStatusHistory(req.user.id, days, limit);
   res.send(history);
 });
 
@@ -207,6 +217,14 @@ const addTemperatureEntry = catchAsync(async (req, res) => {
 const addFatEntry = catchAsync(async (req, res) => {
   const entry = await trackerService.addFatEntry(req.user.id, req.body);
   res.status(httpStatus.CREATED).send(entry);
+});
+
+/**
+ * Persist body-fat goal without logging a new reading.
+ */
+const updateFatGoal = catchAsync(async (req, res) => {
+  const entry = await trackerService.updateFatGoal(req.user.id, req.body.goal);
+  res.send(entry);
 });
 
 /**
@@ -459,6 +477,7 @@ export {
   getMoodHistory,
   getTemperatureHistory,
   getFatHistory,
+  getFatSummary,
   getBmiHistory,
   getBodyStatusHistory,
   getBodyStatusById,
@@ -470,6 +489,7 @@ export {
   addMoodEntry,
   addTemperatureEntry,
   addFatEntry,
+  updateFatGoal,
   addBmiEntry,
   addBodyStatusEntry,
   addStepEntry,

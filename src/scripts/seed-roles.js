@@ -34,6 +34,7 @@ const seedRoles = async () => {
                 support: { create: true, read: true, update: true, delete: true },
                 roleManagement: { create: true, read: true, update: true, delete: true },
                 teamManagement: { create: true, read: true, update: true, delete: true },
+                homeBanners: { create: true, read: true, update: true, delete: true },
             },
         };
 

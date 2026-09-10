@@ -16,6 +16,21 @@ import { CacheKeys, CacheTTL } from '../utils/cacheKeys.js';
 const REFERRAL_IMMUTABLE_FIELDS = ['referralCode', 'referredBy', 'referredAt'];
 
 /**
+ * Drop blank age/dob so a new-user profile PATCH (no My Body yet) cannot
+ * persist empty strings or fail mongoose minlength on those fields.
+ * @param {Record<string, unknown>} updateBody
+ */
+function omitBlankAgeAndDob(updateBody) {
+  ['age', 'dob'].forEach((key) => {
+    if (!Object.prototype.hasOwnProperty.call(updateBody, key)) return;
+    const value = updateBody[key];
+    if (value == null || String(value).trim() === '') {
+      delete updateBody[key];
+    }
+  });
+}
+
+/**
  * Normalize optional referral code from client input.
  * @param {unknown} value
  * @returns {string|null} uppercase code or null if absent
@@ -283,7 +298,7 @@ const getUserById = async (id) => {
   return await cacheService.getOrSet(
     cacheKey,
     async () => {
-      return await User.findById(id);
+      return await User.findById(id).select('-password');
     },
     CacheTTL.USER_PROFILE
   );
@@ -310,6 +325,7 @@ const updateUserById = async (userId, updateBody) => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
+  omitBlankAgeAndDob(updateBody);
   const previousRole = user.role;
   REFERRAL_IMMUTABLE_FIELDS.forEach((key) => {
     if (Object.prototype.hasOwnProperty.call(updateBody, key)) {

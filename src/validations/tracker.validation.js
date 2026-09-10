@@ -1,5 +1,6 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
+import { createBodyStatusBody } from './bodyStatus.schema.js';
 
 const dateKey = Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -71,16 +72,16 @@ const createTemperatureTracker = {
 const createFatTracker = {
   body: Joi.object().keys({
     date: dateKey,
-    age: Joi.number().min(1).max(120).required(),
-    gender: Joi.string().valid('Male', 'Female', 'Other').required(),
+    age: Joi.number().min(1).max(120),
+    gender: Joi.string().valid('Male', 'Female', 'Other'),
     height: Joi.object({
-      value: Joi.number().greater(0).max(300).required(),
+      value: Joi.number().greater(0).max(300),
       unit: Joi.string().valid('cm', 'ft').default('cm'),
-    }).required(),
+    }),
     weight: Joi.object({
-      value: Joi.number().greater(0).max(500).required(),
+      value: Joi.number().greater(0).max(500),
       unit: Joi.string().valid('kg', 'lbs').default('kg'),
-    }).required(),
+    }),
     bodyFat: Joi.object({
       value: Joi.number().greater(0).max(100).required(),
       unit: Joi.string().valid('%').default('%'),
@@ -108,43 +109,7 @@ const createBmiTracker = {
 };
 
 const createBodyStatusTracker = {
-  body: Joi.object().keys({
-    age: Joi.number().min(1).max(120),
-    gender: Joi.string().valid('Male', 'Female', 'Other'),
-    height: Joi.object({
-      value: Joi.number().greater(0).max(300).required(),
-      unit: Joi.string().valid('cm', 'ft').default('cm'),
-    }).required(),
-    weight: Joi.object({
-      value: Joi.number().greater(0).max(500).required(),
-      unit: Joi.string().valid('kg', 'lbs').default('kg'),
-    }).required(),
-    chest: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('cm', 'inches').default('cm'),
-    }),
-    waist: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('cm', 'inches').default('cm'),
-    }),
-    hips: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('cm', 'inches').default('cm'),
-    }),
-    arms: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('cm', 'inches').default('cm'),
-    }),
-    thighs: Joi.object({
-      value: Joi.number(),
-      unit: Joi.string().valid('cm', 'inches').default('cm'),
-    }),
-    bodyFat: Joi.object({
-      value: Joi.number().min(0).max(100),
-      unit: Joi.string().valid('%').default('%'),
-    }),
-    notes: Joi.string().max(500),
-  }),
+  body: createBodyStatusBody,
 };
 
 const createStepTracker = {
@@ -163,23 +128,25 @@ const createStepTracker = {
 
 // Daily activity (device steps + active calories), upsert by date.
 const createActivityTracker = {
-  body: Joi.object().keys({
-    date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/),
-    steps: Joi.object({
-      value: Joi.number().min(0).max(200000).required(),
-    }).required(),
-    activeCalories: Joi.object({
-      value: Joi.number().min(0),
-      unit: Joi.string().default('kcal'),
-    }),
-    distance: Joi.object({
-      value: Joi.number().min(0),
-      unit: Joi.string().valid('km', 'mi').default('km'),
-    }),
-    activeTime: Joi.number().min(0),
-    source: Joi.string().valid('healthkit', 'healthconnect', 'manual', 'system'),
-    notes: Joi.string().max(500),
-  }),
+  body: Joi.object()
+    .keys({
+      date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/),
+      steps: Joi.object({
+        value: Joi.number().integer().min(0).max(200000).required(),
+      }),
+      activeCalories: Joi.object({
+        value: Joi.number().min(0),
+        unit: Joi.string().default('kcal'),
+      }),
+      distance: Joi.object({
+        value: Joi.number().min(0),
+        unit: Joi.string().valid('km', 'mi').default('km'),
+      }),
+      activeTime: Joi.number().min(0),
+      source: Joi.string().valid('healthkit', 'healthconnect', 'manual', 'system'),
+      notes: Joi.string().max(500),
+    })
+    .or('steps', 'activeCalories'),
 };
 
 // Daily heart-rate summary, upsert by date.
@@ -234,6 +201,7 @@ const deleteTrackerEntry = {
 const getTrackerHistory = {
   query: Joi.object().keys({
     days: Joi.number().integer().min(1).max(730).default(30),
+    limit: Joi.number().integer().min(1).max(100),
   }),
 };
 
@@ -264,6 +232,12 @@ const updateWaterTarget = {
 const updateStepGoal = {
   body: Joi.object().keys({
     goal: Joi.number().integer().min(1000).max(50000).required(),
+  }),
+};
+
+const updateFatGoal = {
+  body: Joi.object().keys({
+    goal: Joi.number().greater(0).max(100).required(),
   }),
 };
 
@@ -392,6 +366,7 @@ export {
   getTrackerEntryById,
   updateWaterTarget,
   updateStepGoal,
+  updateFatGoal,
   deleteWaterIntake,
   addWaterIntake,
   getTodayWaterData,

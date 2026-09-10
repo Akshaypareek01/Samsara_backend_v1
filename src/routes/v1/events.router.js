@@ -28,12 +28,16 @@ const eventsRouter = express.Router();
 // Create a new event
 eventsRouter.post('/', auth(), validate(eventValidation.createEvent), createEvent);
 
-// Get event by ID
-eventsRouter.get('/upcoming', getAllEventsUpcoming);
-eventsRouter.get('/:id', getEventById);
-
-// Get all events
+// Static 1-segment GET paths MUST be registered before /:id
 eventsRouter.get('/', getAllEvents);
+eventsRouter.get('/upcoming', getAllEventsUpcoming);
+eventsRouter.get('/enrollment/:eventId/student/:userId', isUserEnrolledInEvent);
+eventsRouter.get('/enrollment/:eventId/:userId', isUserEnrolledInEvent);
+eventsRouter.get('/students/:eventId', auth(), getStudentsForEvent);
+eventsRouter.get('/user-events/:userId/upcoming', auth(), selfOrAdmin(), getUserRegisteredEventsUpcoming);
+eventsRouter.get('/user-events/:userId', auth(), selfOrAdmin(), getUserRegisteredEvents);
+eventsRouter.get('/teacher/:teacherId', getEventsByTeacher);
+eventsRouter.get('/:id', getEventById);
 
 eventsRouter.post('/add-pre-data', auth(), adminOnly(), addPredefinedEvents);
 // Update event
@@ -46,20 +50,6 @@ eventsRouter.post('/end_meeting/:classId', auth(), EndEventMeeting);
 
 eventsRouter.post('/start_meeting/:eventId', auth(), startEventMeeting);
 
-// Check if user is enrolled in an event
-eventsRouter.get('/enrollment/:eventId/:userId', isUserEnrolledInEvent);
-
 eventsRouter.post('/register', auth(), validate(eventValidation.registerUserToEvent), registerUserToEvent);
-
-// Route to get all students for a specific event
-eventsRouter.get('/students/:eventId', auth(), getStudentsForEvent);
-
-// Route to get all events a user is registered in
-eventsRouter.get('/user-events/:userId', auth(), selfOrAdmin(), getUserRegisteredEvents);
-
-eventsRouter.get('/user-events/:userId/upcoming', auth(), selfOrAdmin(), getUserRegisteredEventsUpcoming);
-
-// Route to get all events by teacher ID
-eventsRouter.get('/teacher/:teacherId', getEventsByTeacher);
 
 export default eventsRouter;
