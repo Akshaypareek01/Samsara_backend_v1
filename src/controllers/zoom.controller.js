@@ -863,8 +863,11 @@ export const getMeetingDetails = async (req, res) => {
 
         const isTeacherOfDoc = docTeacherId && userId && docTeacherId === userId;
         const isEnrolled = (docStudents || []).some((s) => String(s?._id || s) === userId);
+        // Consumer instructor (User.role=teacher) may join another teacher's class
+        // as a participant without being on the roster. Not CRM trainer/staff.
+        const isConsumerTeacher = user?.role === 'teacher';
 
-        if (!isStaff && !isTeacherOfDoc && !isEnrolled) {
+        if (!isStaff && !isTeacherOfDoc && !isEnrolled && !isConsumerTeacher) {
             return res.status(403).json({
                 status: 'fail',
                 message: 'You are not allowed to join this private meeting',
