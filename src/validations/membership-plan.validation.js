@@ -41,7 +41,7 @@ const createMembershipPlan = {
 const getMembershipPlans = {
   query: Joi.object().keys({
     name: Joi.string(),
-    planType: Joi.string().valid('basic', 'premium', 'enterprise', 'trial'),
+    planType: Joi.string().valid('basic', 'premium', 'enterprise', 'trial', 'limited-time'),
     isActive: Joi.boolean(),
     sortBy: Joi.string(),
     limit: Joi.number().integer().min(1).max(100),

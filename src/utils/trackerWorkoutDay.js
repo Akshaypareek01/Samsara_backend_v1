@@ -153,7 +153,7 @@ export function aggregateWorkoutDocs(docs, dateKey) {
 }
 
 /**
- * Persist one daily burn: max(device active kcal, today's workout logs).
+ * Persist one daily burn: device active kcal + today's workout logs.
  * Breakdown buckets stay for journal/debug; the ring uses currentCalories only.
  * @param {import('mongoose').Types.ObjectId|string} userId
  * @param {string|Date} [dateInput]

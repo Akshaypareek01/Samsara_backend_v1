@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import config from '../config/config.js';
 import { MembershipPlan, CouponCode } from '../models/index.js';
+import { buildLaunchPlanDocument } from '../constants/launch-plan.js';
 
 /**
  * Seed Basic membership tiers (Lifetime internal, Beta limited-time optional) + sample coupons for testing.
@@ -139,6 +140,8 @@ async function seedMembershipData() {
           effectiveMonthlyUsd: 36.58,
         },
       },
+      // --- Limited-time Launch Plan (₹5999 + 18% GST, buy until 31 Oct 2026) ---
+      buildLaunchPlanDocument(basicAccessPlanFeatures),
       // --- Internal 7-day trial for new user registrations (not publicly purchasable) ---
       {
         name: 'Trial Plan',

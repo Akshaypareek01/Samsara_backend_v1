@@ -148,9 +148,10 @@ CaloriesTargetSchema.methods.updateCalories = function (source, calories) {
     this.caloriesBreakdown.other = calories;
   }
 
-  this.currentCalories = Math.max(
-    Number(this.caloriesBreakdown.workout) || 0,
-    Number(this.caloriesBreakdown.steps) || 0,
+  this.currentCalories = Math.min(
+    (Number(this.caloriesBreakdown.workout) || 0) +
+      (Number(this.caloriesBreakdown.steps) || 0),
+    16000,
   );
   const target = Number(this.dailyTarget) || 2000;
   const rawPct = target > 0 ? (this.currentCalories / target) * 100 : 0;

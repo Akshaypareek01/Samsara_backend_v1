@@ -140,6 +140,8 @@ export function buildActivitySet(existing, data, ids) {
 }
 
 export const MAX_ACTIVITY_KCAL = 8000;
+/** Device + logged workouts can both be real; cap the combined daily ring. */
+export const MAX_DAILY_KCAL = MAX_ACTIVITY_KCAL * 2;
 
 /**
  * Health Connect / HealthKit active kcal for one day (1..8000).
@@ -153,14 +155,16 @@ export function clampDeviceKcal(raw) {
 }
 
 /**
- * Canonical daily burn: watch active energy already includes gym sessions.
- * Summing device + workout double-counts. If the watch is 0, the log still shows.
+ * Daily burn = watch/phone active kcal + today's logged workouts.
+ * Manual logs cover sessions the device never saw (e.g. dancing without a watch).
+ * Each source is clamped to MAX_ACTIVITY_KCAL before summing.
  * @param {unknown} deviceKcal
  * @param {unknown} workoutKcal
  * @returns {number}
  */
 export function canonicalDailyCalories(deviceKcal, workoutKcal) {
-  return Math.max(clampDeviceKcal(deviceKcal), clampDeviceKcal(workoutKcal));
+  const total = clampDeviceKcal(deviceKcal) + clampDeviceKcal(workoutKcal);
+  return Math.min(total, MAX_DAILY_KCAL);
 }
 
 /**
