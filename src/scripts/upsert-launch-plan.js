@@ -65,8 +65,12 @@ async function upsertLaunchPlan() {
 
     const gst = plan.taxConfig?.gst?.rate ?? 0;
     const total = plan.calculateTotalPrice('INR');
+    const usd = plan.usdBasePrice;
+    const usdTotal = typeof usd === 'number' ? plan.calculateTotalPrice('USD') : null;
     console.log(
-      `Launch Plan id=${plan.id || plan._id} | ₹${plan.basePrice} + ${gst}% GST = ₹${total} | ${plan.validityDays}d | until ${plan.availableUntil?.toISOString()} | appleProductId=${plan.appleProductId} | displayMemberCap=${plan.metadata?.displayMemberCap} (enforced=${plan.metadata?.enforceMemberCap})`
+      `Launch Plan id=${plan.id || plan._id} | ₹${plan.basePrice} + ${gst}% GST = ₹${total}` +
+        (usdTotal != null ? ` | USD $${usd} + ${gst}% GST = $${usdTotal}` : '') +
+        ` | ${plan.validityDays}d | until ${plan.availableUntil?.toISOString()} | appleProductId=${plan.appleProductId} | displayMemberCap=${plan.metadata?.displayMemberCap} (enforced=${plan.metadata?.enforceMemberCap})`
     );
   } catch (err) {
     console.error('upsert-launch-plan failed:', err);

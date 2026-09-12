@@ -233,7 +233,10 @@ membershipPlanSchema.methods.getBasePriceForCurrency = function (pricingCurrency
  * @returns {string}
  */
 membershipPlanSchema.methods.getSettlementCurrencyCode = function (pricingCurrency = 'INR') {
-  return normalizePricingCurrency(pricingCurrency) === 'USD' ? 'USD' : 'INR';
+  const wantsUsd = normalizePricingCurrency(pricingCurrency) === 'USD';
+  const hasUsdTier =
+    typeof this.usdBasePrice === 'number' && !Number.isNaN(this.usdBasePrice) && this.usdBasePrice > 0;
+  return wantsUsd && hasUsdTier ? 'USD' : 'INR';
 };
 
 /**

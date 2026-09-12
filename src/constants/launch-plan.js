@@ -14,6 +14,9 @@ export const LAUNCH_PLAN_AVAILABLE_UNTIL = new Date('2026-10-31T23:59:59+05:30')
 
 export const LAUNCH_PLAN_BASE_PRICE_INR = 5999;
 
+/** Android / web USD storefront. Matches App Store equalization for launch_yearly_plan. */
+export const LAUNCH_PLAN_BASE_PRICE_USD = 59.99;
+
 export const LAUNCH_PLAN_GST_RATE = 18;
 
 export const LAUNCH_PLAN_VALIDITY_DAYS = 365;
@@ -40,8 +43,9 @@ export function buildLaunchPlanDocument(accessFeatures = []) {
   return {
     name: LAUNCH_PLAN_NAME,
     description:
-      'Launch Plan — 1 year membership at ₹5999 + 18% GST. Shown as a 300-member launch offer (not a hard cap). Available to purchase until 31 Oct 2026.',
+      'Launch Plan — 1 year membership at ₹5999 + 18% GST (USD $59.99). Shown as a 300-member launch offer (not a hard cap). Available to purchase until 31 Oct 2026.',
     basePrice: LAUNCH_PLAN_BASE_PRICE_INR,
+    usdBasePrice: LAUNCH_PLAN_BASE_PRICE_USD,
     currency: 'INR',
     validityDays: LAUNCH_PLAN_VALIDITY_DAYS,
     features: [...LAUNCH_PLAN_DISPLAY_FEATURES, ...uniqueAccess],
@@ -69,6 +73,7 @@ export function buildLaunchPlanDocument(accessFeatures = []) {
       offerEndsAt: '2026-10-31',
       revenuecatProductId: LAUNCH_PLAN_APPLE_PRODUCT_ID,
       effectiveMonthlyInr: Math.round(LAUNCH_PLAN_BASE_PRICE_INR / 12),
+      effectiveMonthlyUsd: Math.round((LAUNCH_PLAN_BASE_PRICE_USD / 12) * 100) / 100,
     },
   };
 }
