@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { Membership, MembershipPlan, Transaction } from '../models/index.js';
 import ApiError from '../utils/ApiError.js';
 import config from '../config/config.js';
+import { sendMembershipPurchaseEvents } from './meta-capi.service.js';
 
 const RC_API_BASE = 'https://api.revenuecat.com/v1';
 
@@ -286,6 +287,8 @@ const handleInitialPurchase = async (event) => {
 
   await createTransactionRecord(userId, plan, originalTxnId, platform, 'completed');
 
+  reportMetaPurchase(event, plan, platform, originalTxnId || event.id);
+
   console.info(`RevenueCat INITIAL_PURCHASE processed: membership ${membership._id}`);
 };
 
@@ -329,6 +332,13 @@ const handleRenewal = async (event) => {
   if (plan) {
     await createTransactionRecord(userId, plan, originalTxnId, store === 'APP_STORE' ? 'ios' : 'android', 'completed');
   }
+
+  reportMetaPurchase(
+    event,
+    plan,
+    store === 'APP_STORE' ? 'ios' : 'android',
+    event.id || event.transaction_id || originalTxnId
+  );
 
   console.info(`RevenueCat RENEWAL processed: membership ${membership._id}, new endDate=${endDate}`);
 };
@@ -415,6 +425,37 @@ const handleBillingIssue = async (event) => {
   await membership.save();
 
   console.info(`RevenueCat BILLING_ISSUE flagged: membership ${membership._id}`);
+};
+
+/**
+ * Forward a confirmed store purchase to Meta. Sandbox events are skipped in production.
+ * Renewal uses the RevenueCat event id so it does not collapse into the original purchase.
+ * @param {object} event
+ * @param {object | null} plan
+ * @param {string} platform
+ * @param {string | undefined} eventId
+ */
+const reportMetaPurchase = (event, plan, platform, eventId) => {
+  if (config.env === 'production' && event?.is_sandbox) {
+    console.info('Meta CAPI skipped for RevenueCat sandbox event');
+    return;
+  }
+  if (!eventId || !event?.app_user_id) return;
+
+  const iapPricing = plan?.getIapReportingPricing?.() || {};
+  const value = Number(event.price_in_purchased_currency ?? event.price ?? iapPricing.amount);
+
+  sendMembershipPurchaseEvents({
+    eventId: String(eventId),
+    userId: String(event.app_user_id),
+    value: Number.isFinite(value) ? value : undefined,
+    currency: event.currency || iapPricing.currency || 'INR',
+    contentId: event.product_id,
+    platform,
+    eventTime: event.purchased_at_ms || event.event_timestamp_ms,
+  }).catch((err) => {
+    console.error('Meta CAPI after RevenueCat webhook failed:', err?.message || err);
+  });
 };
 
 /**

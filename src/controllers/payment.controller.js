@@ -4,6 +4,7 @@ import ApiError from '../utils/ApiError.js';
 import catchAsync from '../utils/catchAsync.js';
 import { MembershipPlan, CouponCode, Membership, Transaction, User } from '../models/index.js';
 import razorpayService from '../services/razorpay.service.js';
+import { sendMembershipPurchaseEvents } from '../services/meta-capi.service.js';
 import config from '../config/config.js';
 
 /**
@@ -455,6 +456,17 @@ const verifyPayment = catchAsync(async (req, res) => {
       await couponCode.incrementUsage();
     }
   }
+
+  sendMembershipPurchaseEvents({
+    eventId: razorpay_payment_id,
+    userId,
+    value: Number(transaction.amount),
+    currency: transaction.currency || 'INR',
+    contentId: String(membershipPlan._id),
+    platform: platform || transaction.platform || 'android',
+  }).catch((err) => {
+    console.error('Meta CAPI after Razorpay verify failed:', err?.message || err);
+  });
 
   res.send({
     success: true,

@@ -61,6 +61,9 @@ const envVarsSchema = Joi.object()
       .uri()
       .optional()
       .description('Consumer web app base URL (user/teacher OTP email links)'),
+    META_DATASET_ID: Joi.string().allow('').optional().description('Meta Events Manager dataset id'),
+    META_CAPI_ACCESS_TOKEN: Joi.string().allow('').optional().description('Meta Conversions API access token'),
+    META_GRAPH_VERSION: Joi.string().default('v21.0').description('Meta Graph API version'),
   })
   .unknown();
 
@@ -170,6 +173,11 @@ const config = {
   revenuecat: {
     secretKey: envVars.REVENUECAT_SECRET_KEY,
     webhookSecret: envVars.REVENUECAT_WEBHOOK_SECRET,
+  },
+  meta: {
+    datasetId: envVars.META_DATASET_ID || '',
+    accessToken: envVars.META_CAPI_ACCESS_TOKEN || '',
+    graphVersion: envVars.META_GRAPH_VERSION || 'v21.0',
   },
   fx: {
     usdToInr: envVars.USD_TO_INR_RATE,
