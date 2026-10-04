@@ -217,9 +217,14 @@ export const submitAnswer = catchAsync(async (req, res) => {
   const { doshaScore, doshaPercentages } = await calculateDoshaScores(assessment.answers, assessment.assessmentType);
   assessment.doshaScore = doshaScore;
   assessment.doshaPercentages = doshaPercentages;
+  // The app submits the full answer set in one call and never hits /calculate.
+  // Leaving isCompleted false kept the row as "in progress", so result screens
+  // kept reading an older attempt (or this one never qualified as submitted).
+  assessment.isCompleted = true;
+  assessment.submittedAt = new Date();
 
   await assessment.save();
-  res.send(assessment);
+  res.send(withClampedPercentages(assessment));
 });
 
 // Calculate dosha score and complete assessment

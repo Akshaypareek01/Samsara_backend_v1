@@ -199,10 +199,61 @@ export const stopPeriod = async (userId, date) => {
 };
 
 /**
+ * Drop blank, NaN, and empty-string fields before mongoose casts them.
+ * Blank BBT must not be stored as null/NaN (that fails the 35–42 check).
+ * @param {object} data
+ * @returns {object}
+ */
+function sanitizeDailyLogPayload(data) {
+  const next = { ...(data || {}) };
+  const bbt = next.basalBodyTemperature;
+  if (bbt == null || bbt === '') {
+    delete next.basalBodyTemperature;
+  } else {
+    const n = Number(bbt);
+    if (!Number.isFinite(n)) delete next.basalBodyTemperature;
+    else next.basalBodyTemperature = n;
+  }
+  ['sleepHours', 'painLevel', 'flowIntensity'].forEach((key) => {
+    if (next[key] == null || next[key] === '') {
+      delete next[key];
+      return;
+    }
+    const n = Number(next[key]);
+    if (!Number.isFinite(n)) delete next[key];
+    else next[key] = key === 'sleepHours' ? Math.round(n * 2) / 2 : n;
+  });
+  Object.keys(next).forEach((key) => {
+    if (next[key] === '') delete next[key];
+  });
+  return next;
+}
+
+/**
+ * Turn a mongoose ValidationError into a sentence the app can show.
+ * @param {import('mongoose').Error.ValidationError} err
+ * @returns {string}
+ */
+function dailyLogValidationMessage(err) {
+  const parts = Object.entries(err?.errors || {}).map(([path, detail]) => {
+    if (path.endsWith('basalBodyTemperature')) {
+      return 'Basal body temperature must be between 35°C and 42°C.';
+    }
+    if (path.endsWith('sleepHours')) return 'Sleep hours must be between 0 and 24.';
+    if (path.endsWith('painLevel')) return 'Pain level must be between 0 and 10.';
+    if (path.endsWith('flowIntensity')) return 'Flow must be between 0 and 5.';
+    return detail?.message;
+  });
+  const text = parts.filter(Boolean).join(' ');
+  return text || 'Could not save this log. Check the values and try again.';
+}
+
+/**
  * Upsert a daily log for the given date. Auto-creates a cycle if none exists.
  */
 export const upsertDailyLog = async (userId, date, data) => {
   const day = toDateOnly(date);
+  const payload = sanitizeDailyLogPayload(data);
 
   await autoCompleteOldCycles(userId);
 
@@ -225,17 +276,28 @@ export const upsertDailyLog = async (userId, date, data) => {
   }
 
   const idx = cycle.dailyLogs.findIndex((l) => toDateOnly(l.date).getTime() === day.getTime());
-  if (idx >= 0) {
-    cycle.dailyLogs[idx] = { ...cycle.dailyLogs[idx].toObject(), ...data, date: day };
-  } else {
-    cycle.dailyLogs.push({ date: day, ...data });
+  const merged = idx >= 0
+    ? { ...cycle.dailyLogs[idx].toObject(), ...payload, date: day }
+    : { date: day, ...payload };
+  const storedBbt = Number(merged.basalBodyTemperature);
+  if (!Number.isFinite(storedBbt) || storedBbt < 35 || storedBbt > 42) {
+    delete merged.basalBodyTemperature;
   }
+  if (idx >= 0) cycle.dailyLogs[idx] = merged;
+  else cycle.dailyLogs.push(merged);
   cycle.dailyLogs.sort((a, b) => toDateOnly(a.date) - toDateOnly(b.date));
 
   // Auto-update flow summary whenever a log is saved
   _recalcFlowSummary(cycle);
 
-  await cycle.save();
+  try {
+    await cycle.save();
+  } catch (err) {
+    if (err?.name === 'ValidationError') {
+      throw new ApiError(httpStatus.BAD_REQUEST, dailyLogValidationMessage(err));
+    }
+    throw err;
+  }
   return cycle.dailyLogs.find((l) => toDateOnly(l.date).getTime() === day.getTime());
 };
 

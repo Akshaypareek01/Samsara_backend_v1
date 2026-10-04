@@ -61,6 +61,7 @@ const createMoodTracker = {
 const createTemperatureTracker = {
   body: Joi.object().keys({
     date: dateKey,
+    measuredAt: Joi.string().isoDate(),
     temperature: Joi.object({
       value: Joi.number().greater(0).max(115).required(),
       unit: Joi.string().valid('F', 'C').default('F'),

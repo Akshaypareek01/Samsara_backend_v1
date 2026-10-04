@@ -92,12 +92,28 @@ const eventSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    /** Soft-delete. The document stays so enrolled students can open past details. */
+    cancelled: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    cancelledAt: {
+      type: Date,
+      default: null,
+    },
+    cancellationReason: {
+      type: String,
+      default: '',
+      trim: true,
+    },
   },
   { timestamps: true }
 );
 
 // perf indexes — same access patterns as classes
 eventSchema.index({ startDate: 1 });
+eventSchema.index({ cancelled: 1, startDate: 1 });
 eventSchema.index({ teacher: 1, startDate: -1 });
 eventSchema.index({ students: 1 });
 eventSchema.index({ meeting_number: 1 });

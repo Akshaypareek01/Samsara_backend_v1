@@ -15,6 +15,8 @@ import {
   ACTIVE_CLASS_FILTER,
   cancelClassById,
   isClassCancelled,
+  isClassCompleted,
+  removeCompletedClass,
 } from '../services/classCancellation.service.js';
 import { cancelStudentRegistration } from '../services/classEnrollment.service.js';
 import {
@@ -479,14 +481,23 @@ export const updateClass = async (req, res) => {
 export const deleteClass = async (req, res) => {
   const { classId } = req.params;
   try {
-    const { classDoc, notified, zoomEnded } = await cancelClassById(classId);
-    const classData = classDoc.toObject ? classDoc.toObject() : classDoc;
+    const existing = await Class.findById(classId);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Class not found' });
+    }
+
+    // Finished session: drop it from the trainer list. Do not label it cancelled or push students.
+    const result = isClassCompleted(existing)
+      ? await removeCompletedClass(existing)
+      : await cancelClassById(classId);
+
+    const classData = result.classDoc.toObject ? result.classDoc.toObject() : result.classDoc;
     res.json({
       success: true,
       data: classData,
-      cancelled: true,
-      notified,
-      zoomEnded,
+      cancelled: result.cancelled !== false,
+      notified: result.notified,
+      zoomEnded: result.zoomEnded,
     });
   } catch (error) {
     const status = error.statusCode || 500;
@@ -648,7 +659,8 @@ export const getStudentUpcomingClasses = async (req, res) => {
 
     // Find all classes where the student is enrolled (we'll filter by upcoming in JavaScript)
     const allClasses = await Class.find({ 
-      students: studentId
+      students: studentId,
+      ...ACTIVE_CLASS_FILTER,
     })
     .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
     .exec();
@@ -821,6 +833,7 @@ export const removeStudentFromClass = async (req, res) => {
       // Update meeting number and password
       foundClass.meeting_number = "";
       foundClass.status = false;
+      if (!foundClass.completedAt) foundClass.completedAt = new Date();
       // Save the updated class
       await foundClass.save();
   

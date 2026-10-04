@@ -112,6 +112,7 @@ const getUserUpcomingEvents = async (userId) => {
     students: userId,
     startDate: { $gte: now },
     status: true,
+    cancelled: { $ne: true },
   })
     .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
     .sort({ startDate: 1 })

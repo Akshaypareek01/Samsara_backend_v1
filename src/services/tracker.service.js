@@ -78,6 +78,23 @@ const applyClientDate = (data, fieldName = 'measurementDate') => {
 };
 
 /**
+ * Store the client's clock time on a temperature row.
+ * Without `measuredAt`, `date` alone is UTC midnight and shows as 5:30 AM in IST.
+ *
+ * @param {Object} data
+ * @returns {Object}
+ */
+const applyTemperatureTimestamp = (data) => {
+  const next = applyClientDate(data);
+  const measured = data?.measuredAt ? new Date(data.measuredAt) : null;
+  if (measured && !Number.isNaN(measured.getTime())) {
+    next.measurementDate = measured;
+  }
+  delete next.measuredAt;
+  return next;
+};
+
+/**
  * Persist ObjectIds on workout subdocs that were saved without `_id`.
  * Mongoose hydrates missing subdoc ids in memory, so we inspect the raw BSON.
  * @param {import('mongoose').Document[]} docs
@@ -113,6 +130,9 @@ const ensureWorkoutEntryIds = async (docs) => {
  */
 const normalizeTrackerUpdate = (trackerType, updateData) => {
   const data = { ...updateData };
+  if (trackerType === 'temperature') {
+    return applyTemperatureTimestamp(data);
+  }
   if (trackerType === 'step') {
     if (data.steps && typeof data.steps === 'object' && data.steps.value != null) {
       data.steps = data.steps.value;
@@ -334,11 +354,17 @@ const getTemperatureHistory = async (userId, days = 30) => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   
-  return TemperatureTracker.find({
+  const docs = await TemperatureTracker.find({
     userId,
     measurementDate: { $gte: startDate },
     isActive: true
   }).sort({ measurementDate: -1 });
+  // toJSON strips createdAt. loggedAt is the real insert time when measurementDate is UTC midnight.
+  return docs.map((doc) => {
+    const json = doc.toJSON();
+    if (doc.createdAt) json.loggedAt = doc.createdAt;
+    return json;
+  });
 };
 
 /**
@@ -896,7 +922,7 @@ const addMoodEntry = async (userId, moodData) => {
  * @returns {Promise<Object>}
  */
 const addTemperatureEntry = async (userId, temperatureData) => {
-  return TemperatureTracker.create({ userId, ...applyClientDate(temperatureData) });
+  return TemperatureTracker.create({ userId, ...applyTemperatureTimestamp(temperatureData) });
 };
 
 /**

@@ -865,7 +865,10 @@ export const getMeetingDetails = async (req, res) => {
         const isEnrolled = (docStudents || []).some((s) => String(s?._id || s) === userId);
         // Consumer instructor (User.role=teacher) may join another teacher's class
         // as a participant without being on the roster. Not CRM trainer/staff.
-        const isConsumerTeacher = user?.role === 'teacher';
+        const roleName = String(typeof user?.role === 'string' ? user.role : '')
+            .trim()
+            .toLowerCase();
+        const isConsumerTeacher = roleName === 'teacher';
 
         if (!isStaff && !isTeacherOfDoc && !isEnrolled && !isConsumerTeacher) {
             return res.status(403).json({
@@ -874,12 +877,9 @@ export const getMeetingDetails = async (req, res) => {
             });
         }
 
-        if (asHost && !isStaff && !isTeacherOfDoc) {
-            return res.status(403).json({
-                status: 'fail',
-                message: 'Only the class teacher or staff can start as host',
-            });
-        }
+        // Non-owner teachers use the same participant join URL as students.
+        // asHost=1 from a guest coach must not mint a host SDK signature.
+        const joinAsHost = Boolean(asHost && (isStaff || isTeacherOfDoc));
 
         // Refresh join_url from Zoom when missing
         if (!meetingData.joinUrl && meetingData.meetingNumber) {
@@ -917,11 +917,15 @@ export const getMeetingDetails = async (req, res) => {
             meetingData.joinUrl = `https://zoom.us/wc/join/${meetingData.meetingNumber}${pwd}`;
         }
 
-        // Harden privacy on every authorized fetch (covers older meetings)
-        await patchMeetingPrivacySettings(
-            meetingData.meetingNumber,
-            meetingData.accountId || validAccounts[0]?.id
-        );
+        // Re-lock privacy only for the real host. Guest teachers and students
+        // join the existing meeting; patching private_meeting here is what makes
+        // Zoom reject a non-host SDK join.
+        if (joinAsHost) {
+            await patchMeetingPrivacySettings(
+                meetingData.meetingNumber,
+                meetingData.accountId || validAccounts[0]?.id
+            );
+        }
 
         const responseData = {
             meetingNumber: meetingData.meetingNumber,
@@ -932,7 +936,7 @@ export const getMeetingDetails = async (req, res) => {
             hostStartUrl: null,
         };
 
-        if (asHost) {
+        if (joinAsHost) {
             // Meeting SDK role=1 + ZAK = real host (CRM admin/trainer on desktop web).
             // Mobile teachers on Zoom Basic → WC participant (SDK host lock is permanent on Basic).
             let zoomAccountType = null;
@@ -1040,6 +1044,13 @@ export const getMeetingDetails = async (req, res) => {
                     responseData.hostStartUrl = `${origin}/s/${meetingData.meetingNumber}?zak=${encodeURIComponent(zakForStart)}`;
                 }
             }
+        }
+
+        if (!joinAsHost) {
+            responseData.asHost = false;
+            responseData.hostMode = 'web_participant';
+            responseData.useMeetingSdk = false;
+            responseData.sdkJoinPath = null;
         }
 
         res.json({

@@ -1,5 +1,10 @@
 import Joi from 'joi';
 import { objectId } from './custom.validation.js';
+import {
+  PERFECT_FOR_OPTIONS,
+  NOT_SUITABLE_IF_OPTIONS,
+  WHAT_YOU_GAIN_OPTIONS,
+} from '../constants/classAudience.js';
 
 /**
  * Request validation for the Events and Classes write routes.
@@ -58,6 +63,9 @@ const eventBody = {
   howItWillHelp: Joi.string().trim().max(2000).allow(''),
   howItWillnotHelp: Joi.string().trim().max(2000).allow(''),
   status: Joi.boolean(),
+  cancelled: Joi.any().forbidden(),
+  cancelledAt: Joi.any().forbidden(),
+  cancellationReason: Joi.any().forbidden(),
   // Set server-side by the Zoom flow; never accepted from a client.
   password: Joi.any().forbidden(),
   meeting_number: Joi.any().forbidden(),
@@ -116,9 +124,9 @@ const classBody = {
   classCategory: Joi.string().valid('yoga class', 'meditation class', 'pcos/pcod class', 'thyroid class'),
   duration: Joi.number().integer().min(5).max(480),
   maxCapacity: Joi.number().integer().min(1).max(60),
-  perfectFor: Joi.array().items(Joi.string().max(300)).max(20),
-  skipIf: Joi.array().items(Joi.string().max(300)).max(20),
-  whatYoullGain: Joi.array().items(Joi.string().max(300)).max(20),
+  perfectFor: Joi.array().items(Joi.string().valid(...PERFECT_FOR_OPTIONS)).min(2).max(5),
+  skipIf: Joi.array().items(Joi.string().valid(...NOT_SUITABLE_IF_OPTIONS)).min(2).max(5),
+  whatYoullGain: Joi.array().items(Joi.string().valid(...WHAT_YOU_GAIN_OPTIONS)).min(2).max(5),
   latitude,
   longitude,
   // Zoom fields are server-owned.
@@ -138,6 +146,9 @@ const createClass = {
       title: classBody.title.required(),
       teacher: classBody.teacher.required(),
       classType: classBody.classType.required(),
+      perfectFor: classBody.perfectFor.required(),
+      skipIf: classBody.skipIf.required(),
+      whatYoullGain: classBody.whatYoullGain.required(),
     })
     // The model requires `schedule`, but clients send `schedules`; accept either.
     .or('schedule', 'schedules')

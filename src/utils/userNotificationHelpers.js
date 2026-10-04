@@ -255,6 +255,54 @@ export const sendClassCancellationNotification = async (userId, classData) => {
 };
 
 /**
+ * Notifies a student that an event they registered for has been cancelled.
+ * @param {string} userId
+ * @param {Object} eventData
+ * @param {string|import('mongoose').Types.ObjectId} eventData.id
+ * @param {string} eventData.title
+ * @param {Date|string} [eventData.startDate]
+ * @param {string} [eventData.dateLabel]
+ * @param {string} [eventData.timeLabel]
+ * @param {string} [eventData.instructor]
+ * @returns {Promise<Object>}
+ */
+export const sendEventCancellationNotification = async (userId, eventData) => {
+  const dateLabel = eventData.dateLabel
+    || (eventData.startDate ? new Date(eventData.startDate).toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'Asia/Kolkata',
+    }) : '');
+  const timeLabel = eventData.timeLabel || '';
+  const when = [dateLabel, timeLabel].filter(Boolean).join(' at ');
+  const whenClause = when ? ` scheduled for ${when}` : '';
+
+  return await createUserNotification(
+    userId,
+    'Event Cancelled',
+    `The event "${eventData.title}"${whenClause} has been cancelled.`,
+    {
+      type: 'cancellation',
+      priority: 'high',
+      metadata: {
+        eventId: eventData.id,
+        eventName: eventData.title,
+        instructor: eventData.instructor,
+        scheduledDate: eventData.startDate,
+        eventDate: dateLabel,
+        eventTime: timeLabel,
+      },
+      actionUrl: `/events/${eventData.id}`,
+      actionText: 'View Event',
+      tags: ['event', 'cancelled', 'student'],
+      source: 'automated',
+    }
+  );
+};
+
+/**
  * Send event registration confirmation
  */
 export const sendEventRegistrationConfirmation = async (userId, eventData) => {

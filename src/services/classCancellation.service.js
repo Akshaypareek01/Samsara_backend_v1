@@ -4,7 +4,7 @@ import { sendClassCancellationNotification } from '../utils/userNotificationHelp
 import { resolveUserId } from '../utils/notificationUtils.js';
 
 /** Mongo filter for classes that are still bookable / startable. */
-export const ACTIVE_CLASS_FILTER = { cancelled: { $ne: true } };
+export const ACTIVE_CLASS_FILTER = { cancelled: { $ne: true }, removedByTeacher: { $ne: true } };
 
 /**
  * @param {object|null|undefined} classDoc
@@ -57,6 +57,105 @@ const formatClassTime = (classDoc) => {
     hour12: true,
     timeZone: 'Asia/Kolkata',
   });
+};
+
+/**
+ * Clock string ("17:14" or "5:14 PM") to minutes since midnight.
+ * @param {string|null|undefined} timeStr
+ * @returns {number|null}
+ */
+const parseTimeToMinutes = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string') return null;
+  const match = timeStr.trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+  if (!match) return null;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10) || 0;
+  const amPm = (match[3] || '').toUpperCase();
+  if (amPm === 'PM' && hours !== 12) hours += 12;
+  if (amPm === 'AM' && hours === 12) hours = 0;
+  if (Number.isNaN(hours)) return null;
+  return hours * 60 + minutes;
+};
+
+/**
+ * IST calendar date (YYYY-MM-DD) for a stored schedule instant.
+ * @param {Date} date
+ * @returns {string}
+ */
+const istDateKey = (date) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+
+/**
+ * True when the trainer already ended the session, or the scheduled end (IST) has passed.
+ * Deleting a completed class must not mark it cancelled or notify students.
+ * @param {object|null|undefined} classDoc
+ * @returns {boolean}
+ */
+export const isClassCompleted = (classDoc) => {
+  if (!classDoc) return false;
+  if (classDoc.completedAt) return true;
+
+  const dateValue = classDoc.schedules?.[0]?.date || classDoc.schedule;
+  if (!dateValue) return false;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return false;
+
+  let start = classDoc.schedules?.[0]?.startTime || classDoc.startTime;
+  let end = classDoc.schedules?.[0]?.endTime || classDoc.endTime;
+  if (start && String(start).includes('-') && !end) {
+    const [startPart, endPart] = String(start).split('-').map((part) => part.trim());
+    start = startPart;
+    end = endPart;
+  }
+
+  let endMinutes = parseTimeToMinutes(end);
+  const startMinutes = parseTimeToMinutes(start);
+  const duration = Number(classDoc.duration);
+  if (endMinutes == null && startMinutes != null && Number.isFinite(duration) && duration > 0) {
+    endMinutes = startMinutes + duration;
+  }
+  if (endMinutes == null) return false;
+
+  const [year, month, day] = istDateKey(date).split('-').map(Number);
+  const endHour = Math.floor(endMinutes / 60);
+  const endMin = endMinutes % 60;
+  const endUtcMs = Date.UTC(year, month - 1, day, endHour, endMin) - (5 * 60 + 30) * 60 * 1000;
+  return Date.now() >= endUtcMs;
+};
+
+/**
+ * Hides a finished class from the trainer without marking it cancelled or notifying students.
+ * @param {import('mongoose').Document} classDoc
+ * @returns {Promise<{ classDoc: object, notified: number, zoomEnded: boolean, cancelled: boolean }>}
+ */
+export const removeCompletedClass = async (classDoc) => {
+  let zoomEnded = false;
+  if (classDoc.meeting_number) {
+    try {
+      await endZoomMeeting(classDoc.meeting_number, classDoc.zoomAccountUsed || 'account_1');
+      zoomEnded = true;
+    } catch (zoomError) {
+      console.error(
+        'Error ending Zoom meeting before removing completed class:',
+        zoomError?.message || zoomError
+      );
+    }
+  }
+
+  classDoc.removedByTeacher = true;
+  classDoc.status = false;
+  classDoc.meeting_number = '';
+  classDoc.zoomJoinUrl = undefined;
+  classDoc.zoomStartUrl = undefined;
+  if (!classDoc.completedAt) classDoc.completedAt = new Date();
+  await classDoc.save();
+
+  return { classDoc, notified: 0, zoomEnded, cancelled: false };
 };
 
 /**

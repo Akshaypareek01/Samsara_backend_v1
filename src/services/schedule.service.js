@@ -192,6 +192,7 @@ const getUserUpcomingActivities = async (userId, limit = 10) => {
       students: userId,
       schedule: { $gte: now },
       status: true,
+      cancelled: { $ne: true },
     })
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
       .sort({ schedule: 1 })
@@ -202,6 +203,7 @@ const getUserUpcomingActivities = async (userId, limit = 10) => {
       students: userId,
       startDate: { $gte: now },
       status: true,
+      cancelled: { $ne: true },
     })
       .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images')
       .sort({ startDate: 1 })

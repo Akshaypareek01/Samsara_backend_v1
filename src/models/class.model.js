@@ -48,6 +48,16 @@ const classSchema = new mongoose.Schema({
     default: '',
     trim: true,
   },
+  /** Set when the trainer ends the session. Delete after this is not a cancellation. */
+  completedAt: {
+    type: Date,
+    default: null,
+  },
+  /** Trainer removed a finished class. Hidden from teacher lists, not a student cancellation. */
+  removedByTeacher: {
+    type: Boolean,
+    default: false,
+  },
   students: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Users' }],
   schedule: { type: Date, default: Date.now, required: true },
   startTime: { type: String, required: false },

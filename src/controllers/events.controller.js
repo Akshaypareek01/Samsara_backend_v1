@@ -10,6 +10,13 @@ import {
   enrichDetailsPayload,
 } from '../services/classEventDetails.service.js';
 import { getUpcomingEventsPayload } from '../services/upcomingList.service.js';
+import {
+  ACTIVE_EVENT_FILTER,
+  cancelEventById,
+  isEventCancelled,
+} from '../services/eventCancellation.service.js';
+import { eventStartInstant } from '../utils/eventCalendarDate.js';
+import { invalidateUpcomingEventsCache } from '../services/upcomingList.service.js';
 
 // Helper function to get teacher data with first image
 const getTeacherData = (teacher) => {
@@ -48,6 +55,11 @@ const getTeacherData = (teacher) => {
 export const createEvent = async (req, res) => {
     console.log("body events  ==>", req.body);
     try {
+        if (req.body.startDate) {
+            const normalizedStart = eventStartInstant(req.body.startDate);
+            if (normalizedStart) req.body.startDate = normalizedStart;
+        }
+
         if (req.body.teacher) {
             const overlapResult = await validateEventOverlap(req.body);
             if (overlapResult.hasOverlap) {
@@ -61,6 +73,7 @@ export const createEvent = async (req, res) => {
 
         const event = new Event(req.body);
         await event.save();
+        await invalidateUpcomingEventsCache();
         
         // Populate teacher data if teacher exists
         if (event.teacher) {
@@ -104,7 +117,7 @@ export const getEventById = async (req, res) => {
 // Get all events
 export const getAllEvents = async (req, res) => {
     try {
-        const events = await Event.find()
+        const events = await Event.find(ACTIVE_EVENT_FILTER)
             .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
             .populate('students', 'name email')
             .exec();
@@ -138,6 +151,14 @@ export const updateEvent = async (req, res) => {
         if (!existingEvent) {
             return res.status(404).json({ message: 'Event not found' });
         }
+        if (isEventCancelled(existingEvent)) {
+            return res.status(400).json({ message: 'Cannot update a cancelled event' });
+        }
+
+        if (req.body.startDate) {
+            const normalizedStart = eventStartInstant(req.body.startDate);
+            if (normalizedStart) req.body.startDate = normalizedStart;
+        }
 
         const mergedData = { ...existingEvent, ...req.body };
         if (mergedData.teacher) {
@@ -162,7 +183,8 @@ export const updateEvent = async (req, res) => {
         
         const eventData = event.toObject();
         eventData.teacher = getTeacherData(eventData.teacher);
-        
+        await invalidateUpcomingEventsCache();
+
         res.status(200).json(eventData);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -175,6 +197,9 @@ export const startEventMeeting = async (req, res) => {
     const { eventId } = req.params;
     const eventDoc = await Event.findById(eventId);
     if (!eventDoc) return res.status(404).json({ success: false, error: "Event not found" });
+    if (isEventCancelled(eventDoc)) {
+      return res.status(400).json({ success: false, error: 'Cannot start a cancelled event' });
+    }
 
     // Use centralized Zoom service with multiple account support
     const meetingData = {
@@ -221,16 +246,26 @@ export const startEventMeeting = async (req, res) => {
   }
 };
 
-// Delete event
+/**
+ * Soft-cancels an event. The document stays so student history can still open details.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 export const deleteEvent = async (req, res) => {
     try {
-        const event = await Event.findByIdAndDelete(req.params.id);
-        if (!event) {
-            return res.status(404).json({ message: 'Event not found' });
-        }
-        res.status(200).json({ message: 'Event deleted successfully' });
+        const { eventDoc, notified, zoomEnded } = await cancelEventById(req.params.id);
+        const eventData = eventDoc.toObject ? eventDoc.toObject() : eventDoc;
+        res.status(200).json({
+            success: true,
+            message: 'Event cancelled successfully',
+            data: eventData,
+            cancelled: true,
+            notified,
+            zoomEnded,
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        const status = error.statusCode || 500;
+        res.status(status).json({ success: false, error: error.message });
     }
 };
 
@@ -362,12 +397,18 @@ export const isUserEnrolledInEvent = async (req, res) => {
         if (!event) {
             return res.status(404).json({ message: 'Event not found' });
         }
+        if (isEventCancelled(event)) {
+            return res.status(400).json({
+                message: 'This event has been cancelled',
+                code: 'EVENT_CANCELLED',
+            });
+        }
 
         // Atomic claim: `students: { $ne: userId }` makes double-registration
         // impossible, and the size guard prevents overbooking under concurrency.
         // A read-modify-write here loses updates when a popular event opens.
         const seatCap = Number.parseInt(event.availableseats, 10);
-        const guard = { _id: eventId, students: { $ne: userId } };
+        const guard = { _id: eventId, students: { $ne: userId }, cancelled: { $ne: true } };
         if (Number.isFinite(seatCap) && seatCap > 0) {
             guard.$expr = { $lt: [{ $size: '$students' }, seatCap] };
         }
@@ -379,6 +420,13 @@ export const isUserEnrolledInEvent = async (req, res) => {
         );
 
         if (!claimed) {
+            const latest = await Event.findById(eventId).select('cancelled students').lean();
+            if (isEventCancelled(latest)) {
+                return res.status(400).json({
+                    message: 'This event has been cancelled',
+                    code: 'EVENT_CANCELLED',
+                });
+            }
             const alreadyIn = event.students.some((s) => String(s?._id ?? s) === String(userId));
             return res.status(409).json({
                 message: alreadyIn ? 'User already registered' : 'Event is full',
@@ -417,6 +465,7 @@ export const isUserEnrolledInEvent = async (req, res) => {
             console.error('Error sending event enrollment notifications:', notificationError);
         }
 
+        await invalidateUpcomingEventsCache();
         return res.status(200).json({ message: 'User registered successfully', event: eventData });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
@@ -471,7 +520,8 @@ export const getUserRegisteredEventsUpcoming = async (req, res) => {
         // Fetch only upcoming events or events happening today
         const events = await Event.find({ 
             students: userId, 
-            startDate: { $gte: currentDate } // Ensures only today's and future events are included
+            startDate: { $gte: currentDate },
+            ...ACTIVE_EVENT_FILTER,
         })
         .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
         .populate('students', 'name email')
@@ -494,7 +544,7 @@ export const getEventsByTeacher = async (req, res) => {
     try {
         const { teacherId } = req.params;
 
-        const events = await Event.find({ teacher: teacherId })
+        const events = await Event.find({ teacher: teacherId, ...ACTIVE_EVENT_FILTER })
             .populate('teacher', 'name email teacherCategory expertise teachingExperience qualification images additional_courses description AboutMe profileImage achievements')
             .populate('students', 'name email')
             .exec();

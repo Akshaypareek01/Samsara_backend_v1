@@ -1,5 +1,7 @@
 import { Class, Event } from '../models/index.js';
+import { kolkataDayStart } from '../utils/eventCalendarDate.js';
 import { ACTIVE_CLASS_FILTER } from './classCancellation.service.js';
+import { ACTIVE_EVENT_FILTER } from './eventCancellation.service.js';
 import cacheService from './cache.service.js';
 import { CacheKeys, CacheTTL } from '../utils/cacheKeys.js';
 import {
@@ -61,10 +63,9 @@ async function loadUpcomingClasses(filterUpcomingClasses) {
  * @returns {Promise<object[]>}
  */
 async function loadUpcomingEvents() {
-  const currentDate = new Date();
-  currentDate.setHours(0, 0, 0, 0);
+  const currentDate = kolkataDayStart(new Date());
 
-  const events = await Event.find({ startDate: { $gte: currentDate } })
+  const events = await Event.find({ startDate: { $gte: currentDate }, ...ACTIVE_EVENT_FILTER })
     .select(EVENT_LIST_SELECT)
     .populate('teacher', EVENT_LIST_TEACHER_SELECT)
     .sort({ startDate: 1 })
@@ -90,6 +91,18 @@ export async function getUpcomingClassesPayload(filterUpcomingClasses, options =
     return data;
   }
   return cacheService.getOrSet(key, () => loadUpcomingClasses(filterUpcomingClasses), CacheTTL.SHORT);
+}
+
+/**
+ * Drops cached upcoming-event lists so a create or registration shows up immediately.
+ * @returns {Promise<void>}
+ */
+export async function invalidateUpcomingEventsCache() {
+  try {
+    await cacheService.invalidate('event:list:*');
+  } catch (error) {
+    console.error('invalidateUpcomingEventsCache failed:', error);
+  }
 }
 
 /**
